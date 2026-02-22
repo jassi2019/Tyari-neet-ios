@@ -20,10 +20,11 @@ type TPlanCardProps = {
 };
 
 const INR_SYMBOL = '\u20B9';
+const PLAN_GST_RATE = 18;
 
 const getPlanGstRate = (plan: TPlan): number => {
-  const parsed = Number(plan.gstRate);
-  return Number.isFinite(parsed) ? parsed : 18;
+  void plan;
+  return PLAN_GST_RATE;
 };
 
 const getPlanTotalAmount = (plan: TPlan): number => {
@@ -56,10 +57,7 @@ const PlanCard = ({ plan, onSelect, isSelected, iapProduct }: TPlanCardProps) =>
   const totalAmount = getPlanTotalAmount(plan);
   const gstRate = getPlanGstRate(plan);
 
-  const priceText =
-    Platform.OS === 'ios'
-      ? iapProduct?.displayPrice || formatInr(totalAmount)
-      : formatInr(totalAmount);
+  const priceText = `${formatInr(totalAmount)} Incl. GST`;
 
   const validUntilText = `Valid until ${new Date(plan.validUntil).toLocaleDateString('en-GB', {
     day: '2-digit',
@@ -78,7 +76,7 @@ const PlanCard = ({ plan, onSelect, isSelected, iapProduct }: TPlanCardProps) =>
         : validUntilText
       : validUntilText;
 
-  const showGst = Platform.OS !== 'ios' || !iapProduct?.displayPrice;
+  const showGst = false;
 
   return (
     <TouchableOpacity
@@ -381,9 +379,10 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   planAmount: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#F1BB3E',
+    textAlign: 'right',
   },
   planGst: {
     fontSize: 14,
