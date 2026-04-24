@@ -1,6 +1,5 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import * as Icons from "lucide-react";
 import {
   AreaChart,
@@ -46,100 +45,136 @@ export default function Dashboard() {
 
   if (loading || !selectedMetric) return <Loader />;
 
+  const now = new Date();
+  const timeGreeting =
+    now.getHours() < 12 ? "Good morning" : now.getHours() < 17 ? "Good afternoon" : "Good evening";
+
   return (
     <div className="min-h-screen bg-background">
-      {/* Header Section */}
-      <div className="border-b bg-gradient-to-b from-background to-muted/20">
-        <div className="container mx-auto px-4 py-8">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div>
-              <h1 className="text-3xl sm:text-4xl font-bold tracking-tight bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-                Dashboard
-              </h1>
-              <p className="text-muted-foreground mt-2 text-lg">
-                Welcome back! Here's an overview of your system
-              </p>
-            </div>
+      {/* Header */}
+      <div className="border-b border-border bg-card/50 px-6 py-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground tracking-tight">
+              {timeGreeting} 👋
+            </h1>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              Here&apos;s what&apos;s happening with Taiyari NEET Ki today.
+            </p>
+          </div>
+          <div className="text-xs text-muted-foreground bg-secondary px-3 py-1.5 rounded-full border border-border">
+            {now.toLocaleDateString("en-IN", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
           </div>
         </div>
       </div>
 
-      {/* Metrics Overview */}
-      <div className="container mx-auto px-4 py-8">
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-          {metrics.map((metric) => (
-            <Card
-              key={metric.id}
-              className={`group hover:shadow-lg transition-all duration-300 border-muted/50 cursor-pointer ${
-                selectedMetric.id === metric.id ? "ring-2 ring-primary" : ""
-              }`}
-              onClick={() => setSelectedMetric(metric)}
-            >
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-base font-medium">
-                  {metric.title}
-                </CardTitle>
-                <div
-                  className="p-2 rounded-lg"
-                  style={{ backgroundColor: `${metric.color}20` }}
-                >
-                  {getIcon(metric.icon, metric.color)}
+      <div className="px-6 py-6 space-y-6">
+        {/* Metric Cards */}
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {metrics.map((metric) => {
+            const isSelected = selectedMetric.id === metric.id;
+            return (
+              <button
+                key={metric.id}
+                onClick={() => setSelectedMetric(metric)}
+                className={cn(
+                  "text-left rounded-xl p-5 border transition-all duration-200 cursor-pointer w-full",
+                  isSelected
+                    ? "border-primary/60 bg-primary/10 shadow-lg shadow-primary/10"
+                    : "border-border bg-card hover:border-primary/30 hover:bg-secondary/50"
+                )}
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-sm font-medium text-muted-foreground">
+                    {metric.title}
+                  </span>
+                  <div
+                    className="p-2 rounded-lg"
+                    style={{ backgroundColor: `${metric.color}20` }}
+                  >
+                    {getIcon(metric.icon, metric.color)}
+                  </div>
                 </div>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold">{metric.total}</div>
-                <p className="text-sm text-muted-foreground mt-2">
-                  {metric.description}
-                </p>
+                <div className="text-3xl font-bold text-foreground mb-1">
+                  {metric.total}
+                </div>
+                <p className="text-xs text-muted-foreground">{metric.description}</p>
                 <p
-                  className={`text-sm ${
-                    metric.trend < 0 ? "text-red-500" : "text-green-500"
-                  } mt-1`}
+                  className={`text-xs mt-1 font-medium ${
+                    metric.trend < 0 ? "text-red-400" : "text-emerald-400"
+                  }`}
                 >
-                  {metric.trend} from last month
+                  {metric.trend >= 0 ? "+" : ""}{metric.trend} from last month
                 </p>
-              </CardContent>
-            </Card>
-          ))}
+              </button>
+            );
+          })}
         </div>
 
-        {/* Detailed Chart View */}
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle>{selectedMetric.title} Trends</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[400px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart
-                  data={selectedMetric.data}
-                  margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <Tooltip
-                    formatter={(value) =>
-                      selectedMetric.formatValue
-                        ? [
-                            selectedMetric.formatValue(value),
-                            selectedMetric.title,
-                          ]
-                        : [value.toLocaleString(), selectedMetric.title]
-                    }
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="value"
-                    stroke={selectedMetric.color}
-                    fill={`${selectedMetric.color}20`}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Chart */}
+        <div className="rounded-xl border border-border bg-card p-6">
+          <div className="mb-6">
+            <h2 className="text-base font-semibold text-foreground">
+              {selectedMetric.title} — Monthly Trend
+            </h2>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Click a card above to switch metric
+            </p>
+          </div>
+          <div className="h-[320px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart
+                data={selectedMetric.data}
+                margin={{ top: 10, right: 10, left: -10, bottom: 0 }}
+              >
+                <defs>
+                  <linearGradient id="colorGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={selectedMetric.color} stopOpacity={0.3} />
+                    <stop offset="95%" stopColor={selectedMetric.color} stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                <XAxis
+                  dataKey="month"
+                  tick={{ fill: "#6b7280", fontSize: 12 }}
+                  axisLine={{ stroke: "rgba(255,255,255,0.05)" }}
+                  tickLine={false}
+                />
+                <YAxis
+                  tick={{ fill: "#6b7280", fontSize: 12 }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "hsl(222, 47%, 9%)",
+                    border: "1px solid hsl(222, 47%, 15%)",
+                    borderRadius: "8px",
+                    color: "hsl(213, 31%, 91%)",
+                    fontSize: "12px",
+                  }}
+                  formatter={(value) =>
+                    selectedMetric.formatValue
+                      ? [selectedMetric.formatValue(value), selectedMetric.title]
+                      : [value.toLocaleString(), selectedMetric.title]
+                  }
+                />
+                <Area
+                  type="monotone"
+                  dataKey="value"
+                  stroke={selectedMetric.color}
+                  strokeWidth={2}
+                  fill="url(#colorGradient)"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
       </div>
     </div>
   );
+}
+
+function cn(...classes) {
+  return classes.filter(Boolean).join(" ");
 }
