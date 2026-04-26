@@ -16,7 +16,7 @@ import {
 import { useSidebar } from "./sidebar-provider";
 
 const navigation = [
-  { name: "Dashboard", href: "/", icon: Home },
+  { name: "Dashboard", href: "/admin", icon: Home },
   { name: "Classes", href: "/classes", icon: GraduationCap },
   { name: "Subjects", href: "/subjects", icon: BookType },
   { name: "Chapters", href: "/chapters", icon: BookOpen },
