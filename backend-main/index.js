@@ -1,4 +1,5 @@
 const express = require("express");
+const compression = require("compression");
 const cron = require("node-cron");
 const cors = require("cors");
 require("./src/config/env");
@@ -22,6 +23,7 @@ const pinoLogger = pinoHttp({
 
 const requestBodyLimit = process.env.REQUEST_BODY_LIMIT || "10mb";
 // Receipts and profile image payloads can exceed the default 100kb body size.
+app.use(compression());
 app.use(express.json({ limit: requestBodyLimit }));
 app.use(express.urlencoded({ extended: true, limit: requestBodyLimit }));
 app.use(cors());
