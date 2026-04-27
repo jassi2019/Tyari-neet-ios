@@ -7,8 +7,7 @@ const RazorpaySdk = require('react-native-razorpay');
 
 export function openRazorpay(options: TRazorpayOptions): Promise<TRazorpayPaymentResult> {
   const Razorpay = RazorpaySdk?.default ?? RazorpaySdk;
-  const rzp = new Razorpay(options);
-  return rzp.open() as Promise<TRazorpayPaymentResult>;
+  return Razorpay.open(options) as Promise<TRazorpayPaymentResult>;
 }
 
 export default {

@@ -39,6 +39,25 @@ export const TopicContent = ({ navigation, route }: TopicContentProps) => {
     retry: false,
   });
 
+  const effectiveTopic = !isGuest ? topicResponse?.data || topic : topic;
+  const rawURL = String(effectiveTopic?.contentURL || '').trim();
+  const isCanvaContent = /canva\.com/i.test(rawURL);
+  const isInsecureRemoteUrl = /^http:\/\//i.test(rawURL) && !/^http:\/\/(localhost|127\.0\.0\.1)/i.test(rawURL);
+  const normalizedURL = isInsecureRemoteUrl ? rawURL.replace(/^http:\/\//i, 'https://') : rawURL;
+
+  // Keep hook execution order stable across all render branches.
+  React.useEffect(() => {
+    if (!__DEV__) return;
+    console.log('[TopicContent][URL]', {
+      topicId: effectiveTopic?.id,
+      topicName: effectiveTopic?.name,
+      platform: Platform.OS,
+      originalUrl: rawURL,
+      normalizedURL,
+      isCanvaContent,
+    });
+  }, [effectiveTopic?.id, effectiveTopic?.name, isCanvaContent, normalizedURL, rawURL]);
+
   if (!topic) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: '#FDF6F0' }} edges={['top']}>
@@ -159,25 +178,33 @@ export const TopicContent = ({ navigation, route }: TopicContentProps) => {
     }
   }
 
-  const effectiveTopic = !isGuest ? topicResponse?.data || topic : topic;
+  if (!normalizedURL) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }} edges={['top']}>
+        <Header title={effectiveTopic?.name || 'Topic'} onBack={() => navigation.goBack()} />
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
+          <Text style={{ fontSize: 16, color: '#EF4444', textAlign: 'center' }}>
+            Content URL is missing for this topic.
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
-  const rawURL = effectiveTopic?.contentURL || '';
-  const canvaURLWithEmbed =
-    rawURL.includes('canva.com') && !/(?:\?|&)embed(?:=|&|$)/i.test(rawURL)
-      ? `${rawURL}${rawURL.includes('?') ? '&' : '?'}embed`
-      : rawURL;
-  const webViewSource = rawURL.includes('canva.com')
-    ? { uri: canvaURLWithEmbed }
-    : { uri: rawURL };
+  // Keep Canva URL exactly as received from backend.
+  // Stripping/rebuilding query params can break Canva asset resolution.
+  const webViewSource = { uri: normalizedURL };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }} edges={['top']}>
-      <Header title={effectiveTopic?.name} onBack={() => navigation.goBack()} />
+      <Header title={effectiveTopic?.name || 'Topic'} onBack={() => navigation.goBack()} />
 
       <PlatformWebView
         source={webViewSource}
         style={{ flex: 1 }}
-        protectedContent={true}
+        protectedContent={!isCanvaContent}
+        debugLabel={effectiveTopic?.name || 'TopicContent'}
+        enableDebugLogs={__DEV__}
       />
     </SafeAreaView>
   );

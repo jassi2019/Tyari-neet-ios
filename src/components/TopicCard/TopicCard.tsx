@@ -1,8 +1,9 @@
 import { useAuth } from '@/contexts/AuthContext';
-import { useAddToFavorites, useGetFavorites, useRemoveFromFavorites } from '@/hooks/api/favorites';
+import { useAddToFavorites, useRemoveFromFavorites } from '@/hooks/api/favorites';
 import { getRenderableThumbnailUrl } from '@/utils/media';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as React from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   ActivityIndicator,
   Alert,
@@ -44,11 +45,21 @@ const TopicCard = ({
   const { mutate: addToFavorites, isPending: isAddingToFavorites } = useAddToFavorites();
   const { mutate: removeFromFavorites, isPending: isRemovingFromFavorite } =
     useRemoveFromFavorites();
-  const { refetch } = useGetFavorites({ enabled: !isGuest });
+  const queryClient = useQueryClient();
 
   const safeThumbnailUrl = React.useMemo(
     () => getRenderableThumbnailUrl(thumbnailUrl),
     [thumbnailUrl]
+  );
+  const imageSource = React.useMemo(
+    () =>
+      safeThumbnailUrl
+        ? ({
+            uri: safeThumbnailUrl,
+            cache: 'force-cache',
+          } as const)
+        : null,
+    [safeThumbnailUrl]
   );
 
   React.useEffect(() => {
@@ -70,11 +81,11 @@ const TopicCard = ({
         {
           onSuccess: () => {
             Alert.alert('Success', 'Topic added to favorites');
-            refetch();
+            queryClient.invalidateQueries({ queryKey: ['favorites'] });
           },
           onError: (_error: unknown) => {
             Alert.alert('Error', 'Unable to add to favorites');
-            refetch();
+            queryClient.invalidateQueries({ queryKey: ['favorites'] });
           },
         }
       );
@@ -82,11 +93,11 @@ const TopicCard = ({
       removeFromFavorites(favoriteId || '', {
         onSuccess: () => {
           Alert.alert('Success', 'Topic removed from favorites');
-          refetch();
+          queryClient.invalidateQueries({ queryKey: ['favorites'] });
         },
         onError: (_error: unknown) => {
           Alert.alert('Error', 'Unable to remove from favorites');
-          refetch();
+          queryClient.invalidateQueries({ queryKey: ['favorites'] });
         },
       });
     }
@@ -96,12 +107,37 @@ const TopicCard = ({
     <TouchableOpacity activeOpacity={0.9} onPress={onPress} style={styles.card}>
       <View style={styles.row}>
         <View style={styles.thumbnailWrapper}>
-          {thumbnailUrl && !hasImageError ? (
+          {imageSource && !hasImageError ? (
             <>
               <Image
-                source={{ uri: thumbnailUrl }}
+                source={imageSource}
                 style={styles.thumbnail}
                 resizeMode="cover"
+                onLoadStart={() => {
+                  setIsImageLoading(true);
+                  if (__DEV__) {
+                    console.log('[TopicCard][ImageLoadStart]', {
+                      topicId,
+                      title,
+                      url: safeThumbnailUrl,
+                    });
+                  }
+                }}
+                onLoadEnd={() => {
+                  setIsImageLoading(false);
+                }}
+                onError={(event) => {
+                  setHasImageError(true);
+                  setIsImageLoading(false);
+                  if (__DEV__) {
+                    console.log('[TopicCard][ImageLoadError]', {
+                      topicId,
+                      title,
+                      url: safeThumbnailUrl,
+                      error: event?.nativeEvent?.error || 'unknown',
+                    });
+                  }
+                }}
               />
               {isImageLoading ? (
                 <View style={styles.thumbnailLoader}>

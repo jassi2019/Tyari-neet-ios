@@ -4,6 +4,8 @@ import { Alert, Linking, Platform, StyleSheet, Text, View } from 'react-native';
 type Props = {
   source: { uri: string } | { html: string };
   style?: any;
+  debugLabel?: string;
+  enableDebugLogs?: boolean;
   /**
    * Best-effort content protection for sensitive pages:
    * - Disables screenshots/screen recording at the screen level (see `useContentProtection`).
@@ -67,7 +69,53 @@ const PROTECT_JS = `
   true;
 })();`;
 
-export default function PlatformWebView({ source, style, protectedContent }: Props) {
+const DEBUG_WEBVIEW_JS = `
+(function () {
+  try {
+    function post(type, payload) {
+      if (window.ReactNativeWebView && window.ReactNativeWebView.postMessage) {
+        window.ReactNativeWebView.postMessage(JSON.stringify({
+          type: type,
+          payload: payload || {},
+          href: String(window.location && window.location.href || '')
+        }));
+      }
+    }
+
+    window.addEventListener('error', function (event) {
+      try {
+        var target = event && event.target ? event.target : null;
+        if (target && target.tagName === 'IMG') {
+          post('img_error', {
+            src: String(target.currentSrc || target.src || ''),
+            alt: String(target.alt || '')
+          });
+        }
+      } catch (_) {}
+    }, true);
+  } catch (_) {}
+  true;
+})();`;
+
+const buildInjectedJavaScript = (useProtection: boolean, useDebug: boolean): string | undefined => {
+  const scripts: string[] = [];
+  if (useProtection) scripts.push(PROTECT_JS);
+  if (useDebug) scripts.push(DEBUG_WEBVIEW_JS);
+  if (scripts.length === 0) return undefined;
+  return scripts.join('\n');
+};
+
+export default function PlatformWebView({
+  source,
+  style,
+  protectedContent,
+  debugLabel,
+  enableDebugLogs,
+}: Props) {
+  const debugEnabled = Boolean(enableDebugLogs);
+  const injectedJS = buildInjectedJavaScript(Boolean(protectedContent), debugEnabled);
+  const debugPrefix = debugLabel ? `[PlatformWebView:${debugLabel}]` : '[PlatformWebView]';
+
   if (Platform.OS === 'web') {
     // For web, render an iframe for uri sources, or simple HTML wrapper for html
     if ('uri' in source) {
@@ -115,15 +163,63 @@ export default function PlatformWebView({ source, style, protectedContent }: Pro
         sharedCookiesEnabled={true}
         cacheEnabled={true}
         userAgent={isCanvaUri ? canvaCompatibleUserAgent : undefined}
-        injectedJavaScriptBeforeContentLoaded={protectedContent ? PROTECT_JS : undefined}
-        injectedJavaScript={protectedContent ? PROTECT_JS : undefined}
+        injectedJavaScriptBeforeContentLoaded={injectedJS}
+        injectedJavaScript={injectedJS}
         setSupportMultipleWindows={false}
         allowsLinkPreview={false}
+        onLoadStart={(event: any) => {
+          if (!debugEnabled || !__DEV__) return;
+          console.log(`${debugPrefix}[LoadStart]`, {
+            platform: Platform.OS,
+            url: event?.nativeEvent?.url || '',
+          });
+        }}
+        onLoadEnd={(event: any) => {
+          if (!debugEnabled || !__DEV__) return;
+          console.log(`${debugPrefix}[LoadEnd]`, {
+            platform: Platform.OS,
+            url: event?.nativeEvent?.url || '',
+          });
+        }}
+        onError={(event: any) => {
+          if (!debugEnabled || !__DEV__) return;
+          console.log(`${debugPrefix}[LoadError]`, {
+            platform: Platform.OS,
+            url: event?.nativeEvent?.url || '',
+            description: event?.nativeEvent?.description || 'unknown',
+          });
+        }}
+        onHttpError={(event: any) => {
+          if (!debugEnabled || !__DEV__) return;
+          console.log(`${debugPrefix}[HttpError]`, {
+            platform: Platform.OS,
+            url: event?.nativeEvent?.url || '',
+            statusCode: event?.nativeEvent?.statusCode,
+            description: event?.nativeEvent?.description || 'unknown',
+          });
+        }}
+        onMessage={(event: any) => {
+          if (!debugEnabled || !__DEV__) return;
+          const raw = event?.nativeEvent?.data;
+          if (!raw) return;
+          try {
+            const parsed = JSON.parse(raw);
+            console.log(`${debugPrefix}[Message]`, parsed);
+          } catch {
+            console.log(`${debugPrefix}[Message]`, raw);
+          }
+        }}
         onFileDownload={protectedContent ? () => Alert.alert('Download blocked', 'Downloads are disabled.') : undefined}
         onShouldStartLoadWithRequest={
           protectedContent
             ? (req: any) => {
                 const url = String(req?.url || '');
+                if (debugEnabled && __DEV__) {
+                  console.log(`${debugPrefix}[Request]`, {
+                    url,
+                    isTopFrame: isTopFrameRequest(req),
+                  });
+                }
                 // Important: Allow subresource loads (images/scripts) so embedded lesson
                 // pages (e.g. Canva) don't show broken placeholders. Only gate top-frame
                 // navigations / downloads.

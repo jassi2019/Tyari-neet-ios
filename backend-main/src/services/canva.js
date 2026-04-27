@@ -105,6 +105,23 @@ const getDesign = async (designId) => {
   return data;
 };
 
+const getDesignViewUrl = (design) => {
+  if (!design || typeof design !== "object") return null;
+
+  const candidates = [
+    design?.urls?.view_url,
+    design?.urls?.viewUrl,
+    design?.view_url,
+    design?.viewUrl,
+  ];
+
+  for (const each of candidates) {
+    if (typeof each === "string" && each.trim()) return each.trim();
+  }
+
+  return null;
+};
+
 const renewDesignViewURL = async () => {
   console.log("Renewing design view URLs");
 
@@ -160,18 +177,27 @@ const renewDesignViewURL = async () => {
         }
 
         const {
-          design: { thumbnail },
+          design,
         } = await getDesign(sourceContentId);
 
-        const nextValues = {
-          contentThumbnail: thumbnail.url,
-        };
+        const nextValues = {};
+        const nextThumbnailUrl = design?.thumbnail?.url;
+        const nextViewUrl = getDesignViewUrl(design);
+
+        if (typeof nextThumbnailUrl === "string" && nextThumbnailUrl.trim()) {
+          nextValues.contentThumbnail = nextThumbnailUrl.trim();
+        }
+        if (typeof nextViewUrl === "string" && nextViewUrl.trim()) {
+          nextValues.contentURL = nextViewUrl.trim();
+        }
 
         if (sourceContentId !== doc.contentId) {
           nextValues.contentId = sourceContentId;
         }
 
-        await doc.update(nextValues);
+        if (Object.keys(nextValues).length > 0) {
+          await doc.update(nextValues);
+        }
       } catch (topicError) {
         console.error("Failed to renew design view URL for topic", {
           topicId: doc.id,
@@ -191,5 +217,6 @@ const renewDesignViewURL = async () => {
 module.exports = {
   getAccessToken,
   getDesign,
+  getDesignViewUrl,
   renewDesignViewURL,
 };

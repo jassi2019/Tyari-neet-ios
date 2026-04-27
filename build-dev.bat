@@ -3,7 +3,7 @@ echo ========================================
 echo Building Development Build for Android
 echo ========================================
 echo.
-echo This will create a custom APK build that includes native modules (e.g., In-App Purchases).
+echo This will create a custom APK with Razorpay payment support.
 echo The build will take approximately 10-15 minutes.
 echo.
 echo Make sure you are logged in to EAS CLI.
@@ -28,7 +28,6 @@ echo 2. Install it on your Android device
 echo 3. Run: npx expo start --dev-client
 echo 4. Scan QR code with your development build app
 echo.
-echo Development build is ready.
+echo Payment functionality will now work! 🚀
 echo.
 pause
-

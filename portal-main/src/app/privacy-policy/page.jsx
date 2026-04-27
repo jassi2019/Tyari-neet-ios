@@ -16,7 +16,7 @@ export default function Privacy() {
         <section className="mb-8">
           <h2 className="text-2xl font-semibold mb-3">1. Introduction</h2>
           <p className="text-gray-700 leading-relaxed">
-            Welcome to Taiyari NEET ki ("we," "our," or "us"). We are committed
+            Welcome to Taiyari NEET ki (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;). We are committed
             to protecting your privacy and ensuring the security of your
             personal information. This Privacy Policy explains how we collect,
             use, disclose, and safeguard your information when you use our
@@ -124,7 +124,7 @@ export default function Privacy() {
           <p className="text-gray-700 leading-relaxed">
             We may update this Privacy Policy from time to time. We will notify
             you of any changes by posting the new Privacy Policy on this page
-            and updating the "Last Updated" date at the top of this policy.
+            and updating the &quot;Last Updated&quot; date at the top of this policy.
           </p>
         </section>
       </div>

@@ -17,16 +17,23 @@
     "assetBundlePatterns": [
       "**/*"
     ],
-    "plugins": ["react-native-iap"],
+    "plugins": [
+      "./plugins/withRazorpayConfig"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.taiyarineetki.educationapp",
       "buildNumber": "1.0.3",
-      "jsEngine": "jsc",
+"jsEngine": "hermes",
       "infoPlist": {
+        "NSCameraUsageDescription": "This app requires camera access for user uploads and verification.",
         "NSPhotoLibraryUsageDescription": "This app needs access to your photo library to attach images.",
+        "NSMicrophoneUsageDescription": "This app requires microphone access for audio features.",
         "UIBackgroundModes": [
           "fetch"
+        ],
+        "LSApplicationQueriesSchemes": [
+          "razorpay"
         ]
       },
       "config": {
@@ -36,7 +43,7 @@
     "android": {
       "package": "com.taiyarineetki.app",
       "versionCode": 2,
-      "jsEngine": "jsc",
+      "jsEngine": "hermes",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
@@ -44,7 +51,12 @@
       "permissions": [
         "INTERNET",
         "ACCESS_NETWORK_STATE",
-        "READ_EXTERNAL_STORAGE"
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ],
+      "blockedPermissions": [
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "extra": {

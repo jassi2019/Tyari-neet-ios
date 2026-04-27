@@ -7,7 +7,6 @@ node_modules/
 .expo/
 dist/
 web-build/
-web-build-*/
 expo-env.d.ts
 
 # Native
@@ -30,9 +29,6 @@ yarn-error.*
 .DS_Store
 *.pem
 
-# Local archives (cleanup, exports)
-archive/
-
 # local env files
 .env*.local
 
@@ -40,12 +36,3 @@ archive/
 *.tsbuildinfo
 
 .env
-
-# Local screenshots / QA exports
-screenshots/
-
-# Accidental XML copies of iOS XML-based files (Xcode expects the canonical extensions)
-ios/**/*.entitlements.xml
-ios/**/*.storyboard.xml
-ios/**/*.xcprivacy.xml
-ios/**/*.xcworkspacedata.xml

@@ -88,6 +88,12 @@ type TAppleReceiptFetchOptions = {
   delayMs?: number;
 };
 
+type TAppleIapConnectionOptions = {
+  attempts?: number;
+  delayMs?: number;
+  settleDelayMs?: number;
+};
+
 function requireIap() {
   if (!IapSdk) {
     throw new Error(IAP_NOT_AVAILABLE_MESSAGE);
@@ -103,6 +109,98 @@ function sleep(ms: number) {
   return new Promise<void>((resolve) => {
     setTimeout(resolve, ms);
   });
+}
+
+function isAppleIapInitConnectionError(error: unknown): boolean {
+  const e = error as { code?: unknown; message?: unknown } | null | undefined;
+  const code = String(e?.code ?? '');
+  const message = String(e?.message ?? error ?? '').toLowerCase();
+
+  return (
+    code === 'init-connection' ||
+    message.includes('connection not initialized') ||
+    message.includes('initconnection() first') ||
+    message.includes('"code":"init-connection"')
+  );
+}
+
+async function ensureAppleIapConnection(IAP: any, options?: TAppleIapConnectionOptions): Promise<void> {
+  const attempts = Math.max(1, Math.trunc(options?.attempts ?? 3));
+  const delayMs = Math.max(0, Math.trunc(options?.delayMs ?? 350));
+  const settleDelayMs = Math.max(0, Math.trunc(options?.settleDelayMs ?? 250));
+
+  let lastError: unknown = null;
+
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      const connected = await IAP.initConnection();
+      if (connected) {
+        // `react-native-iap` Nitro can return `true` while another init is still in progress.
+        // A short settle delay avoids immediate `init-connection` races on `fetchProducts`.
+        if (settleDelayMs > 0) {
+          await sleep(settleDelayMs);
+        }
+        return;
+      }
+      lastError = new Error('Failed to connect to the App Store.');
+    } catch (e) {
+      lastError = e;
+    }
+
+    if (attempt < attempts) {
+      try {
+        await IAP.endConnection();
+      } catch {
+        // noop
+      }
+      if (delayMs > 0) {
+        await sleep(delayMs);
+      }
+    }
+  }
+
+  if (lastError instanceof Error) {
+    throw lastError;
+  }
+
+  throw new Error(String(lastError || 'Failed to connect to the App Store.'));
+}
+
+async function runAppleIapWithInitRetry<T>(
+  IAP: any,
+  operation: () => Promise<T>,
+  options?: Pick<TAppleIapConnectionOptions, 'attempts' | 'delayMs'>
+): Promise<T> {
+  const attempts = Math.max(1, Math.trunc(options?.attempts ?? 3));
+  const delayMs = Math.max(0, Math.trunc(options?.delayMs ?? 350));
+
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      return await operation();
+    } catch (e) {
+      if (!isAppleIapInitConnectionError(e) || attempt === attempts) {
+        throw e;
+      }
+
+      try {
+        await IAP.endConnection();
+      } catch {
+        // noop
+      }
+
+      if (delayMs > 0) {
+        await sleep(delayMs);
+      }
+
+      await ensureAppleIapConnection(IAP, {
+        attempts: 2,
+        delayMs,
+        settleDelayMs: delayMs,
+      });
+    }
+  }
+
+  throw new Error('IAP operation failed.');
 }
 
 export function formatAppleSubscriptionPeriod(
@@ -142,15 +240,13 @@ export async function fetchAppleSubscriptionProducts(
   if (skus.length === 0) return [];
 
   const IAP = requireIap();
-
-  const connected = await IAP.initConnection();
-  if (!connected) {
-    throw new Error('Failed to connect to the App Store.');
-  }
+  await ensureAppleIapConnection(IAP);
 
   try {
     // Fetch both subscriptions and one-time products. We'll decide how to purchase based on `type`.
-    const products = await IAP.fetchProducts({ skus, type: 'all' });
+    const products = await runAppleIapWithInitRetry(IAP, () =>
+      IAP.fetchProducts({ skus, type: 'all' })
+    );
     if (!Array.isArray(products)) return [];
 
     const mapped = products
@@ -229,11 +325,7 @@ export async function restoreAppleReceipt(): Promise<string> {
   }
 
   const IAP = requireIap();
-
-  const connected = await IAP.initConnection();
-  if (!connected) {
-    throw new Error('Failed to connect to the App Store.');
-  }
+  await ensureAppleIapConnection(IAP);
 
   try {
     try {
@@ -265,11 +357,7 @@ export async function openAppleManageSubscriptions(): Promise<void> {
   }
 
   const IAP = requireIap();
-
-  const connected = await IAP.initConnection();
-  if (!connected) {
-    throw new Error('Failed to connect to the App Store.');
-  }
+  await ensureAppleIapConnection(IAP);
 
   try {
     try {
@@ -305,11 +393,7 @@ export async function purchaseAppleProduct(
   }
 
   const IAP = requireIap();
-
-  const connected = await IAP.initConnection();
-  if (!connected) {
-    throw new Error('Failed to connect to the App Store.');
-  }
+  await ensureAppleIapConnection(IAP);
 
   let purchaseSub: EventSubscription | null = null;
   let errorSub: EventSubscription | null = null;

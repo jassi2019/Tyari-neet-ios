@@ -1,5 +1,5 @@
 const { Topic } = require("../../models");
-const { getDesign } = require("../../services/canva");
+const { getDesign, getDesignViewUrl } = require("../../services/canva");
 
 const updateV1 = async (req, res, next) => {
   try {
@@ -18,20 +18,24 @@ const updateV1 = async (req, res, next) => {
     } = req.body;
 
     let contentThumbnail = undefined;
+    let resolvedContentURL = contentURL;
 
     if (contentId) {
       const {
-        design: { thumbnail },
+        design,
       } = await getDesign(contentId);
 
-      contentThumbnail = thumbnail.url;
+      if (typeof design?.thumbnail?.url === "string" && design.thumbnail.url.trim()) {
+        contentThumbnail = design.thumbnail.url.trim();
+      }
+      resolvedContentURL = getDesignViewUrl(design) || contentURL;
     }
 
     const doc = await Topic.update(
       {
         name,
         description,
-        contentURL,
+        contentURL: resolvedContentURL,
         contentThumbnail,
         contentId,
         sequence,

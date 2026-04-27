@@ -1,5 +1,5 @@
 const { Topic } = require("../../models");
-const { getDesign } = require("../../services/canva");
+const { getDesign, getDesignViewUrl } = require("../../services/canva");
 
 const createV1 = async (req, res, next) => {
   try {
@@ -16,14 +16,16 @@ const createV1 = async (req, res, next) => {
     } = req.body;
 
     const {
-      design: { thumbnail },
+      design,
     } = await getDesign(contentId);
+    const contentThumbnail = design?.thumbnail?.url || null;
+    const resolvedContentURL = getDesignViewUrl(design) || contentURL;
 
     const doc = await Topic.create({
       name,
       description,
-      contentURL,
-      contentThumbnail: thumbnail.url,
+      contentURL: resolvedContentURL,
+      contentThumbnail,
       contentId,
       sequence,
       serviceType,
