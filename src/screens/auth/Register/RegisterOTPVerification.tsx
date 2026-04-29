@@ -4,7 +4,6 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  ImageBackground,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
@@ -25,10 +24,12 @@ type OTPVerificationProps = {
 export const RegisterOTPVerification = ({ navigation, route }: OTPVerificationProps) => {
   const { email } = route.params;
   const insets = useSafeAreaInsets();
+
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
   const [resendIn, setResendIn] = useState(0);
   const inputRefs = useRef<Array<TextInput | null>>([]);
+
   const { mutate: verifyOTP, isPending } = useVerifyRegistrationOTP();
   const { mutate: resendOtp, isPending: isResending } = useGetRegistrationOTP();
 
@@ -39,11 +40,8 @@ export const RegisterOTPVerification = ({ navigation, route }: OTPVerificationPr
   }, [resendIn]);
 
   const handleOtpChange = (value: string, index: number) => {
-    const newOtp = [...otp];
     const numericValue = value.replace(/[^0-9]/g, '');
-
     if (numericValue.length > 1) {
-      // Handle paste
       const pastedOtp = numericValue.slice(0, 6).split('');
       const updatedOtp = [...otp];
       pastedOtp.forEach((char, i) => {
@@ -54,18 +52,13 @@ export const RegisterOTPVerification = ({ navigation, route }: OTPVerificationPr
       inputRefs.current[nextIndex]?.focus();
       return;
     }
-
+    const newOtp = [...otp];
     newOtp[index] = numericValue;
     setOtp(newOtp);
-
-    // Move to next input if value is entered
-    if (numericValue && index < 5) {
-      inputRefs.current[index + 1]?.focus();
-    }
+    if (numericValue && index < 5) inputRefs.current[index + 1]?.focus();
   };
 
   const handleKeyPress = (e: any, index: number) => {
-    // Move to previous input on backspace if current input is empty
     if (e.nativeEvent.key === 'Backspace' && !otp[index] && index > 0) {
       inputRefs.current[index - 1]?.focus();
     }
@@ -73,16 +66,14 @@ export const RegisterOTPVerification = ({ navigation, route }: OTPVerificationPr
 
   const handleContinue = async () => {
     const normalizedEmail = String(email || '').trim();
-
     if (!normalizedEmail) {
       Alert.alert('Error', 'Email not found. Please try again');
       navigation.navigate('SetEmail');
       return;
     }
-
     const otpString = otp.join('');
     if (otpString.length !== 6) {
-      Alert.alert('Error', 'Please enter a valid OTP');
+      Alert.alert('Error', 'Please enter a valid 6-digit OTP');
       return;
     }
 
@@ -114,9 +105,7 @@ export const RegisterOTPVerification = ({ navigation, route }: OTPVerificationPr
 
   const handleResend = async () => {
     const normalizedEmail = String(email || '').trim();
-    if (!normalizedEmail) return;
-
-    if (resendIn > 0) return;
+    if (!normalizedEmail || resendIn > 0) return;
 
     resendOtp(normalizedEmail, {
       onSuccess: (data: any) => {
@@ -126,7 +115,6 @@ export const RegisterOTPVerification = ({ navigation, route }: OTPVerificationPr
         } else {
           Alert.alert('Sent', 'A new OTP has been sent to your email.');
         }
-
         setResendIn(30);
       },
       onError: (error: any) => {
@@ -135,55 +123,59 @@ export const RegisterOTPVerification = ({ navigation, route }: OTPVerificationPr
     });
   };
 
+  const maskedEmail = email ? email.replace(/(.{2})(.*)(@.*)/, '$1***$3') : '';
+
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.container}
       >
-        <ImageBackground
-          source={require('../../../assets/images/background-pattern.png')}
-          style={styles.background}
-          resizeMode="cover"
-        >
+        <View style={styles.background}>
           {/* Header */}
           <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
-            <TouchableOpacity
-              onPress={() => navigation.goBack()}
-              style={styles.backButton}
-            >
-              <ChevronLeft size={24} color="#1e1e1e" />
+            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+              <ChevronLeft size={24} color="#1a1a1a" />
             </TouchableOpacity>
           </View>
 
           <View style={styles.content}>
-            {/* Title Section */}
-            <View style={styles.titleSection}>
-              <Text style={styles.title}>
-                Verify Your{'\n'}Account
-              </Text>
+            {/* Progress */}
+            <View style={styles.progressRow}>
+              <View style={styles.progressDotDone} />
+              <View style={[styles.progressDot, styles.progressDotActive]} />
+              <View style={styles.progressDot} />
+            </View>
+
+            {/* Icon */}
+            <View style={styles.iconCircle}>
+              <Text style={styles.iconText}>✉️</Text>
+            </View>
+
+            {/* Title */}
+            <View style={styles.titleContainer}>
+              <Text style={styles.title}>Verify Email OTP</Text>
               <View style={styles.titleUnderline} />
             </View>
 
-            {/* Subtitle */}
-            <View style={styles.subtitleSection}>
-              <Text style={styles.subtitle}>
-                We've sent a 6-digit verification code to
-              </Text>
-              <Text style={styles.emailText}>{email}</Text>
-            </View>
+            <Text style={styles.subtitle}>
+              Enter the 6-digit OTP sent to{'\n'}
+              <Text style={{ fontWeight: '700', color: '#1a1a1a' }}>{maskedEmail}</Text>
+            </Text>
 
-            {/* OTP Input Container */}
+            {/* OTP inputs */}
             <View style={styles.otpContainer}>
               {[0, 1, 2, 3, 4, 5].map((index) => (
                 <TextInput
                   key={index}
-                  ref={(ref) => {
-                    inputRefs.current[index] = ref;
-                  }}
+                  ref={(ref) => { inputRefs.current[index] = ref; }}
                   style={[
                     styles.otpInput,
-                    focusedIndex === index ? styles.otpInputFocused : styles.otpInputBlurred
+                    focusedIndex === index
+                      ? styles.otpInputFocused
+                      : otp[index]
+                        ? styles.otpInputFilled
+                        : styles.otpInputBlurred,
                   ]}
                   maxLength={1}
                   keyboardType="numeric"
@@ -195,183 +187,90 @@ export const RegisterOTPVerification = ({ navigation, route }: OTPVerificationPr
                   onBlur={() => setFocusedIndex(null)}
                   onChangeText={(value) => handleOtpChange(value, index)}
                   onKeyPress={(e) => handleKeyPress(e, index)}
-                  selectTextOnFocus={true}
+                  selectTextOnFocus
                 />
               ))}
             </View>
 
-            {/* Resend OTP */}
+            {/* Resend */}
             <View style={styles.resendContainer}>
-              <Text style={styles.resendText}>Didn't receive the code? </Text>
+              <Text style={styles.resendText}>Didn't receive? </Text>
               <TouchableOpacity onPress={handleResend} disabled={isResending || resendIn > 0}>
                 <Text style={[styles.resendLink, (isResending || resendIn > 0) && styles.resendLinkDisabled]}>
-                  {isResending ? 'Sending...' : resendIn > 0 ? `Resend in ${resendIn}s` : 'Resend Code'}
+                  {isResending ? 'Sending...' : resendIn > 0 ? `Resend in ${resendIn}s` : 'Resend OTP'}
                 </Text>
               </TouchableOpacity>
             </View>
 
-            {/* Action Button */}
+            {/* Action button */}
             <TouchableOpacity
               onPress={handleContinue}
-              style={[
-                styles.button,
-                isPending ? styles.buttonDisabled : styles.buttonEnabled
-              ]}
+              style={[styles.button, isPending && styles.buttonDisabled]}
               disabled={isPending}
-              activeOpacity={0.8}
+              activeOpacity={0.85}
             >
-              {isPending ? (
-                <ActivityIndicator color="white" />
-              ) : (
-                <Text style={styles.buttonText}>VERIFY & CONTINUE</Text>
-              )}
+              {isPending
+                ? <ActivityIndicator color="#1a1a1a" />
+                : <Text style={styles.buttonText}>Verify & Continue →</Text>}
             </TouchableOpacity>
           </View>
-        </ImageBackground>
+        </View>
       </KeyboardAvoidingView>
     </TouchableWithoutFeedback>
   );
 };
 
-
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  background: {
-    flex: 1,
-    backgroundColor: '#FDF6F0',
-    width: '100%',
-  },
-  header: {
-    paddingHorizontal: 24,
-  },
+  container: { flex: 1 },
+  background: { flex: 1, backgroundColor: '#FDF6F0', width: '100%' },
+  header: { paddingHorizontal: 24 },
   backButton: {
-    width: 44,
-    height: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 22,
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
-    borderWidth: 1,
-    borderColor: '#F0F0F0',
-    // Shadow for iOS
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    // Elevation for Android
-    elevation: 3,
+    width: 44, height: 44, alignItems: 'center', justifyContent: 'center',
+    borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.8)',
+    borderWidth: 1, borderColor: '#F0F0F0',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08, shadowRadius: 4, elevation: 3,
   },
-  content: {
-    flex: 1,
-    paddingHorizontal: 32,
-    paddingTop: 40,
+  content: { flex: 1, paddingHorizontal: 24, paddingTop: 24 },
+  progressRow: { flexDirection: 'row', gap: 8, marginBottom: 16 },
+  progressDot: { flex: 1, height: 5, borderRadius: 3, backgroundColor: '#e5e7eb' },
+  progressDotActive: { backgroundColor: '#F59E0B' },
+  progressDotDone: { flex: 1, height: 5, borderRadius: 3, backgroundColor: '#1a1a1a' },
+  iconCircle: {
+    width: 64, height: 64, borderRadius: 32,
+    backgroundColor: 'rgba(245,158,11,0.15)',
+    alignItems: 'center', justifyContent: 'center', marginBottom: 16,
   },
-  titleSection: {
-    marginBottom: 32,
-  },
-  title: {
-    fontSize: 36,
-    fontWeight: '800',
-    color: '#1a1a1a',
-    lineHeight: 42,
-  },
-  titleUnderline: {
-    height: 4,
-    width: 48,
-    backgroundColor: '#1e1e1e',
-    marginTop: 12,
-    borderRadius: 2,
-  },
-  subtitleSection: {
-    marginBottom: 40,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#666',
-    fontWeight: '500',
-  },
-  emailText: {
-    fontSize: 16,
-    color: '#1e1e1e',
-    fontWeight: 'bold',
-    marginTop: 4,
-  },
-  otpContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 40,
-  },
+  iconText: { fontSize: 28 },
+  titleContainer: { marginBottom: 8 },
+  title: { fontSize: 38, fontWeight: '800', color: '#1a1a1a', lineHeight: 44 },
+  titleAccentRow: { alignSelf: 'flex-start' },
+  titleAccent: { fontSize: 38, fontWeight: '800', color: '#1a1a1a', lineHeight: 44 },
+  titleUnderline: { height: 4, backgroundColor: '#F59E0B', borderRadius: 2, marginTop: 4, width: '100%' },
+  subtitle: { fontSize: 14, color: '#6b7280', marginBottom: 24, marginTop: 10, lineHeight: 20 },
+  otpContainer: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 },
   otpInput: {
-    width: 45,
-    height: 60,
-    backgroundColor: 'white',
-    borderRadius: 12,
-    borderWidth: 2,
-    textAlign: 'center',
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1e1e1e',
-    // Shadow for iOS
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    // Elevation for Android
-    elevation: 2,
+    width: 46, height: 56, backgroundColor: '#fff',
+    borderRadius: 12, borderWidth: 2, textAlign: 'center',
+    fontSize: 22, fontWeight: '700', color: '#1a1a1a',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05, shadowRadius: 3, elevation: 2,
   },
-  otpInputFocused: {
-    borderColor: '#1e1e1e',
-  },
-  otpInputBlurred: {
-    borderColor: '#F0F0F0',
-  },
-  resendContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 40,
-  },
-  resendText: {
-    fontSize: 15,
-    color: '#666',
-    fontWeight: '500',
-  },
-  resendLink: {
-    fontSize: 15,
-    color: '#1e1e1e',
-    fontWeight: '800',
-  },
-  resendLinkDisabled: {
-    color: '#9CA3AF',
-  },
+  otpInputFocused: { borderColor: '#F59E0B', backgroundColor: '#fffbf0' },
+  otpInputFilled: { borderColor: '#F59E0B', backgroundColor: '#fffbf0' },
+  otpInputBlurred: { borderColor: '#e5e7eb' },
+  resendContainer: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginBottom: 24 },
+  resendText: { fontSize: 14, color: '#6b7280' },
+  resendLink: { fontSize: 14, color: '#F59E0B', fontWeight: '700', textDecorationLine: 'underline' },
+  resendLinkDisabled: { color: '#9ca3af', textDecorationLine: 'none' },
   button: {
-    height: 60,
-    borderRadius: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    // Shadow for iOS
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    // Elevation for Android
-    elevation: 5,
+    backgroundColor: '#F59E0B', height: 54, borderRadius: 12,
+    alignItems: 'center', justifyContent: 'center',
+    shadowColor: '#F59E0B', shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3, shadowRadius: 8, elevation: 4,
   },
-  buttonEnabled: {
-    backgroundColor: '#1e1e1e',
-  },
-  buttonDisabled: {
-    backgroundColor: '#999',
-  },
-  buttonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '700',
-    letterSpacing: 1.2,
-  },
+  buttonDisabled: { backgroundColor: '#fcd34d' },
+  buttonText: { color: '#1a1a1a', fontSize: 17, fontWeight: '700' },
 });
 
 export default RegisterOTPVerification;

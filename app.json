@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Education App",
-    "slug": "education-app",
+    "name": "Taiyari NEET ki",
+    "slug": "taiyari-neet-ki",
     "version": "1.0.3",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
@@ -9,7 +9,7 @@
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#F59E0B"
     },
     "updates": {
       "fallbackToCacheTimeout": 0

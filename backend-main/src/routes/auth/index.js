@@ -9,6 +9,8 @@ const loginV1 = require("../../controllers/auth/login");
 const resetPasswordV1 = require("../../controllers/auth/reset.password");
 const passwordResetEmailVerificationV1 = require("../../controllers/auth/password.reset.email.verification");
 const passwordResetOTPVerificationV1 = require("../../controllers/auth/password.reset.otp.verification");
+const passwordResetPhoneVerificationV1 = require("../../controllers/auth/password.reset.phone.verification");
+const passwordResetPhoneOTPVerificationV1 = require("../../controllers/auth/password.reset.phone.otp.verification");
 
 const authMiddleware = require("../../middlewares/auth");
 
@@ -252,5 +254,13 @@ router
 router
   .route("/reset/password/otp/verification")
   .post(passwordResetOTPVerificationV1);
+
+// Phone-based password reset routes
+router
+  .route("/reset/password/phone/verification")
+  .post(passwordResetPhoneVerificationV1);
+router
+  .route("/reset/password/phone/otp/verification")
+  .post(passwordResetPhoneOTPVerificationV1);
 
 module.exports = router;

@@ -19,8 +19,17 @@ const Otp = db.define(
       type: DataTypes.STRING,
       allowNull: false,
     },
+    phone: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      defaultValue: null,
+    },
     type: {
-      type: DataTypes.ENUM(OTP_TYPES.REGISTRATION, OTP_TYPES.PASSWORD_RESET),
+      type: DataTypes.ENUM(
+        OTP_TYPES.REGISTRATION,
+        OTP_TYPES.PASSWORD_RESET,
+        OTP_TYPES.PHONE_PASSWORD_RESET
+      ),
       allowNull: false,
     },
     expiresAt: {

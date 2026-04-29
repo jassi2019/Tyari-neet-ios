@@ -1,20 +1,20 @@
 import { useGetRegistrationOTP } from '@/hooks/api/auth';
+import { ChevronLeft, Mail } from 'lucide-react-native';
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  ImageBackground,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
   Text,
   TextInput,
-  TouchableHighlight,
   TouchableOpacity,
   TouchableWithoutFeedback,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type RegisterProps = {
   navigation: any;
@@ -22,6 +22,8 @@ type RegisterProps = {
 
 export const SetEmail = ({ navigation }: RegisterProps) => {
   const [email, setEmail] = useState('');
+  const [emailFocused, setEmailFocused] = useState(false);
+  const insets = useSafeAreaInsets();
 
   const { mutate: getRegistrationOTP, isPending } = useGetRegistrationOTP();
 
@@ -35,20 +37,16 @@ export const SetEmail = ({ navigation }: RegisterProps) => {
 
     getRegistrationOTP(normalizedEmail, {
       onSuccess: (data: any) => {
-        // If backend is in dev mode and returns OTP (SMTP not configured), show it but DO NOT auto-fill.
         const devOtp = String(data?.data?.otp || '').trim();
         if (devOtp) {
           Alert.alert('Verification Code', `Enter this OTP manually: ${devOtp}`);
         }
-
-        navigation.navigate('RegisterOTPVerification', { email: normalizedEmail });
+        navigation.navigate('RegisterOTPVerification', {
+          email: normalizedEmail,
+        });
       },
       onError: (error: any) => {
-        console.error('❌ Registration Error:', error);
-
-        // Handle different error types
         let errorMessage = 'Registration failed. Please try again.';
-
         if (error?.code === 'TIMEOUT') {
           errorMessage = 'Connection timeout. Please check your internet connection and try again.';
         } else if (error?.code === 'NETWORK_ERROR') {
@@ -69,14 +67,9 @@ export const SetEmail = ({ navigation }: RegisterProps) => {
           ]);
           return;
         }
-
         Alert.alert('Registration Error', errorMessage);
       },
     });
-  };
-
-  const handleLogin = () => {
-    navigation.navigate('Login');
   };
 
   return (
@@ -85,126 +78,117 @@ export const SetEmail = ({ navigation }: RegisterProps) => {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.container}
       >
-        <ImageBackground
-          source={require('../../../assets/images/background-pattern.png')}
-          style={styles.background}
-          resizeMode="cover"
-        >
+        <View style={styles.background}>
+          {/* Header */}
+          <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
+            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+              <ChevronLeft size={24} color="#1a1a1a" />
+            </TouchableOpacity>
+          </View>
+
           <View style={styles.content}>
-            {/* Title */}
-            <View style={styles.titleContainer}>
-              <Text style={styles.title}>Welcome to{'\n'}Taiyari NEET ki</Text>
+            {/* Progress */}
+            <View style={styles.progressRow}>
+              <View style={[styles.progressDot, styles.progressDotActive]} />
+              <View style={styles.progressDot} />
+              <View style={styles.progressDot} />
             </View>
 
-            {/* Subtitle */}
-            <Text style={styles.subtitle}>Please enter your email</Text>
+            {/* Title */}
+            <View style={styles.titleContainer}>
+              <Text style={styles.title}>Create Account</Text>
+              <View style={styles.titleUnderline} />
+            </View>
 
-            {/* Input fields */}
-            <View style={styles.inputContainer}>
+            <Text style={styles.subtitle}>Step 1 of 3 — OTP will be sent to your email</Text>
+
+            {/* Email input */}
+            <Text style={styles.fieldLabel}>
+              <Text style={styles.requiredDot}>● </Text>Email Address *
+            </Text>
+            <View style={[styles.inputWrapper, emailFocused && styles.inputWrapperFocused]}>
+              <Mail size={18} color={emailFocused ? '#F59E0B' : '#9ca3af'} style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
                 placeholder="john@gmail.com"
-                placeholderTextColor="#999"
+                placeholderTextColor="#9ca3af"
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
                 autoCapitalize="none"
+                onFocus={() => setEmailFocused(true)}
+                onBlur={() => setEmailFocused(false)}
               />
             </View>
 
-            {/* Submit Button */}
-            <TouchableHighlight
+            {/* Submit */}
+            <TouchableOpacity
               onPress={handleSubmit}
-              style={styles.submitButton}
-              underlayColor="#333"
+              style={[styles.submitButton, isPending && styles.submitButtonDisabled]}
               disabled={isPending}
+              activeOpacity={0.85}
             >
-              {isPending ? (
-                <ActivityIndicator color="white" />
-              ) : (
-                <Text style={styles.submitButtonText}>Submit</Text>
-              )}
-            </TouchableHighlight>
+              {isPending
+                ? <ActivityIndicator color="#1a1a1a" />
+                : <Text style={styles.submitButtonText}>Send OTP →</Text>}
+            </TouchableOpacity>
 
-            {/* Login Link */}
+            {/* Login link */}
             <View style={styles.loginContainer}>
-              <Text style={styles.loginText}>Already have an account?</Text>
-              <TouchableOpacity onPress={handleLogin} style={styles.loginLink}>
+              <Text style={styles.loginText}>Already have an account? </Text>
+              <TouchableOpacity onPress={() => navigation.navigate('Login')}>
                 <Text style={styles.loginLinkText}>Login</Text>
               </TouchableOpacity>
             </View>
           </View>
-        </ImageBackground>
+        </View>
       </KeyboardAvoidingView>
     </TouchableWithoutFeedback>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+  container: { flex: 1 },
+  background: { flex: 1, backgroundColor: '#FDF6F0', width: '100%' },
+  header: { paddingHorizontal: 24 },
+  backButton: {
+    width: 44, height: 44, alignItems: 'center', justifyContent: 'center',
+    borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.8)',
+    borderWidth: 1, borderColor: '#F0F0F0',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08, shadowRadius: 4, elevation: 3,
   },
-  background: {
-    flex: 1,
-    backgroundColor: '#FDF6F0',
+  content: { flex: 1, paddingHorizontal: 24, paddingTop: 24 },
+  progressRow: { flexDirection: 'row', gap: 8, marginBottom: 20 },
+  progressDot: { flex: 1, height: 5, borderRadius: 3, backgroundColor: '#e5e7eb' },
+  progressDotActive: { backgroundColor: '#F59E0B' },
+  titleContainer: { marginBottom: 8 },
+  title: { fontSize: 38, fontWeight: '800', color: '#1a1a1a', lineHeight: 44 },
+  titleAccentRow: { alignSelf: 'flex-start' },
+  titleAccent: { fontSize: 38, fontWeight: '800', color: '#1a1a1a', lineHeight: 44 },
+  titleUnderline: { height: 4, backgroundColor: '#F59E0B', borderRadius: 2, marginTop: 4, width: '100%' },
+  subtitle: { fontSize: 13, color: '#6b7280', marginBottom: 22, marginTop: 10, lineHeight: 18 },
+  fieldLabel: { fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 6 },
+  requiredDot: { color: '#F59E0B', fontSize: 10 },
+  inputWrapper: {
+    flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff',
+    borderRadius: 12, borderWidth: 1.5, borderColor: '#e5e7eb',
+    paddingHorizontal: 14, height: 54, marginBottom: 20,
   },
-  content: {
-    flex: 1,
-    paddingHorizontal: 16,
-    justifyContent: 'flex-start',
-    paddingTop: 64,
-  },
-  titleContainer: {
-    marginBottom: 24,
-  },
-  title: {
-    fontSize: 48,
-    fontWeight: 'bold',
-    color: '#000',
-    lineHeight: 56,
-  },
-  subtitle: {
-    fontSize: 18,
-    color: '#666',
-    marginBottom: 16,
-  },
-  inputContainer: {
-    marginBottom: 0,
-  },
-  input: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 16,
-    color: '#000',
-  },
+  inputWrapperFocused: { borderColor: '#F59E0B', backgroundColor: '#fffbf0' },
+  inputIcon: { marginRight: 8 },
+  input: { flex: 1, fontSize: 15, color: '#1a1a1a' },
   submitButton: {
-    backgroundColor: '#1A1A1A',
-    borderRadius: 12,
-    marginTop: 24,
-    padding: 16,
+    backgroundColor: '#F59E0B', borderRadius: 12, height: 54,
+    alignItems: 'center', justifyContent: 'center',
+    shadowColor: '#F59E0B', shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3, shadowRadius: 8, elevation: 4, marginBottom: 20,
   },
-  submitButtonText: {
-    color: '#fff',
-    textAlign: 'center',
-    fontSize: 18,
-    fontWeight: '500',
-  },
-  loginContainer: {
-    flexDirection: 'row',
-    marginTop: 16,
-  },
-  loginText: {
-    color: '#1A1A1A',
-    fontSize: 18,
-  },
-  loginLink: {
-    marginLeft: 4,
-  },
-  loginLinkText: {
-    color: '#F59E0B',
-    fontSize: 18,
-  },
+  submitButtonDisabled: { backgroundColor: '#fcd34d' },
+  submitButtonText: { color: '#1a1a1a', fontSize: 17, fontWeight: '700' },
+  loginContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
+  loginText: { color: '#374151', fontSize: 15 },
+  loginLinkText: { color: '#F59E0B', fontSize: 15, fontWeight: '700', textDecorationLine: 'underline' },
 });
 
 export default SetEmail;

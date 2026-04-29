@@ -146,6 +146,37 @@ export const useResetPassword = (
   });
 };
 
+// ─── Phone-based password reset ───────────────────────────────────────────────
+
+const requestPhonePasswordReset = (phone: string): TApiPromise<void> => {
+  return api.post('/api/v1/auth/reset/password/phone/verification', { phone }, AUTH_REQUEST_CONFIG);
+};
+
+const verifyPhonePasswordResetOTP = (data: {
+  phone: string;
+  otp: string;
+}): TApiPromise<{ token: string }> => {
+  return api.post('/api/v1/auth/reset/password/phone/otp/verification', data, AUTH_REQUEST_CONFIG);
+};
+
+export const useRequestPhonePasswordReset = (options?: TMutationOpts<string, void>) => {
+  return useMutation({
+    mutationFn: (phone: string) => requestPhonePasswordReset(phone),
+    ...options,
+  });
+};
+
+export const useVerifyPhonePasswordResetOTP = (
+  options?: TMutationOpts<{ phone: string; otp: string }, { token: string }>
+) => {
+  return useMutation({
+    mutationFn: (data: { phone: string; otp: string }) => verifyPhonePasswordResetOTP(data),
+    ...options,
+  });
+};
+
+// ─── Account deletion ──────────────────────────────────────────────────────────
+
 const requestAccountDeletion = (data: {
   email: string;
   password: string;
