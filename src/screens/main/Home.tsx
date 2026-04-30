@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useGetProfile } from '@/hooks/api/user';
 import { useProgress } from '@/hooks/useProgress';
 import { useStreak } from '@/hooks/useStreak';
+import { useGetHomeContent } from '@/hooks/api/homecontent';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Bell } from 'lucide-react-native';
 import React, { useMemo, useState } from 'react';
@@ -29,7 +30,7 @@ type HomeScreenProps = {
   navigation: any;
 };
 
-const FEATURES = [
+const DEFAULT_FEATURES = [
   { icon: '💡', num: '1.', name: 'Explanation', desc: 'Detailed explanation of every topic' },
   { icon: '🧠', num: '2.', name: 'Revision Recall Station', desc: 'Smart revision to retain better' },
   { icon: '🔗', num: '3.', name: 'Hidden Links', desc: 'Connect concepts unlock clarity' },
@@ -39,7 +40,7 @@ const FEATURES = [
   { icon: '🛡️', num: '7.', name: 'Chapter Check Point', desc: 'Full chapter test to check your real preparation' },
 ];
 
-const TESTS = [
+const DEFAULT_TESTS = [
   { icon: '📅', name: 'Daily Practice Test', desc: 'Everyday concept strengthening', bg: '#E8F5E9', btn: '#2E7D32' },
   { icon: '📊', name: 'Weekly Test', desc: 'Revision + performance tracking', bg: '#E3F2FD', btn: '#1565C0' },
   { icon: '📄', name: 'Full Syllabus Test', desc: 'Real exam simulation', bg: '#F3E5F5', btn: '#6A1B9A' },
@@ -48,6 +49,34 @@ const TESTS = [
 export const Home = ({ navigation }: HomeScreenProps) => {
   const { isGuest } = useAuth();
   const { data: profile } = useGetProfile({ enabled: !isGuest });
+  const { data: homeContent } = useGetHomeContent();
+
+  const FEATURES = useMemo(() => {
+    const apiFeatures = homeContent?.data?.filter((i: any) => i.section === 'feature') || [];
+    if (apiFeatures.length > 0) {
+      return apiFeatures.map((f: any, i: number) => ({
+        icon: f.icon || '📚',
+        num: `${i + 1}.`,
+        name: f.title,
+        desc: f.description || '',
+      }));
+    }
+    return DEFAULT_FEATURES;
+  }, [homeContent]);
+
+  const TESTS = useMemo(() => {
+    const apiTests = homeContent?.data?.filter((i: any) => i.section === 'test') || [];
+    if (apiTests.length > 0) {
+      return apiTests.map((t: any) => ({
+        icon: t.icon || '📋',
+        name: t.title,
+        desc: t.description || '',
+        bg: t.bgColor || '#E8F5E9',
+        btn: t.btnColor || '#2E7D32',
+      }));
+    }
+    return DEFAULT_TESTS;
+  }, [homeContent]);
 
   const displayName = isGuest
     ? 'Future Doctor'

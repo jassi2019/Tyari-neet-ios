@@ -9,6 +9,7 @@ import {
   BookType,
   ListOrdered,
   HelpCircle,
+  LayoutDashboard,
   LogOut,
   Menu,
   Home,
@@ -23,6 +24,7 @@ const navigation = [
   { name: "Chapters", href: "/chapters", icon: BookOpen },
   { name: "Topics", href: "/topics", icon: ListOrdered },
   { name: "Questions", href: "/questions", icon: HelpCircle },
+  { name: "Home Content", href: "/home-content", icon: LayoutDashboard },
 ];
 
 export default function Sidebar() {

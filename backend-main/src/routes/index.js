@@ -17,6 +17,7 @@ const webhookRoutes = require("./webhook");
 const subscriptionRoutes = require("./subscription");
 const deletionRoutes = require("./deletion");
 const questionRoutes = require("./question");
+const homeContentRoutes = require("./homecontent");
 
 router.use("/auth", authRoutes);
 router.use("/users", userRoutes);
@@ -34,5 +35,6 @@ router.use("/webhooks", webhookRoutes);
 router.use("/subscriptions", subscriptionRoutes);
 router.use("/deletions", deletionRoutes);
 router.use("/questions", questionRoutes);
+router.use("/home-content", homeContentRoutes);
 
 module.exports = router;
