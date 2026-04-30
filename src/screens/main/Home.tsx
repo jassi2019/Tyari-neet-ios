@@ -173,7 +173,7 @@ export const Home = ({ navigation }: HomeScreenProps) => {
                   key={i}
                   style={styles.featCard}
                   activeOpacity={0.7}
-                  onPress={goToFreeContent}
+                  onPress={() => navigation.navigate('SubjectSelect', { featureName: f.name })}
                 >
                   <Text style={styles.featIco}>{f.icon}</Text>
                   <Text style={styles.featNum}>{f.num} {f.name}</Text>
