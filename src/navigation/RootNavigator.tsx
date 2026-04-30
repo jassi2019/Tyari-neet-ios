@@ -67,7 +67,6 @@ function MainTabs() {
         component={Library}
         options={{
           title: 'My Library',
-          tabBarButton: () => null,
         }}
       />
       <Tab.Screen
@@ -139,15 +138,7 @@ function MainStack() {
 export default function RootNavigator() {
   const { user, isGuest, hasSession, isLoading } = useAuth();
 
-  // MOCK MODE: Set to true to bypass authentication and see main content
-  // Set to false when backend is ready
-  // NOTE: Main screens use Tailwind classes and need styling fixes before mock mode can work
-  const MOCK_AUTH_MODE = false;
-
-  console.log('🔄 RootNavigator - isLoading:', isLoading, 'user:', user ? 'EXISTS' : 'NULL');
-
   if (isLoading) {
-    console.log('⏳ Showing loading screen...');
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator size="large" color="#F1BB3E" />
@@ -155,17 +146,9 @@ export default function RootNavigator() {
     );
   }
 
-  // In mock mode, always show main stack to test UI without backend
-  if (MOCK_AUTH_MODE) {
-    console.log('🧪 Mock mode enabled - showing MainStack');
-    return <MainStack />;
-  }
-
   if (user || isGuest || hasSession) {
-    console.log('✅ User authenticated or guest - showing MainStack');
     return <MainStack />;
   }
 
-  console.log('🔐 No user - showing AuthStack');
   return <AuthStack />;
 }

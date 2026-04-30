@@ -69,8 +69,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setHasSession(false);
       }
       setUser(userData);
-    } catch (error) {
-      console.log(JSON.stringify(error, null, 2));
+    } catch (_error) {
+      // silent
     }
   };
 
@@ -82,8 +82,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUser(null);
       setIsGuest(true);
       setHasSession(false);
-    } catch (error) {
-      console.log(JSON.stringify(error, null, 2));
+    } catch (_error) {
+      // silent
     } finally {
       setIsLoading(false);
     }

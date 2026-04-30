@@ -1,6 +1,6 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { ChevronLeft } from 'lucide-react-native';
-import React from 'react';
+import React, { useRef, useState } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -40,6 +40,8 @@ const TOPIC_EMOJIS = ['⚡', '🔌', '🧲', '🌊', '🔬', '⚗️', '🌿', '
 const BAR_COLORS = { good: '#43A047', mid: '#F6C228', bad: '#EF5350' };
 
 export const TestResult = ({ navigation, route }: TestResultProps) => {
+  const [showReview, setShowReview] = useState(false);
+  const scrollRef = useRef<ScrollView>(null);
   const testName       = route?.params?.testName       || 'Test';
   const subjectName    = route?.params?.subjectName    || '';
   const chapterName    = route?.params?.chapterName    || '';
@@ -127,6 +129,7 @@ export const TestResult = ({ navigation, route }: TestResultProps) => {
       </View>
 
       <ScrollView
+        ref={scrollRef}
         style={{ flex: 1 }}
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
@@ -204,12 +207,80 @@ export const TestResult = ({ navigation, route }: TestResultProps) => {
             );
           })}
         </View>
+
+        {/* Answer Review Section */}
+        {questions.length > 0 && (
+          <View style={styles.reviewSection}>
+            <TouchableOpacity
+              style={styles.reviewToggle}
+              onPress={() => setShowReview(!showReview)}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.reviewToggleText}>
+                {showReview ? '▲ Hide Answer Review' : '📋 Review Answers'}
+              </Text>
+            </TouchableOpacity>
+
+            {showReview && questions.map((q, i) => {
+              const userAns = answers[i]?.selectedIndex;
+              const isCorrect = userAns === q.correctIndex;
+              const isSkipped = userAns === null;
+              return (
+                <View key={q.id} style={styles.reviewCard}>
+                  <View style={styles.reviewQHeader}>
+                    <View style={[
+                      styles.reviewStatus,
+                      isSkipped ? styles.reviewSkipped : isCorrect ? styles.reviewCorrect : styles.reviewWrong
+                    ]}>
+                      <Text style={styles.reviewStatusText}>
+                        {isSkipped ? 'SKIPPED' : isCorrect ? '✓ CORRECT' : '✗ WRONG'}
+                      </Text>
+                    </View>
+                    <Text style={styles.reviewQNum}>Q{i + 1}</Text>
+                  </View>
+                  <Text style={styles.reviewQText}>{q.text}</Text>
+                  {q.options.map((opt, idx) => {
+                    const isUserChoice = userAns === idx;
+                    const isRight = q.correctIndex === idx;
+                    return (
+                      <View
+                        key={idx}
+                        style={[
+                          styles.reviewOpt,
+                          isRight && styles.reviewOptCorrect,
+                          isUserChoice && !isRight && styles.reviewOptWrong,
+                        ]}
+                      >
+                        <Text style={[
+                          styles.reviewOptLetter,
+                          isRight && { color: '#2E7D32' },
+                          isUserChoice && !isRight && { color: '#C62828' },
+                        ]}>
+                          {opt.letter}
+                        </Text>
+                        <Text style={[
+                          styles.reviewOptText,
+                          isRight && { color: '#2E7D32', fontWeight: '800' },
+                          isUserChoice && !isRight && { color: '#C62828' },
+                        ]}>
+                          {opt.text}
+                        </Text>
+                        {isRight && <Text style={{ fontSize: 12 }}>✓</Text>}
+                        {isUserChoice && !isRight && <Text style={{ fontSize: 12 }}>✗</Text>}
+                      </View>
+                    );
+                  })}
+                </View>
+              );
+            })}
+          </View>
+        )}
       </ScrollView>
 
       {/* Action Buttons */}
       <View style={styles.resultActions}>
         <TouchableOpacity style={styles.btnOutline} onPress={handleBack} activeOpacity={0.8}>
-          <Text style={styles.btnOutlineText}>📋 Review</Text>
+          <Text style={styles.btnOutlineText}>🏠 Home</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.btnSolid} onPress={handleRetry} activeOpacity={0.8}>
           <Text style={styles.btnSolidText}>Retry →</Text>
@@ -303,8 +374,36 @@ const styles = StyleSheet.create({
   bdFill: { height: '100%', borderRadius: 5 },
   bdPct: { fontSize: 12, fontWeight: '900', color: '#111' },
 
+  reviewSection: { paddingHorizontal: 16, marginTop: 14 },
+  reviewToggle: {
+    backgroundColor: '#fff', borderRadius: 12, padding: 12,
+    alignItems: 'center', borderWidth: 1.5, borderColor: '#F6C228', marginBottom: 10,
+  },
+  reviewToggleText: { fontSize: 13, fontWeight: '800', color: '#92400E' },
+  reviewCard: {
+    backgroundColor: '#fff', borderRadius: 14, padding: 14,
+    marginBottom: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05, shadowRadius: 8, elevation: 2,
+  },
+  reviewQHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  reviewStatus: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
+  reviewCorrect: { backgroundColor: '#E8F5E9' },
+  reviewWrong: { backgroundColor: '#FFEBEE' },
+  reviewSkipped: { backgroundColor: '#F5F5F5' },
+  reviewStatusText: { fontSize: 9.5, fontWeight: '800', color: '#333' },
+  reviewQNum: { fontSize: 10, color: '#999', fontWeight: '700' },
+  reviewQText: { fontSize: 12.5, color: '#111', fontWeight: '600', marginBottom: 10, lineHeight: 18 },
+  reviewOpt: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    padding: 8, borderRadius: 8, marginBottom: 5, backgroundColor: '#FAFAFA',
+  },
+  reviewOptCorrect: { backgroundColor: '#E8F5E9' },
+  reviewOptWrong: { backgroundColor: '#FFEBEE' },
+  reviewOptLetter: { fontSize: 12, fontWeight: '900', color: '#555', width: 16 },
+  reviewOptText: { flex: 1, fontSize: 11.5, color: '#444', fontWeight: '600' },
+
   resultActions: {
-    flexDirection: 'row', gap: 10, padding: 14, paddingBottom: 18,
+    flexDirection: 'row', gap: 8, padding: 14, paddingBottom: 18,
     backgroundColor: '#FFF8E8', borderTopWidth: 1, borderTopColor: 'rgba(0,0,0,0.05)',
   },
   btnOutline: {

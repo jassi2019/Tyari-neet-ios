@@ -198,7 +198,7 @@ export const Home = ({ navigation }: HomeScreenProps) => {
                   key={i}
                   style={[styles.testCard, { backgroundColor: t.bg }]}
                   activeOpacity={0.85}
-                  onPress={goToFreeContent}
+                  onPress={() => navigation.navigate('MainTabs', { screen: 'TestsTab' })}
                 >
                   <Text style={styles.tIco}>{t.icon}</Text>
                   <Text style={styles.tName}>{t.name}</Text>
@@ -280,6 +280,7 @@ export const Home = ({ navigation }: HomeScreenProps) => {
           <TouchableOpacity activeOpacity={0.9} onPress={goToFreeContent} style={styles.footerWrap}>
             <Image source={footerImage} style={styles.footerImg} />
           </TouchableOpacity>
+          <View style={{ height: 100, backgroundColor: '#fff' }} />
       </View>
       </ScrollView>
 
@@ -388,6 +389,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 24,
     marginTop: 0,
     paddingBottom: 0,
+    overflow: 'hidden',
   },
   scrollContent: { paddingTop: 18, paddingHorizontal: 14, paddingBottom: 0 },
   section: { paddingBottom: 18 },
@@ -500,8 +502,9 @@ const styles = StyleSheet.create({
 
   /* Footer */
   footerWrap: {
-    backgroundColor: '#F9C45A',
+    backgroundColor: '#fff',
     marginBottom: 0,
+    overflow: 'hidden',
   },
   footerImg: {
     width: '100%',

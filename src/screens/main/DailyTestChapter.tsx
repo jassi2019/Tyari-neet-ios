@@ -116,6 +116,7 @@ export const DailyTestChapter = ({ navigation, route }: DailyTestChapterProps) =
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.filterRow}
+            style={{ flexGrow: 0 }}
           >
             {FILTERS.map((f) => (
               <TouchableOpacity
@@ -232,7 +233,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16, paddingTop: 22,
   },
 
-  filterRow: { gap: 8, paddingBottom: 14 },
+  filterRow: { gap: 8, paddingBottom: 14, alignItems: 'center' },
   filterPill: {
     backgroundColor: '#fff', borderWidth: 1, borderColor: '#f0f0f0',
     paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20,

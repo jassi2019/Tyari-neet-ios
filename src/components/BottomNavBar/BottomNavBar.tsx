@@ -81,7 +81,7 @@ export const BottomNav = ({ state, navigation }: BottomTabBarProps) => {
       <TouchableOpacity
         activeOpacity={0.85}
         onPress={() => handlePress('LibraryTab')}
-        style={styles.fab}
+        style={[styles.fab, currentRouteName === 'LibraryTab' && styles.fabActive]}
       >
         <Plus size={24} color="#fff" strokeWidth={3} />
       </TouchableOpacity>
@@ -118,15 +118,18 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#1a1a1a',
+    backgroundColor: '#92400E',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#1a1a1a',
+    shadowColor: '#92400E',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.45,
     shadowRadius: 12,
     elevation: 6,
     marginHorizontal: 4,
+  },
+  fabActive: {
+    backgroundColor: '#F6C228',
   },
 });
 

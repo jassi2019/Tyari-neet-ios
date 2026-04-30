@@ -28,6 +28,14 @@ type SubjectMeta = {
   gradient: [string, string];
 };
 
+const NEET_CHAPTER_COUNTS: Record<string, number> = {
+  botany: 22,
+  zoology: 20,
+  physics: 29,
+  chemistry: 30,
+  biology: 42,
+};
+
 const SUBJECT_META: Record<string, SubjectMeta> = {
   botany: { emoji: '🌿', gradient: ['#66BB6A', '#43A047'] },
   chemistry: { emoji: '⚗️', gradient: ['#42A5F5', '#1976D2'] },
@@ -147,9 +155,10 @@ export const Subjects = ({ navigation }: SubjectsScreenProps) => {
             {subjects.map((subject, idx) => {
               const meta = getMetaFor(subject.name);
               const num = String(idx + 1).padStart(2, '0');
+              const apiCount = Number((subject as any).chapterCount ?? 0);
               const chapterCount = isGuest
                 ? getGuestChaptersBySubjectAndClass(subject.id, null).length
-                : (subject as any).chapterCount ?? (subject as any).Chapter?.length ?? 0;
+                : apiCount > 0 ? apiCount : NEET_CHAPTER_COUNTS[subject.name?.toLowerCase()] ?? 0;
               const { pct, total } = getSubjectProgress(subject);
 
               return (
@@ -201,7 +210,7 @@ export const Subjects = ({ navigation }: SubjectsScreenProps) => {
           </View>
 
           {/* Info Bar */}
-          <TouchableOpacity style={styles.infoBar} activeOpacity={0.85}>
+          <TouchableOpacity style={styles.infoBar} activeOpacity={0.85} onPress={() => navigation.navigate('MainTabs', { screen: 'TestsTab' })}>
             <View style={styles.infoIcon}>
               <Text style={{ fontSize: 20 }}>💡</Text>
             </View>
