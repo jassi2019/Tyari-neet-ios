@@ -110,7 +110,7 @@ export const Login = ({ navigation }: any) => {
 
             {/* Email input */}
             <View style={[styles.inputWrapper, emailFocused && styles.inputWrapperFocused]}>
-              <Mail size={18} color={emailFocused ? '#F59E0B' : '#9ca3af'} style={styles.inputIcon} />
+              <Mail size={18} color={emailFocused ? '#FED93A' : '#9ca3af'} style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
                 placeholder="Email address"
@@ -126,7 +126,7 @@ export const Login = ({ navigation }: any) => {
 
             {/* Password input */}
             <View style={[styles.inputWrapper, passwordFocused && styles.inputWrapperFocused]}>
-              <Lock size={18} color={passwordFocused ? '#F59E0B' : '#9ca3af'} style={styles.inputIcon} />
+              <Lock size={18} color={passwordFocused ? '#FED93A' : '#9ca3af'} style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
                 placeholder="Password"
@@ -227,7 +227,7 @@ const styles = StyleSheet.create({
   },
   titleUnderline: {
     height: 4,
-    backgroundColor: '#F59E0B',
+    backgroundColor: '#FED93A',
     borderRadius: 2,
     marginTop: 4,
     width: '100%',
@@ -250,7 +250,7 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   inputWrapperFocused: {
-    borderColor: '#F59E0B',
+    borderColor: '#FED93A',
     backgroundColor: '#fffbf0',
   },
   inputIcon: {
@@ -269,18 +269,18 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   forgotPasswordText: {
-    color: '#F59E0B',
+    color: '#FED93A',
     fontSize: 14,
     fontWeight: '600',
     textDecorationLine: 'underline',
   },
   loginButton: {
-    backgroundColor: '#F59E0B',
+    backgroundColor: '#FED93A',
     borderRadius: 12,
     height: 54,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#F59E0B',
+    shadowColor: '#FED93A',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -288,7 +288,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   loginButtonDisabled: {
-    backgroundColor: '#fcd34d',
+    backgroundColor: '#FED93A',
   },
   loginButtonText: {
     color: '#1a1a1a',
@@ -305,7 +305,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   registerLinkText: {
-    color: '#F59E0B',
+    color: '#FED93A',
     fontSize: 15,
     fontWeight: '700',
     textDecorationLine: 'underline',

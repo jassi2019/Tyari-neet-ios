@@ -107,7 +107,7 @@ export const SetEmail = ({ navigation }: RegisterProps) => {
               <Text style={styles.requiredDot}>● </Text>Email Address *
             </Text>
             <View style={[styles.inputWrapper, emailFocused && styles.inputWrapperFocused]}>
-              <Mail size={18} color={emailFocused ? '#F59E0B' : '#9ca3af'} style={styles.inputIcon} />
+              <Mail size={18} color={emailFocused ? '#FED93A' : '#9ca3af'} style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
                 placeholder="john@gmail.com"
@@ -161,34 +161,34 @@ const styles = StyleSheet.create({
   content: { flex: 1, paddingHorizontal: 24, paddingTop: 24 },
   progressRow: { flexDirection: 'row', gap: 8, marginBottom: 20 },
   progressDot: { flex: 1, height: 5, borderRadius: 3, backgroundColor: '#e5e7eb' },
-  progressDotActive: { backgroundColor: '#F59E0B' },
+  progressDotActive: { backgroundColor: '#FED93A' },
   titleContainer: { marginBottom: 8 },
   title: { fontSize: 38, fontWeight: '800', color: '#1a1a1a', lineHeight: 44 },
   titleAccentRow: { alignSelf: 'flex-start' },
   titleAccent: { fontSize: 38, fontWeight: '800', color: '#1a1a1a', lineHeight: 44 },
-  titleUnderline: { height: 4, backgroundColor: '#F59E0B', borderRadius: 2, marginTop: 4, width: '100%' },
+  titleUnderline: { height: 4, backgroundColor: '#FED93A', borderRadius: 2, marginTop: 4, width: '100%' },
   subtitle: { fontSize: 13, color: '#6b7280', marginBottom: 22, marginTop: 10, lineHeight: 18 },
   fieldLabel: { fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 6 },
-  requiredDot: { color: '#F59E0B', fontSize: 10 },
+  requiredDot: { color: '#FED93A', fontSize: 10 },
   inputWrapper: {
     flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff',
     borderRadius: 12, borderWidth: 1.5, borderColor: '#e5e7eb',
     paddingHorizontal: 14, height: 54, marginBottom: 20,
   },
-  inputWrapperFocused: { borderColor: '#F59E0B', backgroundColor: '#fffbf0' },
+  inputWrapperFocused: { borderColor: '#FED93A', backgroundColor: '#fffbf0' },
   inputIcon: { marginRight: 8 },
   input: { flex: 1, fontSize: 15, color: '#1a1a1a' },
   submitButton: {
-    backgroundColor: '#F59E0B', borderRadius: 12, height: 54,
+    backgroundColor: '#FED93A', borderRadius: 12, height: 54,
     alignItems: 'center', justifyContent: 'center',
-    shadowColor: '#F59E0B', shadowOffset: { width: 0, height: 4 },
+    shadowColor: '#FED93A', shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3, shadowRadius: 8, elevation: 4, marginBottom: 20,
   },
-  submitButtonDisabled: { backgroundColor: '#fcd34d' },
+  submitButtonDisabled: { backgroundColor: '#FED93A' },
   submitButtonText: { color: '#1a1a1a', fontSize: 17, fontWeight: '700' },
   loginContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
   loginText: { color: '#374151', fontSize: 15 },
-  loginLinkText: { color: '#F59E0B', fontSize: 15, fontWeight: '700', textDecorationLine: 'underline' },
+  loginLinkText: { color: '#FED93A', fontSize: 15, fontWeight: '700', textDecorationLine: 'underline' },
 });
 
 export default SetEmail;

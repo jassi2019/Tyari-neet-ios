@@ -80,7 +80,7 @@ export const AskForEmail = ({ navigation }: AskForEmailProps) => {
               <Text style={styles.requiredDot}>● </Text>Email Address
             </Text>
             <View style={[styles.inputWrapper, emailFocused && styles.inputWrapperFocused]}>
-              <Mail size={18} color={emailFocused ? '#F59E0B' : '#9ca3af'} style={styles.inputIcon} />
+              <Mail size={18} color={emailFocused ? '#FED93A' : '#9ca3af'} style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
                 placeholder="john@gmail.com"
@@ -140,29 +140,29 @@ const styles = StyleSheet.create({
   title: { fontSize: 38, fontWeight: '800', color: '#1a1a1a', lineHeight: 44 },
   titleAccentRow: { alignSelf: 'flex-start' },
   titleAccent: { fontSize: 38, fontWeight: '800', color: '#1a1a1a', lineHeight: 44 },
-  titleUnderline: { height: 4, backgroundColor: '#F59E0B', borderRadius: 2, marginTop: 4, width: '100%' },
+  titleUnderline: { height: 4, backgroundColor: '#FED93A', borderRadius: 2, marginTop: 4, width: '100%' },
   subtitle: { fontSize: 14, color: '#6b7280', marginBottom: 20, marginTop: 10, lineHeight: 20 },
   fieldLabel: { fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 6 },
-  requiredDot: { color: '#F59E0B', fontSize: 10 },
+  requiredDot: { color: '#FED93A', fontSize: 10 },
   inputWrapper: {
     flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff',
     borderRadius: 12, borderWidth: 1.5, borderColor: '#e5e7eb',
     paddingHorizontal: 14, height: 54, marginBottom: 20,
   },
-  inputWrapperFocused: { borderColor: '#F59E0B', backgroundColor: '#fffbf0' },
+  inputWrapperFocused: { borderColor: '#FED93A', backgroundColor: '#fffbf0' },
   inputIcon: { marginRight: 8 },
   input: { flex: 1, fontSize: 15, color: '#1a1a1a' },
   button: {
-    backgroundColor: '#F59E0B', height: 54, borderRadius: 12,
+    backgroundColor: '#FED93A', height: 54, borderRadius: 12,
     alignItems: 'center', justifyContent: 'center',
-    shadowColor: '#F59E0B', shadowOffset: { width: 0, height: 4 },
+    shadowColor: '#FED93A', shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3, shadowRadius: 8, elevation: 4, marginBottom: 16,
   },
-  buttonDisabled: { backgroundColor: '#fcd34d' },
+  buttonDisabled: { backgroundColor: '#FED93A' },
   buttonText: { color: '#1a1a1a', fontSize: 17, fontWeight: '700' },
   loginRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center' },
   loginText: { color: '#374151', fontSize: 15 },
-  loginLink: { color: '#F59E0B', fontSize: 15, fontWeight: '700', textDecorationLine: 'underline' },
+  loginLink: { color: '#FED93A', fontSize: 15, fontWeight: '700', textDecorationLine: 'underline' },
 });
 
 export default AskForEmail;

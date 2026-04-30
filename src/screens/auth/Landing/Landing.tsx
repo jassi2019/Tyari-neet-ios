@@ -59,11 +59,16 @@ const Landing = ({ navigation }: { navigation: any }) => {
               </Text>
               <Text style={styles.heroSubtitle}>India's #1 Smart NEET Preparation App</Text>
 
-              {/* Badge with new content */}
-              <View style={styles.featureBadge}>
-                <Text style={styles.featureBadgeText}>
-                  Build from basics, strengthen with practice, and reach exam-level mastery through concepts, back exercise, Exemplar, PYQs
-                </Text>
+              {/* Feature Badges */}
+              <View style={styles.badgeRow}>
+                <View style={styles.badge}><Text style={styles.badgeText}>📖 Build from Basics</Text></View>
+                <View style={styles.badge}><Text style={styles.badgeText}>💪 Strengthen with Practice</Text></View>
+              </View>
+              <View style={styles.badgeRow}>
+                <View style={styles.badge}><Text style={styles.badgeText}>🧠 Concepts</Text></View>
+                <View style={styles.badge}><Text style={styles.badgeText}>📝 Back Exercise</Text></View>
+                <View style={styles.badge}><Text style={styles.badgeText}>🏆 Exemplar</Text></View>
+                <View style={styles.badge}><Text style={styles.badgeText}>📋 PYQs</Text></View>
               </View>
             </View>
           </View>
@@ -212,21 +217,25 @@ const styles = StyleSheet.create({
     marginBottom: 18,
     textAlign: 'center',
   },
-  featureBadge: {
+  badgeRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 8,
+    marginBottom: 8,
+  },
+  badge: {
     backgroundColor: 'rgba(255,255,255,0.75)',
-    borderRadius: 16,
-    paddingHorizontal: 18,
-    paddingVertical: 12,
-    marginHorizontal: 8,
+    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.9)',
   },
-  featureBadgeText: {
-    fontSize: 13,
-    fontWeight: '600',
+  badgeText: {
+    fontSize: 12,
+    fontWeight: '700',
     color: '#1a1a1a',
-    textAlign: 'center',
-    lineHeight: 20,
   },
   bottomContainer: {
     marginBottom: 48,
