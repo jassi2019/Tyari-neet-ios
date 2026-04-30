@@ -31,7 +31,31 @@ const Topic = db.define(
       type: DataTypes.STRING,
       allowNull: false,
     },
-    richContent: {
+    explanationContent: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    revisionContent: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    hiddenLinksContent: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    exerciseRevivalContent: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    masterExemplarContent: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    pyqContent: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    chapterCheckpointContent: {
       type: DataTypes.TEXT,
       allowNull: true,
     },

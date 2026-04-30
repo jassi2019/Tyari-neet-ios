@@ -7,7 +7,13 @@ export type TTopic = {
   description: string;
   contentURL: string;
   contentThumbnail: string;
-  richContent?: string;
+  explanationContent?: string;
+  revisionContent?: string;
+  hiddenLinksContent?: string;
+  exerciseRevivalContent?: string;
+  masterExemplarContent?: string;
+  pyqContent?: string;
+  chapterCheckpointContent?: string;
   sequence: number;
   serviceType: 'FREE' | 'PREMIUM';
   Chapter: TChapter;

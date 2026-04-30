@@ -33,11 +33,22 @@ const topicHeaderStyles = StyleSheet.create({
   title: { fontSize: 17, fontWeight: '800', color: '#111', flex: 1 },
 });
 
+const FEATURE_CONTENT_MAP: Record<string, keyof TTopic> = {
+  'Explanation': 'explanationContent',
+  'Revision Recall Station': 'revisionContent',
+  'Hidden Links': 'hiddenLinksContent',
+  'Exercise Revival': 'exerciseRevivalContent',
+  'Master Exemplar': 'masterExemplarContent',
+  'Previous Year Questions': 'pyqContent',
+  'Chapter Check Point': 'chapterCheckpointContent',
+};
+
 type TopicContentProps = {
   navigation: any;
   route: {
     params?: {
       topic?: TTopic;
+      featureName?: string;
     };
   };
 };
@@ -45,6 +56,7 @@ type TopicContentProps = {
 export const TopicContent = ({ navigation, route }: TopicContentProps) => {
   const { isGuest, user } = useAuth();
   const topic = route?.params?.topic;
+  const featureName = route?.params?.featureName;
   const topicId = topic?.id || '';
   const isPremiumTopic = isPremiumServiceType(topic?.serviceType);
   const hasPremium = isPaidSubscriptionActive(user?.subscription);
@@ -72,7 +84,8 @@ export const TopicContent = ({ navigation, route }: TopicContentProps) => {
   });
 
   const effectiveTopic = !isGuest ? topicResponse?.data || topic : topic;
-  const richContent = String(effectiveTopic?.richContent || '').trim();
+  const contentField = featureName ? FEATURE_CONTENT_MAP[featureName] : undefined;
+  const richContent = contentField ? String((effectiveTopic as any)?.[contentField] || '').trim() : '';
   const hasRichContent = richContent.length > 0;
   const rawURL = String(effectiveTopic?.contentURL || '').trim();
   const isCanvaContent = /canva\.com/i.test(rawURL);

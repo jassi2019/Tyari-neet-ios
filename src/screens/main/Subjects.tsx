@@ -109,6 +109,7 @@ export const Subjects = ({ navigation, route }: SubjectsScreenProps) => {
       subjectId: subject.id,
       subjectTitle: subject.name,
       classId,
+      featureName,
     });
   };
 
