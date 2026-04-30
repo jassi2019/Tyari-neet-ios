@@ -26,7 +26,15 @@ const requestBodyLimit = process.env.REQUEST_BODY_LIMIT || "10mb";
 app.use(compression());
 app.use(express.json({ limit: requestBodyLimit }));
 app.use(express.urlencoded({ extended: true, limit: requestBodyLimit }));
-app.use(cors());
+app.use(cors({
+  origin: [
+    "https://taiyarineetki.com",
+    "https://www.taiyarineetki.com",
+    "https://api.taiyarineetki.com",
+    /^http:\/\/localhost(:\d+)?$/,
+  ],
+  credentials: true,
+}));
 app.use(pinoLogger);
 
 app.use("/api-docs", swaggerUI.serve, swaggerUI.setup(swaggerSpec));
