@@ -61,14 +61,14 @@ const Landing = ({ navigation }: { navigation: any }) => {
 
               {/* Feature Badges */}
               <View style={styles.badgeRow}>
-                <View style={styles.badge}><Text style={styles.badgeText}>📖 Build from Basics</Text></View>
-                <View style={styles.badge}><Text style={styles.badgeText}>💪 Strengthen with Practice</Text></View>
+                <View style={styles.badge}><Text style={styles.badgeText} numberOfLines={1}>📖 Build from Basics</Text></View>
+                <View style={styles.badge}><Text style={styles.badgeText} numberOfLines={1}>💪 Strengthen with Practice</Text></View>
               </View>
               <View style={styles.badgeRow}>
-                <View style={styles.badge}><Text style={styles.badgeText}>🧠 Concepts</Text></View>
-                <View style={styles.badge}><Text style={styles.badgeText}>📝 Back Exercise</Text></View>
-                <View style={styles.badge}><Text style={styles.badgeText}>🏆 Exemplar</Text></View>
-                <View style={styles.badge}><Text style={styles.badgeText}>📋 PYQs</Text></View>
+                <View style={styles.badge}><Text style={styles.badgeText} numberOfLines={1}>🧠 Concepts</Text></View>
+                <View style={styles.badge}><Text style={styles.badgeText} numberOfLines={1}>📝 Back Exercise</Text></View>
+                <View style={styles.badge}><Text style={styles.badgeText} numberOfLines={1}>🏆 Exemplar</Text></View>
+                <View style={styles.badge}><Text style={styles.badgeText} numberOfLines={1}>📋 PYQs</Text></View>
               </View>
             </View>
           </View>
