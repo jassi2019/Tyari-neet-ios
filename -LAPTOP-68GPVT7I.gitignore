@@ -1,0 +1,51 @@
+# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
+
+# dependencies
+node_modules/
+
+# Expo
+.expo/
+dist/
+web-build/
+web-build-*/
+expo-env.d.ts
+
+# Native
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Metro
+.metro-health-check*
+
+# debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# macOS
+.DS_Store
+*.pem
+
+# Local archives (cleanup, exports)
+archive/
+
+# local env files
+.env*.local
+
+# typescript
+*.tsbuildinfo
+
+.env
+
+# Local screenshots / QA exports
+screenshots/
+
+# Accidental XML copies of iOS XML-based files (Xcode expects the canonical extensions)
+ios/**/*.entitlements.xml
+ios/**/*.storyboard.xml
+ios/**/*.xcprivacy.xml
+ios/**/*.xcworkspacedata.xml

@@ -3,6 +3,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import React from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
+import BottomNav from '../components/BottomNavBar/BottomNavBar';
 
 // Auth Screens
 import AskForEmail from '../screens/auth/ForgotPassword/AskForEmail';
@@ -17,6 +18,7 @@ import SetEmail from '../screens/auth/Register/SetEmail';
 // Main Screens
 import Chapters from '../screens/main/Chapters';
 import Home from '../screens/main/Home';
+import Library from '../screens/main/Library';
 import Payment from '../screens/main/Payment';
 import Plans from '../screens/main/Plans';
 import Privacy from '../screens/main/Privacy';
@@ -27,6 +29,10 @@ import RefundPolicy from '../screens/main/RefundPolicy';
 import Subjects from '../screens/main/Subjects';
 import SubscriptionMessage from '../screens/main/SubscriptionMessage';
 import TermsAndConditions from '../screens/main/TermsAndConditions';
+import DailyTestChapter from '../screens/main/DailyTestChapter';
+import TestMCQ from '../screens/main/TestMCQ';
+import TestResult from '../screens/main/TestResult';
+import Tests from '../screens/main/Tests';
 import TopicContent from '../screens/main/TopicContent';
 import Topics from '../screens/main/Topics';
 import NotFoundScreen from '../screens/NotFoundScreen';
@@ -37,22 +43,8 @@ const Tab = createBottomTabNavigator();
 function MainTabs() {
   return (
     <Tab.Navigator
-      screenOptions={{
-        headerShown: false,
-        tabBarShowLabel: false,
-        tabBarStyle: {
-          height: 70,
-          paddingBottom: 10,
-          paddingTop: 10,
-          backgroundColor: '#FFFFFF',
-          borderTopWidth: 1,
-          borderTopColor: '#E5E7EB',
-          borderTopLeftRadius: 30,
-          borderTopRightRadius: 30,
-        },
-        tabBarActiveTintColor: '#000000',
-        tabBarInactiveTintColor: '#9CA3AF',
-      }}
+      screenOptions={{ headerShown: false }}
+      tabBar={(props) => <BottomNav {...props} />}
     >
       <Tab.Screen
         name="HomeTab"
@@ -61,18 +53,31 @@ function MainTabs() {
           title: 'Home',
           tabBarIcon: ({ color }: { color: string; size: number }) => {
             const Home = require('lucide-react-native').Home;
-            return <Home size={28} color={color} strokeWidth={color === '#000000' ? 2 : 1.5} />;
+            return <Home size={24} color={color} strokeWidth={color === '#000000' ? 2.2 : 1.8} />;
           },
         }}
       />
       <Tab.Screen
         name="SubjectsTab"
         component={Subjects}
+        options={{ title: 'Library' }}
+      />
+      <Tab.Screen
+        name="LibraryTab"
+        component={Library}
         options={{
-          title: 'Subjects',
+          title: 'My Library',
+          tabBarButton: () => null,
+        }}
+      />
+      <Tab.Screen
+        name="TestsTab"
+        component={Tests}
+        options={{
+          title: 'Tests',
           tabBarIcon: ({ color }: { color: string; size: number }) => {
-            const Notebook = require('lucide-react-native').Notebook;
-            return <Notebook size={28} color={color} strokeWidth={color === '#000000' ? 2 : 1.5} />;
+            const ClipboardList = require('lucide-react-native').ClipboardList;
+            return <ClipboardList size={24} color={color} strokeWidth={color === '#000000' ? 2.2 : 1.8} />;
           },
         }}
       />
@@ -83,7 +88,7 @@ function MainTabs() {
           title: 'Profile',
           tabBarIcon: ({ color }: { color: string; size: number }) => {
             const User = require('lucide-react-native').User;
-            return <User size={28} color={color} strokeWidth={color === '#000000' ? 2 : 1.5} />;
+            return <User size={24} color={color} strokeWidth={color === '#000000' ? 2.2 : 1.8} />;
           },
         }}
       />
@@ -123,6 +128,9 @@ function MainStack() {
       <Stack.Screen name="RefundPolicy" component={RefundPolicy} />
       <Stack.Screen name="Privacy" component={Privacy} />
       <Stack.Screen name="TermsAndConditions" component={TermsAndConditions} />
+      <Stack.Screen name="DailyTestChapter" component={DailyTestChapter} />
+      <Stack.Screen name="TestMCQ" component={TestMCQ} />
+      <Stack.Screen name="TestResult" component={TestResult} />
       <Stack.Screen name="NotFound" component={NotFoundScreen} />
     </Stack.Navigator>
   );

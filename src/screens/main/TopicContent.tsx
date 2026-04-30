@@ -1,13 +1,37 @@
-import { Header } from '@/components/Header/Header';
 import PlatformWebView from '@/components/PlatformWebView';
 import { useAuth } from '@/contexts/AuthContext';
 import { useGetTopicById } from '@/hooks/api/topics';
 import { useContentProtection } from '@/hooks/useContentProtection';
+import { useProgress } from '@/hooks/useProgress';
 import { isPaidSubscriptionActive, isPremiumServiceType } from '@/lib/subscription';
 import { TTopic } from '@/types/Topic';
+import { ChevronLeft } from 'lucide-react-native';
 import React from 'react';
-import { ActivityIndicator, Platform, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
+const TopicHeader = ({ title, onBack }: { title: string; onBack: () => void }) => (
+  <View style={topicHeaderStyles.header}>
+    <TouchableOpacity onPress={onBack} style={topicHeaderStyles.backBtn} activeOpacity={0.7}>
+      <ChevronLeft size={22} color="#111" />
+    </TouchableOpacity>
+    <Text style={topicHeaderStyles.title} numberOfLines={1}>{title}</Text>
+  </View>
+);
+
+const topicHeaderStyles = StyleSheet.create({
+  header: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    backgroundColor: '#F5A623',
+    paddingHorizontal: 18, paddingVertical: 12,
+  },
+  backBtn: {
+    width: 36, height: 36, borderRadius: 18,
+    backgroundColor: 'rgba(146,64,14,0.15)',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  title: { fontSize: 17, fontWeight: '800', color: '#111', flex: 1 },
+});
 
 type TopicContentProps = {
   navigation: any;
@@ -24,6 +48,14 @@ export const TopicContent = ({ navigation, route }: TopicContentProps) => {
   const topicId = topic?.id || '';
   const isPremiumTopic = isPremiumServiceType(topic?.serviceType);
   const hasPremium = isPaidSubscriptionActive(user?.subscription);
+  const { markCompleted } = useProgress();
+
+  // Mark topic as completed once when the user can actually view it.
+  React.useEffect(() => {
+    if (!topicId) return;
+    if (isPremiumTopic && !hasPremium) return;
+    markCompleted(topicId);
+  }, [topicId, isPremiumTopic, hasPremium, markCompleted]);
 
   // Protect lesson content from screenshots / screen recordings (best-effort).
   // NOTE: Web cannot be reliably protected, so keep this native-only.
@@ -60,8 +92,8 @@ export const TopicContent = ({ navigation, route }: TopicContentProps) => {
 
   if (!topic) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#FDF6F0' }} edges={['top']}>
-        <Header title="Error" onBack={() => navigation.goBack()} />
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#FFF8E8' }} edges={['top']}>
+        <TopicHeader title="Error" onBack={() => navigation.goBack()} />
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
           <Text style={{ fontSize: 16, color: '#EF4444', textAlign: 'center' }}>
             Topic data not found. Please try again.
@@ -74,7 +106,7 @@ export const TopicContent = ({ navigation, route }: TopicContentProps) => {
   if (!isGuest && isPremiumTopic && !hasPremium) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }} edges={['top']}>
-        <Header title={topic?.name || 'Topic'} onBack={() => navigation.goBack()} />
+        <TopicHeader title={topic?.name || 'Topic'} onBack={() => navigation.goBack()} />
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
           <Text style={{ fontSize: 18, fontWeight: '700', textAlign: 'center', marginBottom: 8 }}>
             Premium subscription required
@@ -112,7 +144,7 @@ export const TopicContent = ({ navigation, route }: TopicContentProps) => {
     if (isLoadingTopic) {
       return (
         <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }} edges={['top']}>
-          <Header title={topic?.name || 'Topic'} onBack={() => navigation.goBack()} />
+          <TopicHeader title={topic?.name || 'Topic'} onBack={() => navigation.goBack()} />
           <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
             <ActivityIndicator size="large" color="#F4B95F" />
             <Text style={{ marginTop: 12, color: '#6B7280' }}>Loading topic...</Text>
@@ -128,7 +160,7 @@ export const TopicContent = ({ navigation, route }: TopicContentProps) => {
       if (isNotSubscribed) {
         return (
           <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }} edges={['top']}>
-            <Header title={topic?.name || 'Topic'} onBack={() => navigation.goBack()} />
+            <TopicHeader title={topic?.name || 'Topic'} onBack={() => navigation.goBack()} />
             <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
               <Text style={{ fontSize: 18, fontWeight: '700', textAlign: 'center', marginBottom: 8 }}>
                 Premium subscription required
@@ -154,7 +186,7 @@ export const TopicContent = ({ navigation, route }: TopicContentProps) => {
 
       return (
         <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }} edges={['top']}>
-          <Header title={topic?.name || 'Topic'} onBack={() => navigation.goBack()} />
+          <TopicHeader title={topic?.name || 'Topic'} onBack={() => navigation.goBack()} />
           <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
             <Text style={{ fontSize: 16, color: '#EF4444', textAlign: 'center', marginBottom: 12 }}>
               {message || 'Unable to load topic. Please try again.'}
@@ -181,7 +213,7 @@ export const TopicContent = ({ navigation, route }: TopicContentProps) => {
   if (!normalizedURL) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }} edges={['top']}>
-        <Header title={effectiveTopic?.name || 'Topic'} onBack={() => navigation.goBack()} />
+        <TopicHeader title={effectiveTopic?.name || 'Topic'} onBack={() => navigation.goBack()} />
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
           <Text style={{ fontSize: 16, color: '#EF4444', textAlign: 'center' }}>
             Content URL is missing for this topic.
@@ -197,7 +229,7 @@ export const TopicContent = ({ navigation, route }: TopicContentProps) => {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }} edges={['top']}>
-      <Header title={effectiveTopic?.name || 'Topic'} onBack={() => navigation.goBack()} />
+      <TopicHeader title={effectiveTopic?.name || 'Topic'} onBack={() => navigation.goBack()} />
 
       <PlatformWebView
         source={webViewSource}

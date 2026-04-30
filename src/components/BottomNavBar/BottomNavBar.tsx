@@ -1,9 +1,9 @@
-import { useNavigation } from '@react-navigation/native';
-import { Home, Notebook, User } from 'lucide-react-native';
+import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import { ClipboardList, Home, Notebook, Plus, User } from 'lucide-react-native';
 import React, { createContext, useContext, useState } from 'react';
-import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-export type TabName = 'Home' | 'Subjects' | 'Profile';
+export type TabName = 'Home' | 'Library' | 'Tests' | 'Profile';
 
 type BottomNavContextType = {
   activeTab: TabName;
@@ -30,85 +30,65 @@ export const BottomNavProvider = ({ children }: { children: React.ReactNode }) =
   );
 };
 
-export const BottomNav = () => {
-  const { activeTab, setActiveTab } = useBottomNav();
-  const navigation = useNavigation();
+type NavItem = {
+  icon: typeof Home;
+  routeName: string;
+  label: string;
+};
 
-  const navItems: NavItem[] = [
-    {
-      icon: Home,
-      tab: 'Home',
-    },
-    {
-      icon: Notebook,
-      tab: 'Subjects',
-    },
-    {
-      icon: User,
-      tab: 'Profile',
-    },
-  ];
+const NAV_ITEMS_LEFT: NavItem[] = [
+  { icon: Home, routeName: 'HomeTab', label: 'Home' },
+  { icon: Notebook, routeName: 'SubjectsTab', label: 'Library' },
+];
 
-  const handleTabPress = (tab: TabName) => {
-    // Don't navigate if already on this tab
-    if (tab === activeTab) {
-      console.log(`Already on ${tab} tab, skipping navigation`);
-      return;
-    }
+const NAV_ITEMS_RIGHT: NavItem[] = [
+  { icon: ClipboardList, routeName: 'TestsTab', label: 'Tests' },
+  { icon: User, routeName: 'ProfileTab', label: 'Profile' },
+];
 
-    setActiveTab(tab);
+export const BottomNav = ({ state, navigation }: BottomTabBarProps) => {
+  const currentRouteName = state.routes[state.index]?.name;
 
-    // Map tab names to actual navigator screen names
-    const screenMap: Record<TabName, string> = {
-      Home: 'HomeTab',
-      Subjects: 'SubjectsTab',
-      Profile: 'ProfileTab',
-    };
+  const handlePress = (routeName: string) => {
+    if (currentRouteName === routeName) return;
+    navigation.navigate(routeName);
+  };
 
-    // Navigate to the tab within the MainTabs navigator
-    try {
-      console.log(`Navigating to ${tab} (${screenMap[tab]})`);
-      // @ts-ignore - Navigate to nested tab
-      navigation.navigate('MainTabs', { screen: screenMap[tab] });
-    } catch (error) {
-      console.error('Navigation error:', error);
-      // Fallback: try direct navigation
-      try {
-        navigation.navigate(screenMap[tab] as never);
-      } catch (fallbackError) {
-        console.error('Fallback navigation also failed:', fallbackError);
-      }
-    }
+  const renderItem = (item: NavItem) => {
+    const isActive = currentRouteName === item.routeName;
+    return (
+      <TouchableOpacity
+        key={item.routeName}
+        onPress={() => handlePress(item.routeName)}
+        activeOpacity={0.7}
+        style={styles.tabButton}
+      >
+        <item.icon
+          size={22}
+          color={isActive ? '#92400E' : '#9CA3AF'}
+          strokeWidth={isActive ? 2.2 : 1.8}
+          fill="none"
+        />
+        <Text style={[styles.label, isActive && styles.labelActive]}>{item.label}</Text>
+      </TouchableOpacity>
+    );
   };
 
   return (
     <View style={styles.container}>
-      {navItems.map((item) => {
-        const isActive = activeTab === item.tab;
-        return (
-          <TouchableOpacity
-            key={item.tab}
-            onPress={() => handleTabPress(item.tab)}
-            activeOpacity={0.7}
-            style={styles.tabButton}
-          >
-            {/* Icon only - no indicator */}
-            <item.icon
-              size={28}
-              color={isActive ? '#000000' : '#9CA3AF'}
-              strokeWidth={isActive ? 2 : 1.5}
-              fill="none"
-            />
-          </TouchableOpacity>
-        );
-      })}
+      {NAV_ITEMS_LEFT.map(renderItem)}
+
+      <TouchableOpacity
+        activeOpacity={0.85}
+        onPress={() => handlePress('LibraryTab')}
+        style={styles.fab}
+      >
+        <Plus size={24} color="#fff" strokeWidth={3} />
+      </TouchableOpacity>
+
+      {NAV_ITEMS_RIGHT.map(renderItem)}
     </View>
   );
-};
-
-type NavItem = {
-  icon: typeof Home | typeof Notebook | typeof User;
-  tab: TabName;
 };
 
 const styles = StyleSheet.create({
@@ -116,18 +96,37 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'center',
-    paddingVertical: 16,
+    paddingTop: 12,
+    paddingBottom: 24,
     backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
+    borderTopColor: '#eee',
   },
   tabButton: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 24,
-    paddingVertical: 8,
+    gap: 3,
+  },
+  label: {
+    fontSize: 10,
+    color: '#9CA3AF',
+    fontWeight: '600',
+  },
+  labelActive: { color: '#92400E' },
+  fab: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#1a1a1a',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#1a1a1a',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.45,
+    shadowRadius: 12,
+    elevation: 6,
+    marginHorizontal: 4,
   },
 });
 

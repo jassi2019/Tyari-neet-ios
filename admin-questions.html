@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Questions Admin — Taiyari NEET ki</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --amber: #F5A623; --amber-dark: #92400E; --amber-light: #FFF8E8;
+      --green: #43A047; --red: #EF5350; --blue: #1976D2;
+      --bg: #f3f4f6; --card: #fff; --border: #e5e7eb;
+      --text: #111; --muted: #6b7280;
+    }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    /* ── TOPBAR ── */
+    .topbar {
+      background: linear-gradient(135deg, #F5A623, #FCDA3E);
+      padding: 14px 24px; display: flex; align-items: center; gap: 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+      position: sticky; top: 0; z-index: 100;
+    }
+    .topbar-logo { font-size: 22px; font-weight: 900; color: #111; letter-spacing: -0.5px; }
+    .topbar-sub  { font-size: 12px; font-weight: 600; color: #333; }
+    .topbar-spacer { flex: 1; }
+    .api-badge {
+      font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 20px;
+      background: rgba(0,0,0,0.12); color: #333;
+    }
+    .api-badge.connected { background: #E8F5E9; color: #2E7D32; }
+    .api-badge.error { background: #FFEBEE; color: #C62828; }
+
+    /* ── MAIN LAYOUT ── */
+    .layout { display: flex; height: calc(100vh - 54px); }
+
+    /* ── SIDEBAR ── */
+    .sidebar {
+      width: 280px; flex-shrink: 0;
+      background: var(--card); border-right: 1px solid var(--border);
+      display: flex; flex-direction: column; overflow-y: auto;
+    }
+    .sidebar-section { padding: 16px; border-bottom: 1px solid var(--border); }
+    .sidebar-label { font-size: 10px; font-weight: 800; color: var(--muted); letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 8px; }
+    select, input[type=text], input[type=number], textarea {
+      width: 100%; padding: 8px 10px; border: 1.5px solid var(--border);
+      border-radius: 8px; font-size: 13px; background: #fafafa; color: var(--text);
+      outline: none; transition: border-color 0.15s;
+      font-family: inherit;
+    }
+    select:focus, input:focus, textarea:focus { border-color: var(--amber); background: #fff; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 9px 16px; border-radius: 8px; font-size: 13px; font-weight: 700;
+      cursor: pointer; border: none; transition: all 0.15s; letter-spacing: 0.3px;
+    }
+    .btn-primary   { background: #111; color: #fff; }
+    .btn-primary:hover { background: #333; }
+    .btn-amber     { background: var(--amber); color: #fff; }
+    .btn-amber:hover { background: #e6951f; }
+    .btn-danger    { background: var(--red); color: #fff; }
+    .btn-danger:hover { background: #d32f2f; }
+    .btn-outline   { background: #fff; border: 1.5px solid var(--border); color: var(--text); }
+    .btn-outline:hover { border-color: var(--amber); }
+    .btn-sm { padding: 6px 12px; font-size: 12px; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .load-btn { width: 100%; margin-top: 10px; justify-content: center; }
+
+    /* ── MAIN ── */
+    .main { flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 20px; }
+
+    /* ── STATS BAR ── */
+    .stats-bar { display: flex; gap: 12px; flex-wrap: wrap; }
+    .stat-chip {
+      background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+      padding: 10px 16px; display: flex; align-items: center; gap: 8px;
+    }
+    .stat-chip-val { font-size: 20px; font-weight: 900; color: #111; }
+    .stat-chip-lbl { font-size: 11px; color: var(--muted); font-weight: 600; }
+
+    /* ── QUESTION LIST ── */
+    .section-header {
+      display: flex; align-items: center; gap: 12px; margin-bottom: 12px;
+    }
+    .section-title { font-size: 16px; font-weight: 800; color: #111; }
+    .section-spacer { flex: 1; }
+
+    .q-list { display: flex; flex-direction: column; gap: 10px; }
+    .q-card {
+      background: var(--card); border: 1.5px solid var(--border); border-radius: 14px;
+      padding: 14px 16px; transition: border-color 0.15s;
+    }
+    .q-card:hover { border-color: var(--amber); }
+    .q-card-header { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 8px; }
+    .q-num {
+      width: 30px; height: 30px; border-radius: 8px;
+      background: linear-gradient(135deg, #FFB74D, #F5A623);
+      color: #fff; font-size: 12px; font-weight: 900;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .q-text-preview { flex: 1; font-size: 13.5px; font-weight: 600; color: #111; line-height: 1.5; }
+    .q-actions { display: flex; gap: 8px; flex-shrink: 0; }
+    .q-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+    .tag {
+      font-size: 9.5px; font-weight: 800; padding: 2px 8px; border-radius: 10px; letter-spacing: 0.3px;
+    }
+    .tag-easy   { background: #E8F5E9; color: #2E7D32; }
+    .tag-medium { background: #FFF3E0; color: #E65100; }
+    .tag-hard   { background: #FFEBEE; color: #C62828; }
+    .tag-marks  { background: #E3F2FD; color: #1565C0; }
+    .q-options { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    .q-option {
+      font-size: 12px; padding: 6px 10px; border-radius: 8px;
+      background: #f9f9f9; color: #333; display: flex; gap: 6px; align-items: center;
+    }
+    .q-option.correct { background: #E8F5E9; color: #2E7D32; font-weight: 700; }
+    .q-opt-letter {
+      width: 22px; height: 22px; border-radius: 6px; background: #e0e0e0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 900; color: #444; flex-shrink: 0;
+    }
+    .q-option.correct .q-opt-letter { background: #43A047; color: #fff; }
+
+    /* ── MODAL ── */
+    .overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 200; padding: 20px;
+    }
+    .overlay.hidden { display: none; }
+    .modal {
+      background: #fff; border-radius: 20px; width: 100%; max-width: 600px;
+      max-height: 90vh; overflow-y: auto;
+      box-shadow: 0 30px 80px rgba(0,0,0,0.3);
+    }
+    .modal-head {
+      padding: 20px 24px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 12px;
+    }
+    .modal-title { font-size: 18px; font-weight: 900; flex: 1; }
+    .modal-body { padding: 20px 24px; display: flex; flex-direction: column; gap: 14px; }
+    .modal-foot {
+      padding: 16px 24px; border-top: 1px solid var(--border);
+      display: flex; gap: 10px; justify-content: flex-end;
+    }
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field label { font-size: 12px; font-weight: 700; color: var(--muted); }
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .field-row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+    textarea { resize: vertical; min-height: 70px; }
+
+    .correct-group { display: flex; gap: 8px; flex-wrap: wrap; }
+    .correct-opt {
+      padding: 7px 16px; border-radius: 8px; border: 2px solid var(--border);
+      font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.15s;
+    }
+    .correct-opt.active { background: var(--green); border-color: var(--green); color: #fff; }
+    .correct-opt:hover:not(.active) { border-color: var(--amber); }
+
+    /* ── LOGIN ── */
+    .login-wrap {
+      position: fixed; inset: 0; background: linear-gradient(135deg, #F5A623, #FCDA3E);
+      display: flex; align-items: center; justify-content: center; z-index: 300;
+    }
+    .login-card {
+      background: #fff; border-radius: 24px; padding: 36px 32px; width: 100%; max-width: 420px;
+      box-shadow: 0 30px 80px rgba(0,0,0,0.2);
+    }
+    .login-logo { font-size: 28px; font-weight: 900; color: #111; margin-bottom: 4px; }
+    .login-sub  { font-size: 13px; color: var(--muted); margin-bottom: 28px; }
+    .login-fields { display: flex; flex-direction: column; gap: 14px; margin-bottom: 20px; }
+    .login-err { font-size: 12px; color: var(--red); font-weight: 600; }
+
+    /* ── EMPTY / LOADING ── */
+    .empty { text-align: center; padding: 60px 20px; color: var(--muted); }
+    .empty-icon { font-size: 48px; margin-bottom: 12px; }
+    .empty-title { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+    .spinner { display: inline-block; width: 32px; height: 32px; border: 3px solid #f0f0f0; border-top-color: var(--amber); border-radius: 50%; animation: spin 0.7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .toast {
+      position: fixed; bottom: 24px; right: 24px;
+      background: #111; color: #fff; padding: 12px 18px; border-radius: 12px;
+      font-size: 13px; font-weight: 700; box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+      z-index: 400; transition: opacity 0.3s;
+    }
+    .toast.success { background: var(--green); }
+    .toast.error   { background: var(--red); }
+    .toast.hidden  { opacity: 0; pointer-events: none; }
+
+    .delete-confirm {
+      background: #FFEBEE; border: 1.5px solid var(--red); border-radius: 12px;
+      padding: 16px; margin: 0 24px 16px;
+      font-size: 13px; color: #C62828; font-weight: 600;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .delete-confirm.hidden { display: none; }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-wrap" id="loginWrap">
+  <div class="login-card">
+    <div class="login-logo">📋 Questions Admin</div>
+    <div class="login-sub">Taiyari NEET ki — Admin Panel</div>
+    <div class="login-fields">
+      <div class="field">
+        <label>API Base URL</label>
+        <input type="text" id="loginApiUrl" value="https://api.taiyarineetki.com" placeholder="https://api.taiyarineetki.com" />
+      </div>
+      <div class="field">
+        <label>Admin Email</label>
+        <input type="text" id="loginEmail" placeholder="admin@example.com" />
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" id="loginPass" placeholder="••••••••" />
+      </div>
+      <div class="login-err hidden" id="loginErr"></div>
+    </div>
+    <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="doLogin()" id="loginBtn">Sign In →</button>
+  </div>
+</div>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div>
+    <div class="topbar-logo">📋 Questions Admin</div>
+    <div class="topbar-sub">Taiyari NEET ki</div>
+  </div>
+  <div class="topbar-spacer"></div>
+  <span class="api-badge" id="apiBadge">Not connected</span>
+  <button class="btn btn-outline btn-sm" onclick="showAddModal()" style="background:#111;color:#fff;border-color:#111;">+ Add Question</button>
+  <button class="btn btn-outline btn-sm" onclick="logout()">Logout</button>
+</div>
+
+<!-- LAYOUT -->
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Filter by Subject</div>
+      <select id="filterSubject" onchange="onSubjectChange()">
+        <option value="">Loading subjects...</option>
+      </select>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Filter by Class</div>
+      <select id="filterClass" onchange="onClassChange()">
+        <option value="">Loading classes...</option>
+      </select>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Filter by Chapter</div>
+      <select id="filterChapter">
+        <option value="">Select subject + class first</option>
+      </select>
+      <button class="btn btn-amber load-btn" onclick="loadQuestions()">Load Questions</button>
+    </div>
+    <div class="sidebar-section" style="border-bottom:none;">
+      <div class="sidebar-label">Stats</div>
+      <div style="display:flex;flex-direction:column;gap:6px;" id="sidebarStats">
+        <span style="font-size:12px;color:var(--muted);">Select chapter to see stats</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main" id="mainArea">
+    <div class="empty">
+      <div class="empty-icon">📚</div>
+      <div class="empty-title">Select a chapter</div>
+      <div>Choose subject → class → chapter from the sidebar, then click "Load Questions".</div>
+    </div>
+  </div>
+</div>
+
+<!-- ADD / EDIT MODAL -->
+<div class="overlay hidden" id="overlay">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title" id="modalTitle">Add Question</div>
+      <button class="btn btn-outline btn-sm" onclick="closeModal()">✕ Cancel</button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label>Question Text *</label>
+        <textarea id="fText" rows="3" placeholder="Enter the full question here..."></textarea>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Option A *</label>
+          <input type="text" id="fOptA" placeholder="Option A" />
+        </div>
+        <div class="field">
+          <label>Option B *</label>
+          <input type="text" id="fOptB" placeholder="Option B" />
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Option C *</label>
+          <input type="text" id="fOptC" placeholder="Option C" />
+        </div>
+        <div class="field">
+          <label>Option D *</label>
+          <input type="text" id="fOptD" placeholder="Option D" />
+        </div>
+      </div>
+      <div class="field">
+        <label>Correct Answer *</label>
+        <div class="correct-group" id="correctGroup">
+          <div class="correct-opt" onclick="selectCorrect('A')" data-opt="A">A</div>
+          <div class="correct-opt" onclick="selectCorrect('B')" data-opt="B">B</div>
+          <div class="correct-opt" onclick="selectCorrect('C')" data-opt="C">C</div>
+          <div class="correct-opt" onclick="selectCorrect('D')" data-opt="D">D</div>
+        </div>
+      </div>
+      <div class="field-row3">
+        <div class="field">
+          <label>Difficulty</label>
+          <select id="fDiff">
+            <option value="EASY">Easy</option>
+            <option value="MEDIUM" selected>Medium</option>
+            <option value="HARD">Hard</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Marks</label>
+          <input type="text" id="fMarks" value="+4 / −1" />
+        </div>
+        <div class="field">
+          <label>Sequence #</label>
+          <input type="number" id="fSeq" value="1" min="1" />
+        </div>
+      </div>
+      <div class="field">
+        <label>Explanation (optional)</label>
+        <textarea id="fExplanation" rows="2" placeholder="Brief explanation of the correct answer..."></textarea>
+      </div>
+    </div>
+    <div class="delete-confirm hidden" id="deleteConfirm">
+      ⚠️ Are you sure you want to delete this question? This cannot be undone.
+      <button class="btn btn-danger btn-sm" onclick="confirmDelete()">Delete</button>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-amber" onclick="saveQuestion()" id="saveBtn">Save Question</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast hidden" id="toast"></div>
+
+<script>
+  // ── STATE ──────────────────────────────────────────────────────────────
+  let API_URL  = '';
+  let TOKEN    = '';
+  let subjects = [];
+  let classes  = [];
+  let chapters = [];
+  let questions = [];
+  let editingId = null;
+  let deletingId = null;
+  let filterSubjectId = '';
+  let filterClassId   = '';
+  let filterChapterId = '';
+
+  // ── HELPERS ────────────────────────────────────────────────────────────
+  const $ = id => document.getElementById(id);
+  const show = id => $(id).classList.remove('hidden');
+  const hide = id => $(id).classList.add('hidden');
+
+  function toast(msg, type = '') {
+    const el = $('toast');
+    el.textContent = msg;
+    el.className = `toast ${type}`;
+    setTimeout(() => el.classList.add('hidden'), 3000);
+  }
+
+  async function apiFetch(path, opts = {}) {
+    const res = await fetch(API_URL + path, {
+      ...opts,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + TOKEN,
+        ...(opts.headers || {}),
+      },
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(json.message || `Error ${res.status}`);
+    return json;
+  }
+
+  // ── LOGIN ──────────────────────────────────────────────────────────────
+  async function doLogin() {
+    const url   = $('loginApiUrl').value.trim().replace(/\/$/, '');
+    const email = $('loginEmail').value.trim();
+    const pass  = $('loginPass').value;
+    if (!url || !email || !pass) { showLoginErr('Fill all fields'); return; }
+
+    API_URL = url;
+    $('loginBtn').disabled = true;
+    $('loginBtn').textContent = 'Signing in...';
+
+    try {
+      const res = await fetch(url + '/api/v1/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password: pass }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Login failed');
+      TOKEN = data.data?.token || data.token;
+      if (!TOKEN) throw new Error('No token received');
+      hide('loginWrap');
+      $('apiBadge').textContent = '● Connected';
+      $('apiBadge').className = 'api-badge connected';
+      loadSidebarData();
+    } catch (e) {
+      showLoginErr(e.message);
+    } finally {
+      $('loginBtn').disabled = false;
+      $('loginBtn').textContent = 'Sign In →';
+    }
+  }
+
+  function showLoginErr(msg) {
+    const el = $('loginErr');
+    el.textContent = msg;
+    el.classList.remove('hidden');
+  }
+
+  function logout() {
+    TOKEN = ''; API_URL = '';
+    show('loginWrap');
+    $('apiBadge').textContent = 'Not connected';
+    $('apiBadge').className = 'api-badge';
+  }
+
+  // ── SIDEBAR ────────────────────────────────────────────────────────────
+  async function loadSidebarData() {
+    try {
+      const [subRes, clsRes] = await Promise.all([
+        apiFetch('/api/v1/subjects'),
+        apiFetch('/api/v1/classes'),
+      ]);
+      subjects = subRes.data || [];
+      classes  = clsRes.data || [];
+
+      const subSel = $('filterSubject');
+      subSel.innerHTML = '<option value="">— All Subjects —</option>';
+      subjects.forEach(s => {
+        subSel.innerHTML += `<option value="${s.id}">${s.name}</option>`;
+      });
+
+      const clsSel = $('filterClass');
+      clsSel.innerHTML = '<option value="">— All Classes —</option>';
+      classes.forEach(c => {
+        clsSel.innerHTML += `<option value="${c.id}">${c.name}</option>`;
+      });
+    } catch (e) {
+      toast('Failed to load filters: ' + e.message, 'error');
+    }
+  }
+
+  async function onSubjectChange() {
+    filterSubjectId = $('filterSubject').value;
+    await loadChapters();
+  }
+
+  async function onClassChange() {
+    filterClassId = $('filterClass').value;
+    await loadChapters();
+  }
+
+  async function loadChapters() {
+    const chSel = $('filterChapter');
+    if (!filterSubjectId || !filterClassId) {
+      chSel.innerHTML = '<option value="">Select subject + class first</option>';
+      chapters = [];
+      return;
+    }
+    chSel.innerHTML = '<option value="">Loading...</option>';
+    try {
+      const res = await apiFetch(`/api/v1/chapters?subjectId=${filterSubjectId}&classId=${filterClassId}`);
+      chapters = (res.data || []).sort((a, b) => a.number - b.number);
+      chSel.innerHTML = '<option value="">— Select Chapter —</option>';
+      chapters.forEach(c => {
+        chSel.innerHTML += `<option value="${c.id}">Ch ${String(c.number).padStart(2,'0')} · ${c.name}</option>`;
+      });
+    } catch (e) {
+      chSel.innerHTML = '<option value="">Failed to load</option>';
+    }
+  }
+
+  async function loadQuestions() {
+    filterChapterId = $('filterChapter').value;
+    if (!filterChapterId) { toast('Select a chapter first', 'error'); return; }
+
+    $('mainArea').innerHTML = `<div class="empty"><div class="spinner"></div></div>`;
+
+    try {
+      const params = new URLSearchParams();
+      if (filterChapterId) params.set('chapterId', filterChapterId);
+      if (filterSubjectId) params.set('subjectId', filterSubjectId);
+      if (filterClassId)   params.set('classId',   filterClassId);
+
+      const res = await apiFetch('/api/v1/questions?' + params);
+      questions = res.data || [];
+      renderQuestions();
+    } catch (e) {
+      $('mainArea').innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-title">${e.message}</div></div>`;
+    }
+  }
+
+  // ── RENDER ─────────────────────────────────────────────────────────────
+  function renderQuestions() {
+    const ch = chapters.find(c => c.id === filterChapterId);
+    const chLabel = ch ? `Ch ${String(ch.number).padStart(2,'0')} · ${ch.name}` : 'Chapter';
+
+    // Update sidebar stats
+    const easyCount   = questions.filter(q => q.difficulty === 'EASY').length;
+    const medCount    = questions.filter(q => q.difficulty === 'MEDIUM').length;
+    const hardCount   = questions.filter(q => q.difficulty === 'HARD').length;
+    $('sidebarStats').innerHTML = `
+      <div style="font-size:13px;font-weight:800;color:#111;">${questions.length} total questions</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;">
+        <span class="tag tag-easy">${easyCount} Easy</span>
+        <span class="tag tag-medium">${medCount} Medium</span>
+        <span class="tag tag-hard">${hardCount} Hard</span>
+      </div>
+    `;
+
+    if (questions.length === 0) {
+      $('mainArea').innerHTML = `
+        <div class="section-header">
+          <div class="section-title">${chLabel}</div>
+          <div class="section-spacer"></div>
+          <button class="btn btn-amber btn-sm" onclick="showAddModal()">+ Add First Question</button>
+        </div>
+        <div class="empty">
+          <div class="empty-icon">📭</div>
+          <div class="empty-title">No questions yet</div>
+          <div>Click "+ Add Question" to create the first question for this chapter.</div>
+        </div>`;
+      return;
+    }
+
+    const cards = questions.map((q, i) => {
+      const opts = [
+        { letter: 'A', text: q.optionA },
+        { letter: 'B', text: q.optionB },
+        { letter: 'C', text: q.optionC },
+        { letter: 'D', text: q.optionD },
+      ];
+      const optsHtml = opts.map(o => `
+        <div class="q-option${q.correctOption === o.letter ? ' correct' : ''}">
+          <div class="q-opt-letter">${o.letter}</div>
+          <span>${escHtml(o.text)}</span>
+        </div>`).join('');
+
+      return `
+        <div class="q-card" id="qcard-${q.id}">
+          <div class="q-card-header">
+            <div class="q-num">${i + 1}</div>
+            <div class="q-text-preview">${escHtml(q.text)}</div>
+            <div class="q-actions">
+              <button class="btn btn-outline btn-sm" onclick="showEditModal('${q.id}')">✏️ Edit</button>
+              <button class="btn btn-danger btn-sm" onclick="showDeleteModal('${q.id}')">🗑</button>
+            </div>
+          </div>
+          <div class="q-tags">
+            <span class="tag tag-${q.difficulty.toLowerCase()}">${q.difficulty}</span>
+            <span class="tag tag-marks">${escHtml(q.marks)}</span>
+            <span class="tag" style="background:#f3f4f6;color:#555;">Seq ${q.sequence}</span>
+            ${q.explanation ? '<span class="tag" style="background:#E3F2FD;color:#1976D2;">Has explanation</span>' : ''}
+          </div>
+          <div class="q-options">${optsHtml}</div>
+        </div>`;
+    }).join('');
+
+    $('mainArea').innerHTML = `
+      <div class="section-header">
+        <div class="section-title">${chLabel}</div>
+        <div class="section-spacer"></div>
+        <button class="btn btn-amber btn-sm" onclick="showAddModal()">+ Add Question</button>
+      </div>
+      <div class="stats-bar">
+        <div class="stat-chip"><div class="stat-chip-val">${questions.length}</div><div class="stat-chip-lbl">Total</div></div>
+        <div class="stat-chip"><div class="stat-chip-val" style="color:var(--green)">${easyCount}</div><div class="stat-chip-lbl">Easy</div></div>
+        <div class="stat-chip"><div class="stat-chip-val" style="color:#E65100">${medCount}</div><div class="stat-chip-lbl">Medium</div></div>
+        <div class="stat-chip"><div class="stat-chip-val" style="color:var(--red)">${hardCount}</div><div class="stat-chip-lbl">Hard</div></div>
+      </div>
+      <div class="q-list">${cards}</div>`;
+  }
+
+  function escHtml(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // ── MODAL ──────────────────────────────────────────────────────────────
+  let selectedCorrect = '';
+
+  function selectCorrect(opt) {
+    selectedCorrect = opt;
+    document.querySelectorAll('.correct-opt').forEach(el => {
+      el.classList.toggle('active', el.dataset.opt === opt);
+    });
+  }
+
+  function clearForm() {
+    ['fText','fOptA','fOptB','fOptC','fOptD','fExplanation'].forEach(id => $(id).value = '');
+    $('fMarks').value = '+4 / −1';
+    $('fSeq').value = questions.length + 1;
+    $('fDiff').value = 'MEDIUM';
+    selectCorrect('A');
+    hide('deleteConfirm');
+  }
+
+  function showAddModal() {
+    if (!filterChapterId) { toast('Load a chapter first', 'error'); return; }
+    editingId = null; deletingId = null;
+    $('modalTitle').textContent = 'Add Question';
+    clearForm();
+    show('overlay');
+  }
+
+  function showEditModal(id) {
+    const q = questions.find(q => q.id === id);
+    if (!q) return;
+    editingId = id; deletingId = null;
+    $('modalTitle').textContent = 'Edit Question';
+    clearForm();
+    $('fText').value        = q.text;
+    $('fOptA').value        = q.optionA;
+    $('fOptB').value        = q.optionB;
+    $('fOptC').value        = q.optionC;
+    $('fOptD').value        = q.optionD;
+    $('fDiff').value        = q.difficulty;
+    $('fMarks').value       = q.marks;
+    $('fSeq').value         = q.sequence;
+    $('fExplanation').value = q.explanation || '';
+    selectCorrect(q.correctOption);
+    hide('deleteConfirm');
+    show('overlay');
+  }
+
+  function showDeleteModal(id) {
+    const q = questions.find(q => q.id === id);
+    if (!q) return;
+    editingId = id; deletingId = id;
+    $('modalTitle').textContent = 'Edit Question';
+    $('fText').value        = q.text;
+    $('fOptA').value        = q.optionA;
+    $('fOptB').value        = q.optionB;
+    $('fOptC').value        = q.optionC;
+    $('fOptD').value        = q.optionD;
+    $('fDiff').value        = q.difficulty;
+    $('fMarks').value       = q.marks;
+    $('fSeq').value         = q.sequence;
+    $('fExplanation').value = q.explanation || '';
+    selectCorrect(q.correctOption);
+    show('deleteConfirm');
+    show('overlay');
+  }
+
+  function closeModal() {
+    hide('overlay');
+    editingId = null; deletingId = null;
+  }
+
+  // ── SAVE ───────────────────────────────────────────────────────────────
+  async function saveQuestion() {
+    const text   = $('fText').value.trim();
+    const optA   = $('fOptA').value.trim();
+    const optB   = $('fOptB').value.trim();
+    const optC   = $('fOptC').value.trim();
+    const optD   = $('fOptD').value.trim();
+
+    if (!text || !optA || !optB || !optC || !optD || !selectedCorrect) {
+      toast('Fill all required fields and select correct answer', 'error');
+      return;
+    }
+    if (!filterChapterId || !filterSubjectId || !filterClassId) {
+      toast('Chapter/Subject/Class not selected', 'error');
+      return;
+    }
+
+    const body = {
+      text,
+      optionA: optA, optionB: optB, optionC: optC, optionD: optD,
+      correctOption: selectedCorrect,
+      difficulty: $('fDiff').value,
+      marks: $('fMarks').value.trim() || '+4 / −1',
+      sequence: parseInt($('fSeq').value) || 1,
+      explanation: $('fExplanation').value.trim() || null,
+      chapterId: filterChapterId,
+      subjectId: filterSubjectId,
+      classId:   filterClassId,
+    };
+
+    $('saveBtn').disabled = true;
+    $('saveBtn').textContent = 'Saving...';
+
+    try {
+      if (editingId) {
+        await apiFetch(`/api/v1/questions/${editingId}`, { method: 'PUT', body: JSON.stringify(body) });
+        toast('Question updated ✓', 'success');
+      } else {
+        await apiFetch('/api/v1/questions', { method: 'POST', body: JSON.stringify(body) });
+        toast('Question added ✓', 'success');
+      }
+      closeModal();
+      await loadQuestions();
+    } catch (e) {
+      toast('Error: ' + e.message, 'error');
+    } finally {
+      $('saveBtn').disabled = false;
+      $('saveBtn').textContent = 'Save Question';
+    }
+  }
+
+  // ── DELETE ─────────────────────────────────────────────────────────────
+  async function confirmDelete() {
+    if (!deletingId) return;
+    try {
+      await apiFetch(`/api/v1/questions/${deletingId}`, { method: 'DELETE' });
+      toast('Question deleted', 'success');
+      closeModal();
+      await loadQuestions();
+    } catch (e) {
+      toast('Delete failed: ' + e.message, 'error');
+    }
+  }
+
+  // ── KEYBOARD ───────────────────────────────────────────────────────────
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeModal();
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') saveQuestion();
+  });
+
+  // Focus email on load
+  window.addEventListener('load', () => setTimeout(() => $('loginEmail').focus(), 100));
+</script>
+</body>
+</html>

@@ -1,44 +1,26 @@
-import { ContinueReading } from '@/components/ContinueReading/ContinueReading';
-import {
-  ContinueReadingSkeleton,
-  SubjectCardSkeleton,
-  TopicCardSkeleton,
-} from '@/components/SkeletonLoader/SkeletonLoader';
-import SubjectCard from '@/components/SubjectCard/SubjectCard';
-import TopicCard from '@/components/TopicCard/TopicCard';
+import { NotificationsModal } from '@/components/NotificationsModal/NotificationsModal';
+import { StreakCalendar } from '@/components/StreakCalendar/StreakCalendar';
 import { useAuth } from '@/contexts/AuthContext';
-import {
-  getGuestFreeTopics,
-  getGuestSubjectsWithFreeTopics,
-} from '@/constants/guestData';
-import { isPaidSubscriptionActive, isPremiumServiceType } from '@/lib/subscription';
-import { useGetChaptersBySubjectId } from '@/hooks/api/chapters';
-import { useGetAllClasses } from '@/hooks/api/classes';
-import { useGetFavorites } from '@/hooks/api/favorites';
-import { useGetAllSubjects } from '@/hooks/api/subjects';
-import {
-  useGetFreeTopics,
-  useGetLastReadTopic,
-  useGetTopicsByChapterIdAndSubjectId,
-  useMarkTopicAsLastRead,
-} from '@/hooks/api/topics';
 import { useGetProfile } from '@/hooks/api/user';
-import UserHeader from '@/hooks/useHeader';
-import { TSubject } from '@/types/Subject';
-import { TTopic } from '@/types/Topic';
-import React, { useRef, useState } from 'react';
+import { useProgress } from '@/hooks/useProgress';
+import { useStreak } from '@/hooks/useStreak';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Bell } from 'lucide-react-native';
+import React, { useMemo, useState } from 'react';
 import {
   Dimensions,
-  Modal,
-  Platform,
+  Image,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
-  TouchableWithoutFeedback,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
+const heroBanner = require('../../../assets/hero-banner.jpg');
+const avatarLogo = require('../../../assets/avatar-logo.png');
+const footerImage = require('../../../assets/footer.png');
 
 const { width } = Dimensions.get('window');
 
@@ -46,454 +28,453 @@ type HomeScreenProps = {
   navigation: any;
 };
 
+const FEATURES = [
+  { icon: '💡', num: '1.', name: 'Explanation', desc: 'Detailed explanation of every topic' },
+  { icon: '🧠', num: '2.', name: 'Revision Recall Station', desc: 'Smart revision to retain better' },
+  { icon: '🔗', num: '3.', name: 'Hidden Links', desc: 'Connect concepts unlock clarity' },
+  { icon: '📋', num: '4.', name: 'Exercise Revival', desc: 'From Back exercise to Mastery' },
+  { icon: '🏆', num: '5.', name: 'Master Exemplar', desc: 'Exemplar Deep Practice Zone' },
+  { icon: '📖', num: '6.', name: 'Previous Year Questions', desc: 'PYQ to Question Mastery' },
+  { icon: '🛡️', num: '7.', name: 'Chapter Check Point', desc: 'Full chapter test to check your real preparation' },
+];
+
+const TESTS = [
+  { icon: '📅', name: 'Daily Practice Test', desc: 'Everyday concept strengthening', bg: '#E8F5E9', btn: '#2E7D32' },
+  { icon: '📊', name: 'Weekly Test', desc: 'Revision + performance tracking', bg: '#E3F2FD', btn: '#1565C0' },
+  { icon: '📄', name: 'Full Syllabus Test', desc: 'Real exam simulation', bg: '#F3E5F5', btn: '#6A1B9A' },
+];
+
 export const Home = ({ navigation }: HomeScreenProps) => {
-  const { isGuest, user } = useAuth();
-  const { data: profile, isLoading: profileLoading } = useGetProfile({
-    enabled: !isGuest,
-  });
-  const { data, isLoading: subjectsLoading, error: subjectsError } = useGetAllSubjects({
-    enabled: !isGuest,
-  });
-  const scrollViewRef = useRef<ScrollView>(null);
-  const freeTopicsSectionRef = useRef<View>(null);
-  const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const { isGuest } = useAuth();
+  const { data: profile } = useGetProfile({ enabled: !isGuest });
 
-  const { data: classes } = useGetAllClasses({ enabled: !isGuest });
-  const { data: chapters } = useGetChaptersBySubjectId(
-    {
-      subjectId: data?.data?.[0]?.id || '',
-      classId: classes?.data?.[0]?.id || '',
-    },
-    {
-      enabled: !isGuest && !!data?.data?.[0]?.id && !!classes?.data?.[0]?.id,
-    }
-  );
-  const {
-    data: favoritesData,
-    isLoading: favoritesLoading,
-    error: favoritesError,
-  } = useGetFavorites({ enabled: !isGuest });
-  const { data: lastReadTopic, isLoading: lastReadTopicLoading } = useGetLastReadTopic({
-    enabled: !isGuest && !!user?.id,
-  });
-  const { data: freeTopics, isLoading: freeTopicsLoading } = useGetFreeTopics({
-    enabled: !isGuest,
-  });
+  const displayName = isGuest
+    ? 'Future Doctor'
+    : profile?.data?.name
+      ? profile.data.name.charAt(0).toUpperCase() + profile.data.name.slice(1)
+      : 'Future Doctor';
 
-  // Get first free topic if no last read topic
-  const guestSubjects = getGuestSubjectsWithFreeTopics();
-  const guestFreeTopics = getGuestFreeTopics();
-  const firstSubject: TSubject | undefined = data?.data?.[0];
-  const { data: topics, isLoading: topicsLoading } = useGetTopicsByChapterIdAndSubjectId(
-    {
-      subjectId: firstSubject?.id || '',
-      chapterId: chapters?.data?.[0]?.id || '',
-    },
-    {
-      enabled: !isGuest && !!firstSubject?.id && !!chapters?.data?.[0]?.id,
-    }
-  );
-  const firstFreeTopic: TTopic | undefined = topics?.data?.find(
-    (topic: TTopic) => topic.serviceType === 'FREE'
-  );
-
-  const guestFreeTopic: TTopic | undefined = guestFreeTopics?.[0];
-
-  const { mutate: markTopicAsLastRead } = useMarkTopicAsLastRead();
-
-  const effectiveSubscription = user?.subscription || profile?.data?.subscription;
-  const hasPremium = !isGuest && isPaidSubscriptionActive(effectiveSubscription);
-
-  const canAccessServiceType = (serviceType: unknown) => {
-    if (!isPremiumServiceType(serviceType)) return true;
-
-    // Guests cannot buy; signed-in users need an active subscription
-    if (isGuest || !hasPremium) {
-      setShowPremiumModal(true);
-      return false;
-    }
-
-    return true;
+  const goToFreeContent = () => {
+    navigation.navigate('MainTabs', { screen: 'SubjectsTab' });
   };
 
-  const handleSubjectPress = (subject: TSubject) => {
-    navigation.navigate('Chapters', {
-      subjectId: subject.id,
-      subjectTitle: subject.name,
-    });
-  };
+  const { currentStreak, longestStreak, visitedDates, totalDaysStudied } = useStreak();
+  const [streakModalOpen, setStreakModalOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
 
-  const handleContinueReading = () => {
-    if (!lastReadTopic?.data) return;
-    if (!canAccessServiceType(lastReadTopic.data.serviceType)) return;
-    navigation.navigate('TopicContent', {
-      topic: lastReadTopic.data,
-    });
-  };
-
-  const handleStartReading = (topic: TTopic) => {
-    if (!canAccessServiceType(topic.serviceType)) return;
-    // Navigate first, then mark as last read (non-blocking)
-    navigation.navigate('TopicContent', {
-      topic,
-    });
-    // Mark as last read in background - if it fails, user can still read
-    if (!isGuest) {
-      try {
-        markTopicAsLastRead(topic.id);
-      } catch (error) {
-        // Non-critical background task fail
-      }
-    }
-  };
-
-  const handleExploreFreeTopic = () => {
-    // Scroll to free topics section
-    freeTopicsSectionRef.current?.measureLayout(
-      scrollViewRef.current as any,
-      (x, y) => {
-        scrollViewRef.current?.scrollTo({ y: y - 20, animated: true });
-      },
-      () => { }
-    );
-  };
-
-  const displayName =
-    isGuest ? 'Guest' : ((profile?.data?.name?.charAt(0)?.toUpperCase() || '') + (profile?.data?.name?.slice(1) || ''));
+  const { completedTopics } = useProgress();
+  const studyStats = useMemo(() => {
+    const covered = completedTopics.length;
+    // Each topic counts as ~10 min of study time (rough estimate)
+    const totalMinutes = covered * 10;
+    const hours = Math.floor(totalMinutes / 60);
+    const mins = totalMinutes % 60;
+    const studyTime = hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
+    // Accuracy is a placeholder (no test data yet) — show "—" until tests are added.
+    return {
+      covered,
+      studyTime,
+      hasData: covered > 0,
+    };
+  }, [completedTopics]);
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top']}>
+    <LinearGradient
+      colors={['#F5A623', '#F9C45A', '#FCDA3E']}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={styles.gradientWrapper}
+    >
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
       <ScrollView
-        ref={scrollViewRef}
-        style={styles.container}
-        contentContainerStyle={styles.scrollContent}
+        style={{ flex: 1, backgroundColor: 'transparent' }}
+        contentContainerStyle={{ backgroundColor: 'transparent' }}
         showsVerticalScrollIndicator={false}
       >
-        <UserHeader
-          name={displayName}
-          imageUrl={profile?.data?.profilePicture || ''}
-          isPremium={hasPremium}
-        />
-
-        <View style={styles.welcomeSection}>
-          <Text style={styles.welcomeTitleSmall}>Ab hogi</Text>
-          <Text style={styles.welcomeTitleLarge}>Taiyari NEET ki</Text>
-        </View>
-
-        <View style={{ marginBottom: 32 }}>
-          {!isGuest && (lastReadTopicLoading || (topicsLoading && !lastReadTopic?.data)) ? (
-            <ContinueReadingSkeleton />
-          ) : !isGuest && lastReadTopic?.data ? (
-            <ContinueReading
-              title={lastReadTopic.data.name}
-              description={lastReadTopic.data.description}
-              subject={lastReadTopic.data.Subject.name}
-              isPremium={isPremiumServiceType(lastReadTopic.data.serviceType)}
-              onPress={handleContinueReading}
-            />
-          ) : (isGuest ? guestFreeTopic : firstFreeTopic) ? (
-            <ContinueReading
-              title={(isGuest ? guestFreeTopic : firstFreeTopic)?.name || ''}
-              description={(isGuest ? guestFreeTopic : firstFreeTopic)?.description || ''}
-              subject={isGuest ? (guestFreeTopic?.Subject?.name || 'Free Topic') : (firstSubject?.name || '')}
-              isPremium={isPremiumServiceType((isGuest ? guestFreeTopic : firstFreeTopic)?.serviceType)}
-              onPress={() => {
-                const topic = isGuest ? guestFreeTopic : firstFreeTopic;
-                if (topic) {
-                  handleStartReading(topic);
-                }
-              }}
-              isStartReading
-            />
-          ) : null}
-        </View>
-
-        {!isGuest && freeTopicsLoading ? (
-          <View style={styles.section}>
-            <ContinueReadingSkeleton />
+        {/* Yellow Header */}
+        <View style={styles.yellowHeader}>
+          <View style={styles.topNav}>
+            <View style={{ flex: 1 }} />
+            <TouchableOpacity
+              style={styles.bellBtn}
+              onPress={() => setNotifOpen(true)}
+              activeOpacity={0.85}
+            >
+              <Bell size={20} color="#000" />
+              <View style={styles.bellDot} />
+            </TouchableOpacity>
           </View>
-        ) : !isGuest && freeTopics?.data?.length ? (
-          <View ref={freeTopicsSectionRef} style={styles.section}>
-            <Text style={styles.sectionTitle}>Free Topics</Text>
-            <View style={styles.cardStack}>
-              {freeTopics.data.map((topic: TTopic) => (
-                <TopicCard
-                  key={topic.id}
-                  topicId={topic.id}
-                  title={topic.name}
-                  description={topic.description}
-                  thumbnailUrl={topic.contentThumbnail}
-                  isFree={true}
-                  onPress={() => handleStartReading(topic)}
-                  chapterNumber={topic.Chapter.number}
-                  subjectName={topic.Subject.name}
-                />
+
+          {/* Greeting Strip */}
+          <View style={styles.greetStrip}>
+            <View style={styles.greetLeft}>
+              <Image source={avatarLogo} style={styles.greetAvatar} resizeMode="contain" />
+              <View>
+                <Text style={styles.greetHi}>Namaste! 👋</Text>
+                <Text style={styles.greetName}>{displayName}</Text>
+              </View>
+            </View>
+            <TouchableOpacity
+              style={styles.streakBadge}
+              onPress={() => setStreakModalOpen(true)}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.streakText}>🔥 {currentStreak} Day Streak</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Hero Banner */}
+          <TouchableOpacity
+            style={styles.hero}
+            activeOpacity={0.9}
+            onPress={goToFreeContent}
+          >
+            <Image source={heroBanner} style={styles.heroBannerImg} />
+          </TouchableOpacity>
+        </View>
+
+        {/* White Card Body */}
+        <View style={styles.cardBody}>
+          <View style={styles.scrollContent}>
+          {/* 8 Features */}
+          <View style={styles.section}>
+            <View style={styles.featGrid}>
+              {FEATURES.map((f, i) => (
+                <TouchableOpacity
+                  key={i}
+                  style={styles.featCard}
+                  activeOpacity={0.7}
+                  onPress={goToFreeContent}
+                >
+                  <Text style={styles.featIco}>{f.icon}</Text>
+                  <Text style={styles.featNum}>{f.num} {f.name}</Text>
+                  <Text style={styles.featDesc}>{f.desc}</Text>
+                </TouchableOpacity>
               ))}
             </View>
           </View>
-        ) : isGuest && guestFreeTopics.length ? (
-          <View ref={freeTopicsSectionRef} style={styles.section}>
-            <Text style={styles.sectionTitle}>Free Topics</Text>
-            <View style={styles.cardStack}>
-              {guestFreeTopics.map((topic: TTopic) => (
-                <TopicCard
-                  key={topic.id}
-                  topicId={topic.id}
-                  title={topic.name}
-                  description={topic.description}
-                  thumbnailUrl={topic.contentThumbnail}
-                  isFree={true}
-                  onPress={() => handleStartReading(topic)}
-                  chapterNumber={topic.Chapter.number}
-                  subjectName={topic.Subject.name}
-                />
+
+          {/* 3 Levels of Test */}
+          <View style={styles.section}>
+            <View style={styles.secRow}>
+              <View style={styles.secTitleWrap}>
+                <Text style={styles.pulseIcon}>〰</Text>
+                <Text style={styles.secTitle}>Challenge Your Knowledge</Text>
+              </View>
+            </View>
+            <View style={styles.testGrid}>
+              {TESTS.map((t, i) => (
+                <TouchableOpacity
+                  key={i}
+                  style={[styles.testCard, { backgroundColor: t.bg }]}
+                  activeOpacity={0.85}
+                  onPress={goToFreeContent}
+                >
+                  <Text style={styles.tIco}>{t.icon}</Text>
+                  <Text style={styles.tName}>{t.name}</Text>
+                  <Text style={styles.tDesc}>{t.desc}</Text>
+                  <View style={[styles.tBtn, { backgroundColor: t.btn }]}>
+                    <Text style={styles.tBtnText}>→</Text>
+                  </View>
+                </TouchableOpacity>
               ))}
             </View>
           </View>
-        ) : null}
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Explore Subjects</Text>
-          <View style={styles.subjectGrid}>
-            {isGuest ? (
-              guestSubjects.slice(0, 4).map((subject: TSubject) => (
-                <View key={subject.id} style={styles.gridItem}>
-                  <SubjectCard subject={subject} onPress={() => handleSubjectPress(subject)} />
-                </View>
-              ))
-            ) : subjectsLoading ? (
-              [...Array(4)].map((_, index) => (
-                <View key={`skeleton-${index}`} style={styles.gridItem}>
-                  <SubjectCardSkeleton />
-                </View>
-              ))
-            ) : subjectsError ? (
-              <View>
-                <Text style={styles.errorText}>{subjectsError.message}</Text>
-              </View>
-            ) : data?.data?.length ? (
-              data?.data?.slice(0, 4).map((subject: TSubject) => (
-                <View key={subject.id} style={styles.gridItem}>
-                  <SubjectCard subject={subject} onPress={() => handleSubjectPress(subject)} />
-                </View>
-              ))
-            ) : (
-              <View>
-                <Text style={styles.emptyText}>No subjects found</Text>
-              </View>
-            )}
-          </View>
-        </View>
-
-        {!isGuest && (
+          {/* Study Progress */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Your Favorites</Text>
-            <View style={styles.cardStack}>
-              {favoritesLoading ? (
-                [...Array(4)].map((_, index) => <TopicCardSkeleton key={`skeleton-${index}`} />)
-              ) : favoritesError ? (
-                <View>
-                  <Text style={styles.errorText}>{favoritesError?.message}</Text>
-                </View>
-              ) : !favoritesData?.data?.length ? (
-                <View style={styles.emptyCard}>
-                  <Text style={styles.emptyCardTitle}>No favorites yet</Text>
-                  <Text style={styles.emptyCardSubtitle}>
-                    Browse topics and bookmark your favorites to see them here
-                  </Text>
-                </View>
-              ) : (
-                favoritesData?.data?.slice(0, 4).map((favorite: any) => (
-                  <TopicCard
-                    topicId={favorite.Topic.id}
-                    key={favorite.Topic.id}
-                    title={favorite.Topic.name}
-                    description={favorite.Topic.description}
-                    favoriteId={favorite.id}
-                    thumbnailUrl={favorite.Topic.contentThumbnail}
-                    isFree={favorite.Topic.serviceType === 'FREE'}
-                    onPress={() => handleStartReading(favorite.Topic)}
-                    isFavorite={true}
-                    chapterNumber={favorite.Topic.Chapter.number}
-                    subjectName={favorite.Topic.Subject.name}
+            <View style={styles.secRow}>
+              <Text style={styles.secTitle}>Your Study Progress</Text>
+            </View>
+            <View style={styles.progGrid}>
+              <TouchableOpacity style={styles.progCard} activeOpacity={0.85} onPress={goToFreeContent}>
+                <Text style={styles.pIco}>📖</Text>
+                <Text style={styles.pLabel}>Topics Covered</Text>
+                <Text style={styles.pVal}>{studyStats.covered}</Text>
+                <Text style={styles.pSub}>
+                  {studyStats.hasData ? 'lessons read' : 'start learning'}
+                </Text>
+                <View style={styles.pBar}>
+                  <View
+                    style={[
+                      styles.pFill,
+                      {
+                        backgroundColor: '#EF5350',
+                        width: studyStats.hasData ? '100%' : '0%',
+                      },
+                    ]}
                   />
-                ))
-              )}
+                </View>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.progCard} activeOpacity={0.85} onPress={goToFreeContent}>
+                <Text style={styles.pIco}>🔥</Text>
+                <Text style={styles.pLabel}>Day Streak</Text>
+                <Text style={styles.pVal}>{currentStreak}</Text>
+                <Text style={[styles.pSub, currentStreak > 0 && styles.pSubOk]}>
+                  {currentStreak > 0 ? 'Keep it up!' : 'start today'}
+                </Text>
+                <View style={styles.pBar}>
+                  <View
+                    style={[
+                      styles.pFill,
+                      {
+                        backgroundColor: '#43A047',
+                        width: `${Math.min(currentStreak * 10, 100)}%`,
+                      },
+                    ]}
+                  />
+                </View>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.progCard} activeOpacity={0.85} onPress={goToFreeContent}>
+                <Text style={styles.pIco}>🕐</Text>
+                <Text style={styles.pLabel}>Study Time</Text>
+                <Text style={[styles.pVal, { fontSize: 16 }]}>{studyStats.studyTime}</Text>
+                <Text style={styles.pSub}>{studyStats.hasData ? 'total' : 'no time yet'}</Text>
+                <View style={styles.pBar}>
+                  <View
+                    style={[
+                      styles.pFill,
+                      {
+                        backgroundColor: '#92400E',
+                        width: studyStats.hasData ? '100%' : '0%',
+                      },
+                    ]}
+                  />
+                </View>
+              </TouchableOpacity>
             </View>
           </View>
-        )}
 
-        <Modal
-          animationType="fade"
-          transparent
-          visible={showPremiumModal}
-          onRequestClose={() => setShowPremiumModal(false)}
-        >
-          <TouchableWithoutFeedback onPress={() => setShowPremiumModal(false)}>
-            <View style={styles.modalBackdrop}>
-              <TouchableWithoutFeedback onPress={(e) => e.stopPropagation()}>
-                <View style={styles.modalCard}>
-                  <Text style={styles.modalTitle}>
-                    {isGuest ? 'Sign in required' : "You don't have a premium subscription!"}
-                  </Text>
-
-                  <Text style={styles.modalBody}>
-                    {isGuest
-                      ? 'Sign in to subscribe and access premium content.'
-                      : 'Access premium content with a premium subscription.'}
-                  </Text>
-
-                  <TouchableOpacity
-                    style={styles.upgradeButton}
-                    onPress={() => {
-                      setShowPremiumModal(false);
-                      if (isGuest) {
-                        navigation.navigate('MainTabs', { screen: 'ProfileTab' });
-                      } else {
-                        navigation.navigate('Plans');
-                      }
-                    }}
-                  >
-                    <Text style={styles.upgradeText}>
-                      {isGuest ? 'Go to Profile' : 'Upgrade To Pro'}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              </TouchableWithoutFeedback>
-            </View>
-          </TouchableWithoutFeedback>
-        </Modal>
+          </View>
+          {/* Footer Image - edge to edge */}
+          <TouchableOpacity activeOpacity={0.9} onPress={goToFreeContent} style={styles.footerWrap}>
+            <Image source={footerImage} style={styles.footerImg} />
+          </TouchableOpacity>
+      </View>
       </ScrollView>
+
+      <StreakCalendar
+        visible={streakModalOpen}
+        onClose={() => setStreakModalOpen(false)}
+        visitedDates={visitedDates}
+        currentStreak={currentStreak}
+        longestStreak={longestStreak}
+        totalDaysStudied={totalDaysStudied}
+      />
+
+      <NotificationsModal
+        visible={notifOpen}
+        onClose={() => setNotifOpen(false)}
+      />
     </SafeAreaView>
+    </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
+  gradientWrapper: {
+    flex: 1,
+  },
   safeArea: {
     flex: 1,
-    backgroundColor: '#FDF6F0', // Consistent with registration screens
+    backgroundColor: 'transparent',
   },
-  container: {
-    flex: 1,
+  yellowHeader: {
   },
-  scrollContent: {
+  topNav: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 6,
+    paddingBottom: 8,
+  },
+  iconBtn: { padding: 4 },
+  bellBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: 'rgba(146,64,14,0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bellDot: {
+    position: 'absolute',
+    top: 6,
+    right: 7,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#EF4444',
+    borderWidth: 1.5,
+    borderColor: '#92400E',
+  },
+  greetStrip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingBottom: 14,
+  },
+  greetLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  greetAvatar: {
+    width: 52,
+    height: 52,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  greetHi: { fontSize: 12, fontWeight: '600', color: '#555' },
+  greetName: { fontSize: 15, fontWeight: '800', color: '#111' },
+  streakBadge: {
+    backgroundColor: '#92400E',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    shadowColor: '#92400E',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  streakText: { color: '#fff', fontSize: 11, fontWeight: '800' },
+  hero: {
+    paddingHorizontal: 0,
+    paddingBottom: 0,
+    marginHorizontal: 14,
+    marginBottom: 0,
+    borderRadius: 14,
+    overflow: 'hidden',
+  },
+  heroBannerImg: {
+    width: '100%',
+    height: 170,
+    borderRadius: 14,
+    resizeMode: 'cover',
+  },
+  cardBody: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    marginTop: 16,
     paddingBottom: 120,
   },
-  welcomeSection: {
-    paddingHorizontal: 24,
-    marginTop: 12,
-    marginBottom: 32,
+  scrollContent: { paddingTop: 18, paddingHorizontal: 14 },
+  section: { paddingBottom: 18 },
+  secRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
   },
-  welcomeTitleSmall: {
-    fontSize: 33,
-    fontWeight: '700',
-    color: '#333',
-    letterSpacing: -1,
-    lineHeight: 50,
-  },
-  welcomeTitleLarge: {
-    fontSize: 33,
-    fontWeight: '700',
-    color: '#F1BB3E',
-    letterSpacing: -1,
-    lineHeight: 50,
-  },
-  section: {
-    paddingHorizontal: 20,
-    marginBottom: 32,
-  },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#1a1a1a',
-    marginBottom: 16,
-    letterSpacing: -0.5,
-  },
-  cardStack: {
-    gap: 16,
-  },
-  subjectGrid: {
+  secTitleWrap: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  secTitle: { fontSize: 14, fontWeight: '800', color: '#111' },
+  pulseIcon: { color: '#92400E', fontSize: 15, fontWeight: '800' },
+  viewAll: { fontSize: 11.5, fontWeight: '700', color: '#92400E' },
+
+  /* Feature Grid */
+  featGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-between',
+    gap: 8,
   },
-  gridItem: {
-    width: (width - 56) / 2, // 20px padding * 2 = 40, 16px gap = 56
-    marginTop: 16,
-  },
-  emptyCard: {
-    backgroundColor: 'white',
-    borderRadius: 24,
-    padding: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#F0F0F0',
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 2,
-  },
-  emptyCardTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1a1a1a',
-    marginBottom: 8,
-  },
-  emptyCardSubtitle: {
-    fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-  errorText: {
-    color: '#EF4444',
-    fontSize: 14,
-    textAlign: 'center',
-  },
-  emptyText: {
-    color: '#999',
-    fontSize: 14,
-    textAlign: 'center',
-    marginTop: 20,
-  },
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 16,
-  },
-  modalCard: {
+  featCard: {
+    width: (width - 28 - 24) / 4,
     backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#efefef',
+    borderRadius: 14,
+    paddingVertical: 10,
+    paddingHorizontal: 6,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.07,
+    shadowRadius: 6,
+    elevation: 1,
+  },
+  featIco: { fontSize: 24, marginBottom: 6 },
+  featNum: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#111',
+    textAlign: 'center',
+    marginBottom: 3,
+  },
+  featDesc: { fontSize: 8, color: '#777', textAlign: 'center', lineHeight: 11 },
+
+  /* Test Grid */
+  testGrid: { flexDirection: 'row', gap: 9 },
+  testCard: {
+    flex: 1,
+    borderRadius: 14,
+    paddingTop: 12,
+    paddingHorizontal: 8,
+    paddingBottom: 42,
+    minHeight: 130,
+  },
+  tIco: { fontSize: 28, marginBottom: 7 },
+  tName: { fontSize: 10.5, fontWeight: '800', color: '#111', marginBottom: 3, lineHeight: 13 },
+  tDesc: { fontSize: 8.5, color: '#555', lineHeight: 11 },
+  tBtn: {
+    position: 'absolute',
+    bottom: 9,
+    right: 9,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tBtnText: { color: '#fff', fontSize: 13, fontWeight: '900' },
+
+  /* Progress Grid */
+  progGrid: { flexDirection: 'row', gap: 9 },
+  progCard: {
+    flex: 1,
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#efefef',
+    borderRadius: 14,
+    paddingTop: 12,
+    paddingHorizontal: 8,
+    paddingBottom: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.07,
+    shadowRadius: 6,
+    elevation: 1,
+  },
+  pIco: { fontSize: 20, marginBottom: 5 },
+  pLabel: { fontSize: 8.5, color: '#888', fontWeight: '600', marginBottom: 3 },
+  pVal: { fontSize: 19, fontWeight: '900', color: '#111', marginBottom: 2 },
+  pSub: { fontSize: 8, color: '#aaa', marginBottom: 7 },
+  pSubOk: { color: '#2E7D32', fontWeight: '700' },
+  pBar: { height: 4, borderRadius: 4, backgroundColor: '#eee', overflow: 'hidden' },
+  pFill: { height: '100%', borderRadius: 4 },
+
+  /* Quick Actions */
+  quickRow: { gap: 10, paddingBottom: 6 },
+  qItem: { alignItems: 'center', gap: 5, minWidth: 56 },
+  qBox: {
+    width: 50,
+    height: 50,
+    borderRadius: 14,
+    backgroundColor: '#F9C45A',
+    borderWidth: 1.5,
+    borderColor: '#f0e5b0',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  qLabel: { fontSize: 9, color: '#444', fontWeight: '600', textAlign: 'center', lineHeight: 12 },
+
+  /* Footer */
+  footerWrap: {
+    backgroundColor: '#F9C45A',
+  },
+  footerImg: {
     width: '100%',
-    maxWidth: 380,
-    borderRadius: 16,
-    padding: 24,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  modalBody: {
-    color: '#6B7280',
-    textAlign: 'center',
-    marginBottom: 16,
-    lineHeight: 20,
-  },
-  upgradeButton: {
-    backgroundColor: '#F4B95F',
-    borderRadius: 10,
-    paddingVertical: 12,
-  },
-  upgradeText: {
-    textAlign: 'center',
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '700',
+    height: 110,
+    resizeMode: 'cover',
   },
 });
 

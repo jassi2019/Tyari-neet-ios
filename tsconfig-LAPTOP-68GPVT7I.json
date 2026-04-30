@@ -1,0 +1,38 @@
+{
+  "extends": "expo/tsconfig.base.json",
+  "compilerOptions": {
+    "target": "esnext",
+    "lib": ["dom", "esnext"],
+    "jsx": "react-native",
+    "strict": true,
+
+    "module": "preserve",
+    "moduleResolution": "bundler",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    },
+    "types": ["nativewind/types"]
+  },
+  "include": ["App.tsx", "src/**/*.ts", "src/**/*.tsx", "src/**/*.d.ts", "*.d.ts"],
+  "exclude": [
+    "node_modules",
+    "android",
+    "ios",
+    "backend-main",
+    "portal-main",
+    "mobile-app-main",
+    "ios-build",
+    "dist",
+    "web-build",
+    "src/tests",
+    "src/**/*.test.ts",
+    "src/**/*.test.tsx",
+    "src/**/*_FIXED.tsx"
+  ]
+}

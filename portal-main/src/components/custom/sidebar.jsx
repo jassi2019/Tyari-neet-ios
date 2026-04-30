@@ -8,6 +8,7 @@ import {
   GraduationCap,
   BookType,
   ListOrdered,
+  HelpCircle,
   LogOut,
   Menu,
   Home,
@@ -21,6 +22,7 @@ const navigation = [
   { name: "Subjects", href: "/subjects", icon: BookType },
   { name: "Chapters", href: "/chapters", icon: BookOpen },
   { name: "Topics", href: "/topics", icon: ListOrdered },
+  { name: "Questions", href: "/questions", icon: HelpCircle },
 ];
 
 export default function Sidebar() {
