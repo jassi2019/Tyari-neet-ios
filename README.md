@@ -138,6 +138,22 @@ India's best NEET preparation app — free study material, 10,000+ MCQs, chapter
 
 Sections: `feature` | `test` | `hero` | `footer`
 
+### Subscriptions & Payments
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/v1/subscriptions/create-order` | Create Razorpay order (auth) |
+| POST | `/api/v1/subscriptions` | Verify signature + create subscription (auth) |
+| POST | `/api/v1/subscriptions/iap/apple` | Apple IAP receipt verification (auth) |
+| POST | `/api/v1/webhooks/razorpay` | Razorpay webhook (HMAC-SHA256 verified) |
+
+### Questions / MCQ
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/questions?chapterId=&subjectId=&classId=` | Fetch questions for a chapter |
+| POST | `/api/v1/questions` | Create question (admin only) |
+| PUT | `/api/v1/questions/:id` | Update question (admin only) |
+| DELETE | `/api/v1/questions/:id` | Delete question (admin only) |
+
 ## Environment Variables
 
 ### Backend (.env)
@@ -157,6 +173,7 @@ JWT_SECRET=<secret>
 # Razorpay (Android Payments)
 RAZORPAY_KEY_ID=<razorpay_key>
 RAZORPAY_KEY_SECRET=<razorpay_secret>
+RAZORPAY_WEBHOOK_SECRET=<webhook_secret>
 
 # Apple IAP (iOS Payments)
 APPLE_SHARED_SECRET=<apple_secret>
@@ -213,6 +230,49 @@ eas build --platform ios --profile production
 bash scripts/setup-backup-repo.sh <github_personal_access_token>
 ```
 
+## Razorpay Setup
+
+### 1. Configure Live Keys (after KYC complete)
+In `backend-main/.env`:
+```
+RAZORPAY_KEY_ID=rzp_live_xxxxxxxxxxxxx
+RAZORPAY_KEY_SECRET=xxxxxxxxxxxxxxxxxxxx
+RAZORPAY_WEBHOOK_SECRET=<random_strong_secret>
+```
+
+### 2. Add Webhook in Razorpay Dashboard
+- **URL:** `https://api.taiyarineetki.com/api/v1/webhooks/razorpay`
+- **Secret:** same as `RAZORPAY_WEBHOOK_SECRET` in `.env`
+- **Active Events:** `payment.captured`, `payment.failed`
+
+Test mode and live mode webhooks are separate — configure both.
+
+### 3. Recreate Backend Container
+```bash
+cd /opt/app
+docker compose -f docker-compose.prod.yml down backend
+docker compose -f docker-compose.prod.yml up -d backend
+```
+> `restart` alone does not reload `.env` — use `down` + `up`.
+
+### 4. End-to-End Test Script
+```bash
+docker compose -f docker-compose.prod.yml exec \
+  -e TEST_EMAIL=user@example.com \
+  -e TEST_PASSWORD='your_password' \
+  -e TEST_API_BASE=http://localhost:8000 \
+  backend node test-payment-flow.js
+```
+Tests login → plan fetch → order create → signature verify → subscription create → webhook delivery → DB state. All 7 steps must pass before the mobile app payment flow works.
+
+## Email System
+- **Buyer invoice:** sent to user's registered email with payment receipt
+- **Admin notification:** sent to all addresses in `DEVELOPER_EMAILS` (comma-separated)
+- **SMTP:** Gmail with App Password (not regular password)
+- **Templates:** `backend-main/src/views/billing/`
+  - `invoice.handlebars` — buyer receipt
+  - `purchase.notification.handlebars` — admin notification
+
 ## URLs
 - **Landing Page:** https://taiyarineetki.com
 - **Admin Panel:** https://taiyarineetki.com/admin
@@ -220,3 +280,19 @@ bash scripts/setup-backup-repo.sh <github_personal_access_token>
 - **API Docs:** https://api.taiyarineetki.com/api-docs
 - **Play Store:** https://play.google.com/store/apps/details?id=com.taiyarineetki.app
 - **App Store:** https://apps.apple.com/app/taiyari-neet-ki/id6740091521
+
+## Recent Changes
+
+### Payment & Webhook Hardening
+- Razorpay webhook now verifies `x-razorpay-signature` (HMAC-SHA256) before processing
+- Raw body captured on `/api/v1/webhooks/*` routes for signature verification
+- 401 errors during payment now sign the user out and prompt fresh login
+- Live + test mode keys must match between backend `.env` and the dashboard webhook
+
+### Mobile App UX
+- 3-step Test flow: type → subject → class → chapter (uses real DB UUIDs, not hardcoded strings)
+- Library tab: Bookmarks + Notes (NCERT section removed)
+- Test Result screen: inline answer review with correct/wrong highlighting
+- Hero banner uses `aspectRatio: 16/9` + `contain` so it never crops on small devices
+- Bottom nav Plus button opens Library tab
+- Native Android `mipmap-*` icons regenerated from `assets/icon.png` via `expo prebuild`

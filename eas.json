@@ -12,6 +12,16 @@
         "EXPO_PUBLIC_RAZORPAY_KEY_ID": "rzp_test_yKCG6OGi329xSM"
       }
     },
+    "test": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_BACKEND_URL": "https://api.taiyarineetki.com",
+        "EXPO_PUBLIC_RAZORPAY_KEY_ID": "rzp_test_Sjdfz3maTzheaH"
+      }
+    },
     "preview": {
       "distribution": "internal",
       "env": {
