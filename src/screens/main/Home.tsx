@@ -22,6 +22,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 const heroBanner = require('../../../assets/hero-banner.jpg');
 const avatarLogo = require('../../../assets/icon.png');
+const footerImage = require('../../../assets/footer.png');
 
 const { width } = Dimensions.get('window');
 
@@ -275,6 +276,9 @@ export const Home = ({ navigation }: HomeScreenProps) => {
           </View>
 
           </View>
+          <TouchableOpacity activeOpacity={0.9} onPress={goToFreeContent} style={styles.footerWrap}>
+            <Image source={footerImage} style={styles.footerImg} />
+          </TouchableOpacity>
           <View style={{ height: 100, backgroundColor: '#fff' }} />
       </View>
       </ScrollView>
