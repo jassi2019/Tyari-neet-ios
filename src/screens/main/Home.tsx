@@ -279,7 +279,7 @@ export const Home = ({ navigation }: HomeScreenProps) => {
           <TouchableOpacity activeOpacity={0.9} onPress={goToFreeContent} style={styles.footerWrap}>
             <Image source={footerImage} style={styles.footerImg} />
           </TouchableOpacity>
-          <View style={{ height: 100, backgroundColor: '#fff' }} />
+          <View style={{ height: 20, backgroundColor: '#fff' }} />
       </View>
       </ScrollView>
 
