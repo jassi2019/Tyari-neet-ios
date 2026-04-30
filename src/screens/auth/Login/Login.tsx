@@ -269,9 +269,9 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   forgotPasswordText: {
-    color: '#FED93A',
+    color: '#78350f',
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '700',
     textDecorationLine: 'underline',
   },
   loginButton: {
@@ -305,7 +305,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   registerLinkText: {
-    color: '#FED93A',
+    color: '#78350f',
     fontSize: 15,
     fontWeight: '700',
     textDecorationLine: 'underline',

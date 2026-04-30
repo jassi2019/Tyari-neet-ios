@@ -188,7 +188,7 @@ const styles = StyleSheet.create({
   submitButtonText: { color: '#1a1a1a', fontSize: 17, fontWeight: '700' },
   loginContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
   loginText: { color: '#374151', fontSize: 15 },
-  loginLinkText: { color: '#FED93A', fontSize: 15, fontWeight: '700', textDecorationLine: 'underline' },
+  loginLinkText: { color: '#78350f', fontSize: 15, fontWeight: '700', textDecorationLine: 'underline' },
 });
 
 export default SetEmail;
