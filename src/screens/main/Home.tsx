@@ -16,10 +16,11 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const heroBanner = require('../../../assets/hero-banner.jpg');
-const avatarLogo = require('../../../assets/avatar-logo.png');
+const avatarLogo = require('../../../assets/icon.png');
 const footerImage = require('../../../assets/footer.png');
 
 const { width } = Dimensions.get('window');
@@ -280,6 +281,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   yellowHeader: {
+    paddingBottom: 0,
   },
   topNav: {
     flexDirection: 'row',
@@ -314,14 +316,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingBottom: 14,
+    paddingBottom: 10,
   },
   greetLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   greetAvatar: {
-    width: 52,
-    height: 52,
-    alignItems: 'center',
-    justifyContent: 'center',
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    overflow: 'hidden',
   },
   greetHi: { fontSize: 12, fontWeight: '600', color: '#555' },
   greetName: { fontSize: 15, fontWeight: '800', color: '#111' },
@@ -355,10 +357,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    marginTop: 16,
-    paddingBottom: 120,
+    marginTop: 0,
+    paddingBottom: 0,
   },
-  scrollContent: { paddingTop: 18, paddingHorizontal: 14 },
+  scrollContent: { paddingTop: 18, paddingHorizontal: 14, paddingBottom: 0 },
   section: { paddingBottom: 18 },
   secRow: {
     flexDirection: 'row',
@@ -470,11 +472,13 @@ const styles = StyleSheet.create({
   /* Footer */
   footerWrap: {
     backgroundColor: '#F9C45A',
+    marginBottom: 0,
   },
   footerImg: {
     width: '100%',
-    height: 110,
+    height: 150,
     resizeMode: 'cover',
+    marginBottom: 0,
   },
 });
 
