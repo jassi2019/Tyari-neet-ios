@@ -379,9 +379,10 @@ const styles = StyleSheet.create({
   },
   heroBannerImg: {
     width: '100%',
-    height: 170,
+    aspectRatio: 16 / 9,
     borderRadius: 14,
-    resizeMode: 'cover',
+    resizeMode: 'contain',
+    backgroundColor: '#fff',
   },
   cardBody: {
     backgroundColor: '#fff',
