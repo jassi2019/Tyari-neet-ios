@@ -7,6 +7,7 @@ export type TTopic = {
   description: string;
   contentURL: string;
   contentThumbnail: string;
+  richContent?: string;
   sequence: number;
   serviceType: 'FREE' | 'PREMIUM';
   Chapter: TChapter;

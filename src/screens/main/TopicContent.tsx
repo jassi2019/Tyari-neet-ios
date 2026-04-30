@@ -72,6 +72,8 @@ export const TopicContent = ({ navigation, route }: TopicContentProps) => {
   });
 
   const effectiveTopic = !isGuest ? topicResponse?.data || topic : topic;
+  const richContent = String(effectiveTopic?.richContent || '').trim();
+  const hasRichContent = richContent.length > 0;
   const rawURL = String(effectiveTopic?.contentURL || '').trim();
   const isCanvaContent = /canva\.com/i.test(rawURL);
   const isInsecureRemoteUrl = /^http:\/\//i.test(rawURL) && !/^http:\/\/(localhost|127\.0\.0\.1)/i.test(rawURL);
@@ -210,6 +212,23 @@ export const TopicContent = ({ navigation, route }: TopicContentProps) => {
     }
   }
 
+  // Rich HTML content from admin — render directly in WebView
+  if (hasRichContent) {
+    const htmlPage = `<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width, initial-scale=1.0"><style>body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:16px;line-height:1.8;color:#1a1a1a;padding:20px;background:#fff;}h1,h2,h3{color:#1a1a1a;margin-top:24px;margin-bottom:8px;}h2{font-size:20px;}h3{font-size:17px;}p{margin:0 0 14px;}ul,ol{padding-left:24px;margin:0 0 14px;}li{margin-bottom:6px;}img{max-width:100%;border-radius:8px;margin:10px 0;}strong{font-weight:700;}em{font-style:italic;}u{text-decoration:underline;}</style></head><body>${richContent}</body></html>`;
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }} edges={['top']}>
+        <TopicHeader title={effectiveTopic?.name || 'Topic'} onBack={() => navigation.goBack()} />
+        <PlatformWebView
+          source={{ html: htmlPage }}
+          style={{ flex: 1 }}
+          protectedContent={true}
+          debugLabel={effectiveTopic?.name || 'RichContent'}
+          enableDebugLogs={__DEV__}
+        />
+      </SafeAreaView>
+    );
+  }
+
   if (!normalizedURL) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }} edges={['top']}>
@@ -224,7 +243,6 @@ export const TopicContent = ({ navigation, route }: TopicContentProps) => {
   }
 
   // Keep Canva URL exactly as received from backend.
-  // Stripping/rebuilding query params can break Canva asset resolution.
   const webViewSource = { uri: normalizedURL };
 
   return (

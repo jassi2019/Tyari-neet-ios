@@ -50,6 +50,7 @@ export default function EditTopicPage() {
     contentId: "",
     contentURL: "",
     contentThumbnail: "",
+    richContent: "",
     subjectId: "",
     chapterId: "",
     classId: "",
@@ -387,9 +388,115 @@ export default function EditTopicPage() {
                     </div>
                   </div>
 
+                  {/* Rich Content Editor */}
+                  <div className="space-y-4">
+                    <h2 className="text-xl font-semibold">Lesson Content</h2>
+                    <p className="text-sm text-muted-foreground">
+                      Write the lesson content here — shown directly in the app. Supports formatting.
+                    </p>
+                    <div className="border rounded-lg overflow-hidden">
+                      {/* Toolbar */}
+                      <div className="flex flex-wrap gap-1 p-2 border-b bg-muted/30">
+                        {[
+                          { cmd: "bold", label: "B", style: "font-bold" },
+                          { cmd: "italic", label: "I", style: "italic" },
+                          { cmd: "underline", label: "U", style: "underline" },
+                        ].map(({ cmd, label, style }) => (
+                          <button
+                            key={cmd}
+                            type="button"
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              document.execCommand(cmd, false);
+                            }}
+                            className={`px-3 py-1 text-sm rounded border border-border hover:bg-muted ${style}`}
+                          >
+                            {label}
+                          </button>
+                        ))}
+                        <button
+                          type="button"
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            document.execCommand("formatBlock", false, "h2");
+                          }}
+                          className="px-3 py-1 text-sm rounded border border-border hover:bg-muted font-semibold"
+                        >
+                          H2
+                        </button>
+                        <button
+                          type="button"
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            document.execCommand("formatBlock", false, "h3");
+                          }}
+                          className="px-3 py-1 text-sm rounded border border-border hover:bg-muted font-semibold"
+                        >
+                          H3
+                        </button>
+                        <button
+                          type="button"
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            document.execCommand("insertUnorderedList", false);
+                          }}
+                          className="px-3 py-1 text-sm rounded border border-border hover:bg-muted"
+                        >
+                          • List
+                        </button>
+                        <button
+                          type="button"
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            document.execCommand("insertOrderedList", false);
+                          }}
+                          className="px-3 py-1 text-sm rounded border border-border hover:bg-muted"
+                        >
+                          1. List
+                        </button>
+                        <button
+                          type="button"
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            const url = window.prompt("Image URL:");
+                            if (url) document.execCommand("insertImage", false, url);
+                          }}
+                          className="px-3 py-1 text-sm rounded border border-border hover:bg-muted"
+                        >
+                          🖼 Image
+                        </button>
+                        <button
+                          type="button"
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            document.execCommand("removeFormat", false);
+                          }}
+                          className="px-3 py-1 text-sm rounded border border-border hover:bg-muted text-red-500"
+                        >
+                          Clear
+                        </button>
+                      </div>
+                      {/* Editor */}
+                      <div
+                        contentEditable
+                        suppressContentEditableWarning
+                        id="richContentEditor"
+                        onInput={(e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            richContent: e.currentTarget.innerHTML,
+                          }))
+                        }
+                        dangerouslySetInnerHTML={{ __html: formData.richContent || "" }}
+                        className="min-h-[300px] p-4 outline-none prose prose-sm max-w-none dark:prose-invert"
+                        style={{ lineHeight: "1.8" }}
+                      />
+                    </div>
+                  </div>
+
                   {/* Content Selection */}
                   <div className="space-y-4">
-                    <h2 className="text-xl font-semibold">Content Selection</h2>
+                    <h2 className="text-xl font-semibold">Content Selection (Canva)</h2>
 
                     {/* Currently Selected Content */}
                     {formData.contentThumbnail && (

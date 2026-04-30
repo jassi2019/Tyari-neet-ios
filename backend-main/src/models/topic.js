@@ -31,6 +31,10 @@ const Topic = db.define(
       type: DataTypes.STRING,
       allowNull: false,
     },
+    richContent: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
     sequence: {
       type: DataTypes.INTEGER,
       allowNull: false,
