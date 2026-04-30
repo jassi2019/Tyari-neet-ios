@@ -2,6 +2,7 @@ import React from 'react';
 import {
   Dimensions,
   Image,
+  ImageBackground,
   Platform,
   StatusBar,
   StyleSheet,
@@ -12,6 +13,7 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 
 const logoSource = require('../../../../assets/icon.png');
+const bgImage = require('../../../../assets/bg-image.jpg');
 
 const { height } = Dimensions.get('window');
 
@@ -20,11 +22,13 @@ const Landing = ({ navigation }: { navigation: any }) => {
   const statusBarTop = Platform.OS === 'android' ? StatusBar.currentHeight ?? 0 : 0;
 
   return (
-    <View style={[styles.container, { paddingTop: statusBarTop }]}>
-      {/* Decorative circles */}
-      <View style={[styles.decorCircle, styles.decorCircle1]} pointerEvents="none" />
-      <View style={[styles.decorCircle, styles.decorCircle2]} pointerEvents="none" />
-      <View style={[styles.decorCircle, styles.decorCircle3]} pointerEvents="none" />
+    <ImageBackground
+      source={bgImage}
+      style={[styles.container, { paddingTop: statusBarTop }]}
+      resizeMode="cover"
+    >
+      {/* Dark overlay to reduce transparency */}
+      <View style={styles.overlay} pointerEvents="none" />
 
       {/* Main Container */}
       <View style={[styles.mainContainer, Platform.OS === 'web' ? styles.mainContainerWeb : null]}>
@@ -54,16 +58,12 @@ const Landing = ({ navigation }: { navigation: any }) => {
                 <Text style={styles.heroTitleAccent}>Taiyari NEET ki</Text>
               </Text>
               <Text style={styles.heroSubtitle}>India's #1 Smart NEET Preparation App</Text>
-              <View style={styles.featurePills}>
-                <View style={styles.featurePill}>
-                  <Text style={styles.featurePillText}>📚 NCERT</Text>
-                </View>
-                <View style={styles.featurePill}>
-                  <Text style={styles.featurePillText}>🧠 AI Tests</Text>
-                </View>
-                <View style={styles.featurePill}>
-                  <Text style={styles.featurePillText}>🏆 Rank</Text>
-                </View>
+
+              {/* Badge with new content */}
+              <View style={styles.featureBadge}>
+                <Text style={styles.featureBadgeText}>
+                  Build from basics, strengthen with practice, and reach exam-level mastery through concepts, back exercise, Exemplar, PYQs
+                </Text>
               </View>
             </View>
           </View>
@@ -106,39 +106,19 @@ const Landing = ({ navigation }: { navigation: any }) => {
           </View>
         </View>
       </View>
-    </View>
+    </ImageBackground>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    position: 'relative',
-    backgroundColor: '#F59E0B',
     width: '100%',
+    backgroundColor: '#FED93A',
   },
-  decorCircle: {
-    position: 'absolute',
-    borderRadius: 9999,
-    backgroundColor: 'rgba(255,255,255,0.12)',
-  },
-  decorCircle1: {
-    width: 300,
-    height: 300,
-    top: -100,
-    right: -100,
-  },
-  decorCircle2: {
-    width: 200,
-    height: 200,
-    top: height * 0.15,
-    left: -60,
-  },
-  decorCircle3: {
-    width: 150,
-    height: 150,
-    bottom: height * 0.25,
-    right: -40,
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(254, 217, 58, 0.55)',
   },
   mainContainer: {
     flex: 1,
@@ -192,7 +172,7 @@ const styles = StyleSheet.create({
     width: 90,
     height: 90,
     borderRadius: 45,
-    backgroundColor: 'rgba(255,255,255,0.3)',
+    backgroundColor: 'rgba(255,255,255,0.4)',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 20,
@@ -203,7 +183,7 @@ const styles = StyleSheet.create({
     borderRadius: 35,
   },
   namastePill: {
-    backgroundColor: 'rgba(255,255,255,0.45)',
+    backgroundColor: 'rgba(255,255,255,0.6)',
     borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: 6,
@@ -223,29 +203,30 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   heroTitleAccent: {
-    color: '#fff',
+    color: '#78350f',
   },
   heroSubtitle: {
     fontSize: 14,
-    color: '#44403c',
-    fontWeight: '500',
+    color: '#1a1a1a',
+    fontWeight: '600',
     marginBottom: 18,
     textAlign: 'center',
   },
-  featurePills: {
-    flexDirection: 'row',
-    gap: 8,
+  featureBadge: {
+    backgroundColor: 'rgba(255,255,255,0.75)',
+    borderRadius: 16,
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    marginHorizontal: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.9)',
   },
-  featurePill: {
-    backgroundColor: 'rgba(255,255,255,0.5)',
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  featurePillText: {
-    fontSize: 12,
+  featureBadgeText: {
+    fontSize: 13,
     fontWeight: '600',
     color: '#1a1a1a',
+    textAlign: 'center',
+    lineHeight: 20,
   },
   bottomContainer: {
     marginBottom: 48,
@@ -254,11 +235,11 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   bottomCard: {
-    backgroundColor: 'rgba(255,255,255,0.6)',
+    backgroundColor: 'rgba(255,255,255,0.7)',
     borderRadius: 20,
     padding: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.8)',
+    borderColor: 'rgba(255,255,255,0.9)',
   },
   getStartedButton: {
     backgroundColor: '#1a1a1a',
@@ -267,7 +248,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   getStartedButtonText: {
-    color: '#F59E0B',
+    color: '#FED93A',
     textAlign: 'center',
     fontSize: 17,
     fontWeight: '700',
@@ -289,7 +270,7 @@ const styles = StyleSheet.create({
   termsText: {
     textAlign: 'center',
     fontSize: 12,
-    color: '#6b7280',
+    color: '#44403c',
     lineHeight: 18,
   },
   linkText: {
