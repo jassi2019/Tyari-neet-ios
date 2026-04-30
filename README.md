@@ -1,6 +1,6 @@
 # Taiyari NEET Ki
 
-NEET preparation mobile app with admin portal and backend API.
+India's best NEET preparation app — free study material, 10,000+ MCQs, chapter-wise notes for Physics, Chemistry & Biology.
 
 ## Tech Stack
 
@@ -17,51 +17,56 @@ NEET preparation mobile app with admin portal and backend API.
 
 ```
 ├── src/                    # React Native mobile app
-│   ├── screens/            # App screens
-│   │   ├── auth/           # Authentication screens
-│   │   │   ├── Landing/    # Landing page with app branding
-│   │   │   ├── Login/      # Email + password login
-│   │   │   ├── Register/   # Email registration with OTP
+│   ├── screens/
+│   │   ├── auth/
+│   │   │   ├── Landing/        # App landing page (bg image + yellow theme)
+│   │   │   ├── Login/          # Email + password login
+│   │   │   ├── Register/       # Email registration with OTP
 │   │   │   └── ForgotPassword/ # Password reset via email OTP
-│   │   ├── Home/           # Home screen
-│   │   ├── Payment/        # Subscription & payments
-│   │   └── Profile/        # User profile
-│   ├── contexts/           # AuthContext with single-device login
-│   ├── hooks/api/          # API hooks (React Query)
-│   │   └── auth.ts         # Auth mutations (login, register, OTP, reset)
-│   ├── libs/               # Razorpay, IAP wrappers
-│   └── constants/          # Environment config
-├── backend-main/           # Express.js backend API
-│   ├── src/controllers/auth/
-│   │   ├── login.js
-│   │   ├── register.js
-│   │   ├── registration.email.verification.js
-│   │   ├── registration.otp.verification.js
-│   │   ├── password.reset.email.verification.js
-│   │   ├── password.reset.otp.verification.js
-│   │   ├── password.reset.phone.verification.js
-│   │   ├── password.reset.phone.otp.verification.js
-│   │   └── reset.password.js
-│   ├── src/models/         # Sequelize models (User, Otp, etc.)
+│   │   ├── main/
+│   │   │   └── Home.tsx        # Home screen (CMS-driven content)
+│   │   ├── Payment/            # Subscription & payments
+│   │   └── Profile/            # User profile
+│   ├── contexts/               # AuthContext with single-device login
+│   ├── hooks/api/              # React Query API hooks
+│   │   ├── auth.ts             # Auth mutations (login, register, OTP, reset)
+│   │   └── homecontent.ts      # Home screen CMS content hook
+│   ├── libs/                   # Razorpay, IAP wrappers
+│   └── constants/              # Environment config
+├── backend-main/               # Express.js backend API
+│   ├── src/controllers/
+│   │   ├── auth/               # All auth controllers
+│   │   └── homecontent/        # Home content CRUD (create, get, update, delete)
+│   ├── src/models/
+│   │   ├── user.js             # User model
+│   │   ├── homecontent.js      # Home content CMS model
+│   │   └── ...                 # Other models
+│   ├── src/routes/
+│   │   ├── index.js
+│   │   └── homecontent/        # /api/v1/home-content routes
 │   ├── src/services/
-│   │   ├── canva.js        # Canva Connect API
-│   │   ├── mail.js         # Nodemailer email
-│   │   ├── razorpay.js     # Razorpay payments
-│   │   └── sms.js          # Twilio SMS service
-│   ├── src/routes/         # Express routes
-│   ├── src/utils/          # Billing, email, JWT utilities
-│   └── src/views/          # Handlebars email templates
-├── portal-main/            # Next.js admin portal
+│   │   ├── canva.js            # Canva Connect API
+│   │   ├── mail.js             # Nodemailer email
+│   │   ├── razorpay.js         # Razorpay payments
+│   │   └── sms.js              # Twilio SMS
+│   └── src/views/              # Handlebars email templates
+├── portal-main/                # Next.js admin portal
 │   └── src/app/
-│       ├── page.jsx        # Landing page (SEO optimized)
-│       ├── admin/          # Admin dashboard
-│       ├── auth/           # Admin login
-│       ├── chapters/       # Chapter management
-│       ├── subjects/       # Subject management
-│       └── topics/         # Topic management
-├── docker-compose.prod.yml # Production Docker setup
-├── Caddyfile               # Caddy reverse proxy config
-└── eas.json                # EAS Build configuration
+│       ├── page.jsx            # SEO-optimized public landing page
+│       ├── admin/              # Admin dashboard
+│       ├── auth/               # Admin login
+│       ├── home-content/       # Home screen CMS management
+│       ├── chapters/           # Chapter management
+│       ├── subjects/           # Subject management
+│       ├── topics/             # Topic management
+│       └── questions/          # Question bank management
+├── assets/                     # App images (hero-banner, footer, bg-image, logo)
+├── scripts/
+│   ├── backup-db.sh            # Daily PostgreSQL → GitHub backup
+│   └── setup-backup-repo.sh    # One-time VPS backup setup
+├── docker-compose.prod.yml     # Production Docker setup
+├── Caddyfile                   # Caddy reverse proxy + SSL config
+└── eas.json                    # EAS Build configuration
 ```
 
 ## Features
@@ -73,7 +78,8 @@ NEET preparation mobile app with admin portal and backend API.
 - Single device login enforcement
 - Guest mode for free content (iOS only)
 - Screen capture protection
-- Yellow theme (#F59E0B) across all screens
+- Yellow theme (#FED93A) with image background on auth screens
+- Home screen content managed live from admin panel (CMS)
 
 ### Auth Flow
 - **Registration:** Email → OTP verification → Set password → Account created
@@ -83,9 +89,10 @@ NEET preparation mobile app with admin portal and backend API.
 
 ### Admin Portal
 - Dark theme dashboard with analytics
-- Class, Subject, Chapter, Topic CRUD management
+- Class, Subject, Chapter, Topic, Question CRUD management
+- **Home Content CMS:** Manage features, tests, hero banner, footer from admin panel — reflects live in app
 - Canva integration for content thumbnails
-- SEO-optimized landing page at root domain
+- SEO-optimized public landing page at root domain
 
 ### Backend API
 - JWT authentication (180-day tokens)
@@ -97,7 +104,13 @@ NEET preparation mobile app with admin portal and backend API.
 - Purchase invoice emails (student + admin)
 - Canva OAuth token management with auto-renewal
 - Gzip compression for faster responses
-- Swagger API documentation
+- Swagger API documentation at `/api-docs`
+
+### Database Backups
+- Daily automated PostgreSQL dump via cron (2 AM)
+- Backup pushed to GitHub repo automatically
+- Last 7 backups kept locally, last 30 on GitHub
+- Setup: `bash scripts/setup-backup-repo.sh <github_token>`
 
 ## API Endpoints
 
@@ -113,6 +126,17 @@ NEET preparation mobile app with admin portal and backend API.
 | POST | `/api/v1/auth/reset/password/otp/verification` | Verify reset OTP (email) |
 | POST | `/api/v1/auth/reset/password/phone/verification` | Send reset OTP (phone) |
 | POST | `/api/v1/auth/reset/password/phone/otp/verification` | Verify reset OTP (phone) |
+
+### Home Content CMS
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/home-content` | Get active content (public, used by app) |
+| GET | `/api/v1/home-content/all` | Get all content (admin only) |
+| POST | `/api/v1/home-content` | Create content item (admin only) |
+| PUT | `/api/v1/home-content/:id` | Update content item (admin only) |
+| DELETE | `/api/v1/home-content/:id` | Delete content item (admin only) |
+
+Sections: `feature` | `test` | `hero` | `footer`
 
 ## Environment Variables
 
@@ -171,6 +195,7 @@ EXPO_PUBLIC_RAZORPAY_KEY_ID=<razorpay_key>
 ### VPS (Docker)
 ```bash
 cd /opt/app
+git pull
 docker compose -f docker-compose.prod.yml up -d --build
 ```
 
@@ -181,6 +206,11 @@ eas build --platform android --profile production
 
 # iOS
 eas build --platform ios --profile production
+```
+
+### Database Backup Setup (run once on VPS)
+```bash
+bash scripts/setup-backup-repo.sh <github_personal_access_token>
 ```
 
 ## URLs
