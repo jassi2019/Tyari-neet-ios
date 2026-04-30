@@ -24,7 +24,15 @@ const pinoLogger = pinoHttp({
 const requestBodyLimit = process.env.REQUEST_BODY_LIMIT || "10mb";
 // Receipts and profile image payloads can exceed the default 100kb body size.
 app.use(compression());
-app.use(express.json({ limit: requestBodyLimit }));
+app.use(express.json({
+  limit: requestBodyLimit,
+  verify: (req, _res, buf) => {
+    // Capture raw body for webhook signature verification.
+    if (req.originalUrl && req.originalUrl.startsWith("/api/v1/webhooks")) {
+      req.rawBody = buf.toString("utf8");
+    }
+  },
+}));
 app.use(express.urlencoded({ extended: true, limit: requestBodyLimit }));
 app.use(cors({
   origin: [

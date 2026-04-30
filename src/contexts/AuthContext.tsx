@@ -15,6 +15,7 @@ type AuthContextType = {
   isGuest: boolean;
   hasSession: boolean;
   enterGuestMode: () => Promise<void>;
+  signOut: () => Promise<void>;
   isLoading: boolean;
 };
 
@@ -195,6 +196,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return () => subscription.remove();
   }, []);
 
+  const signOut = async () => {
+    await tokenManager.clearToken();
+    await AsyncStorage.removeItem(USER_KEY);
+    await AsyncStorage.removeItem(GUEST_KEY);
+    setUser(null);
+    setIsGuest(false);
+    setHasSession(false);
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -203,6 +213,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         isGuest,
         hasSession,
         enterGuestMode,
+        signOut,
         isLoading,
       }}
     >

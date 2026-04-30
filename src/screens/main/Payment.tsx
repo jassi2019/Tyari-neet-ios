@@ -86,7 +86,7 @@ export const PaymentScreen = ({ navigation, route }: PaymentScreenProps) => {
     );
   }
 
-  const { setUser } = useAuth();
+  const { setUser, signOut } = useAuth();
   const { refetch: fetchProfile } = useGetProfile({ enabled: false });
   const { mutateAsync: createOrderAsync, isPending: isCreatingOrder } = useCreateOrder();
   const {
@@ -198,6 +198,17 @@ export const PaymentScreen = ({ navigation, route }: PaymentScreenProps) => {
           });
         } catch {
           // noop
+        }
+
+        const statusCode = error?.response?.status || error?.status;
+        if (statusCode === 401) {
+          await signOut();
+          Alert.alert(
+            'Session Expired',
+            'Please log in again to continue.',
+            [{ text: 'OK' }]
+          );
+          return;
         }
 
         const message = String(error?.message || 'Payment failed. Please try again.');
