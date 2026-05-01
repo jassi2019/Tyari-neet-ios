@@ -1,0 +1,43 @@
+{
+  "cli": {
+    "version": ">= 18.8.1",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_BACKEND_URL": "http://127.0.0.1:8000",
+        "EXPO_PUBLIC_RAZORPAY_KEY_ID": "rzp_test_yKCG6OGi329xSM"
+      }
+    },
+    "test": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_BACKEND_URL": "https://api.taiyarineetki.com",
+        "EXPO_PUBLIC_RAZORPAY_KEY_ID": "rzp_test_Sjdfz3maTzheaH"
+      }
+    },
+    "preview": {
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_BACKEND_URL": "https://api.taiyarineetki.com",
+        "EXPO_PUBLIC_RAZORPAY_KEY_ID": "rzp_live_ShhCLMHs3DIqZo"
+      }
+    },
+    "production": {
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_BACKEND_URL": "https://api.taiyarineetki.com",
+        "EXPO_PUBLIC_RAZORPAY_KEY_ID": "rzp_live_ShhCLMHs3DIqZo"
+      }
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}
