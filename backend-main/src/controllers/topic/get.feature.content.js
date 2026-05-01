@@ -3,9 +3,9 @@ const { FEATURE_TYPE_TO_FIELD } = require("../../constants");
 
 /**
  * GET /api/v1/topics/:topicId/feature/:featureType
- * Returns the content slot for the requested feature on a topic.
- * Falls back to legacy contentURL/contentId/contentThumbnail if the per-feature
- * slot has not been populated yet.
+ * Returns the content URL for the requested feature on a topic.
+ * Falls back to legacy contentURL/contentId/contentThumbnail when the
+ * per-feature slot is empty.
  */
 const getFeatureContentV1 = async (req, res, next) => {
   try {
@@ -23,31 +23,20 @@ const getFeatureContentV1 = async (req, res, next) => {
       return res.status(404).json({ message: "Topic not found" });
     }
 
-    const slot = topic[field];
-    const hasSlotData =
-      slot && typeof slot === "object" && (slot.url || slot.contentId);
+    const slotValue = topic[field];
+    const slotURL = typeof slotValue === "string" ? slotValue.trim() : "";
 
-    const content = hasSlotData
-      ? {
-          url: slot.url || null,
-          thumbnail: slot.thumbnail || topic.contentThumbnail || null,
-          contentId: slot.contentId || null,
-          description: slot.description || topic.description || "",
-        }
-      : {
-          // Backward-compatible fallback to legacy fields
-          url: topic.contentURL || null,
-          thumbnail: topic.contentThumbnail || null,
-          contentId: topic.contentId || null,
-          description: topic.description || "",
-        };
+    const url = slotURL || topic.contentURL || null;
 
     return res.status(200).json({
       data: {
         topicId: topic.id,
         topicName: topic.name,
         featureType,
-        ...content,
+        url,
+        thumbnail: topic.contentThumbnail || null,
+        contentId: topic.contentId || null,
+        description: topic.description || "",
         serviceType: topic.serviceType,
       },
     });

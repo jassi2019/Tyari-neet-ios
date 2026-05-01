@@ -45,7 +45,7 @@ const FEATURE_TYPES = Object.freeze({
 
 const FEATURE_TYPE_TO_FIELD = Object.freeze({
   [FEATURE_TYPES.EXPLANATION]: "explanationContent",
-  [FEATURE_TYPES.REVISION_RECALL]: "revisionRecallContent",
+  [FEATURE_TYPES.REVISION_RECALL]: "revisionContent",
   [FEATURE_TYPES.HIDDEN_LINKS]: "hiddenLinksContent",
   [FEATURE_TYPES.EXERCISE_REVIVAL]: "exerciseRevivalContent",
   [FEATURE_TYPES.MASTER_EXEMPLAR]: "masterExemplarContent",

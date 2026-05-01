@@ -116,6 +116,7 @@ function MainStack() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="MainTabs" component={MainTabs} />
+      <Stack.Screen name="SubjectSelect" component={Subjects} />
       <Stack.Screen name="Chapters" component={Chapters} />
       <Stack.Screen name="Topics" component={Topics} />
       <Stack.Screen name="TopicContent" component={TopicContent} />

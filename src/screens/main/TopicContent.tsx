@@ -1,7 +1,7 @@
 import PlatformWebView from '@/components/PlatformWebView';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFeature } from '@/contexts/FeatureContext';
-import { useGetTopicById, useGetTopicFeatureContent } from '@/hooks/api/topics';
+import { useGetTopicById } from '@/hooks/api/topics';
 import { useContentProtection } from '@/hooks/useContentProtection';
 import { useProgress } from '@/hooks/useProgress';
 import { isPaidSubscriptionActive, isPremiumServiceType } from '@/lib/subscription';
@@ -34,11 +34,22 @@ const topicHeaderStyles = StyleSheet.create({
   title: { fontSize: 17, fontWeight: '800', color: '#111', flex: 1 },
 });
 
+const FEATURE_CONTENT_MAP: Record<string, keyof TTopic> = {
+  'Explanation': 'explanationContent',
+  'Revision Recall Station': 'revisionContent',
+  'Hidden Links': 'hiddenLinksContent',
+  'Exercise Revival': 'exerciseRevivalContent',
+  'Master Exemplar': 'masterExemplarContent',
+  'Previous Year Questions': 'pyqContent',
+  'Chapter Check Point': 'chapterCheckpointContent',
+};
+
 type TopicContentProps = {
   navigation: any;
   route: {
     params?: {
       topic?: TTopic;
+      featureName?: string;
     };
   };
 };
@@ -47,6 +58,7 @@ export const TopicContent = ({ navigation, route }: TopicContentProps) => {
   const { isGuest, user } = useAuth();
   const { activeFeature, setActiveFeature } = useFeature();
   const topic = route?.params?.topic;
+  const featureName = route?.params?.featureName;
   const topicId = topic?.id || '';
   const isPremiumTopic = isPremiumServiceType(topic?.serviceType);
   const hasPremium = isPaidSubscriptionActive(user?.subscription);
@@ -59,13 +71,6 @@ export const TopicContent = ({ navigation, route }: TopicContentProps) => {
       setActiveFeature(null);
     };
   }, [setActiveFeature]);
-
-  // Per-feature content slot — only fetched when user came via a Home box.
-  const {
-    data: featureResponse,
-  } = useGetTopicFeatureContent(topicId, activeFeature ?? 'explanation', {
-    enabled: !!topicId && !!activeFeature && (!isPremiumTopic || hasPremium) && !isGuest,
-  });
 
   // Mark topic as completed once when the user can actually view it.
   React.useEffect(() => {
@@ -89,11 +94,28 @@ export const TopicContent = ({ navigation, route }: TopicContentProps) => {
   });
 
   const effectiveTopic = !isGuest ? topicResponse?.data || topic : topic;
+
   // If user came via a Home feature box, prefer that feature's content slot.
-  const featureUrl = featureResponse?.data?.url;
-  const rawURL = String(
-    (activeFeature && featureUrl) ? featureUrl : effectiveTopic?.contentURL || ''
-  ).trim();
+  // Two paths: (a) activeFeature from FeatureContext, (b) legacy featureName route param.
+  const FEATURE_TO_FIELD: Record<string, keyof TTopic> = {
+    explanation: 'explanationContent' as keyof TTopic,
+    revision_recall: 'revisionContent' as keyof TTopic,
+    hidden_links: 'hiddenLinksContent' as keyof TTopic,
+    exercise_revival: 'exerciseRevivalContent' as keyof TTopic,
+    master_exemplar: 'masterExemplarContent' as keyof TTopic,
+    pyq: 'pyqContent' as keyof TTopic,
+    chapter_checkpoint: 'chapterCheckpointContent' as keyof TTopic,
+  };
+  const slotField = activeFeature
+    ? FEATURE_TO_FIELD[activeFeature]
+    : (featureName ? FEATURE_CONTENT_MAP[featureName] : undefined);
+  const slotValue = slotField ? String((effectiveTopic as any)?.[slotField] || '').trim() : '';
+
+  // Slot can be either a URL or HTML/rich text. Detect URL.
+  const slotIsURL = /^https?:\/\//i.test(slotValue);
+  const richContent = slotValue && !slotIsURL ? slotValue : '';
+  const hasRichContent = richContent.length > 0;
+  const rawURL = (slotIsURL ? slotValue : String(effectiveTopic?.contentURL || '')).trim();
   const isCanvaContent = /canva\.com/i.test(rawURL);
   const isInsecureRemoteUrl = /^http:\/\//i.test(rawURL) && !/^http:\/\/(localhost|127\.0\.0\.1)/i.test(rawURL);
   const normalizedURL = isInsecureRemoteUrl ? rawURL.replace(/^http:\/\//i, 'https://') : rawURL;
@@ -231,6 +253,23 @@ export const TopicContent = ({ navigation, route }: TopicContentProps) => {
     }
   }
 
+  // Rich HTML content from admin — render directly in WebView
+  if (hasRichContent) {
+    const htmlPage = `<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width, initial-scale=1.0"><style>body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:16px;line-height:1.8;color:#1a1a1a;padding:20px;background:#fff;}h1,h2,h3{color:#1a1a1a;margin-top:24px;margin-bottom:8px;}h2{font-size:20px;}h3{font-size:17px;}p{margin:0 0 14px;}ul,ol{padding-left:24px;margin:0 0 14px;}li{margin-bottom:6px;}img{max-width:100%;border-radius:8px;margin:10px 0;}strong{font-weight:700;}em{font-style:italic;}u{text-decoration:underline;}</style></head><body>${richContent}</body></html>`;
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }} edges={['top']}>
+        <TopicHeader title={effectiveTopic?.name || 'Topic'} onBack={() => navigation.goBack()} />
+        <PlatformWebView
+          source={{ html: htmlPage }}
+          style={{ flex: 1 }}
+          protectedContent={true}
+          debugLabel={effectiveTopic?.name || 'RichContent'}
+          enableDebugLogs={__DEV__}
+        />
+      </SafeAreaView>
+    );
+  }
+
   if (!normalizedURL) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }} edges={['top']}>
@@ -245,7 +284,6 @@ export const TopicContent = ({ navigation, route }: TopicContentProps) => {
   }
 
   // Keep Canva URL exactly as received from backend.
-  // Stripping/rebuilding query params can break Canva asset resolution.
   const webViewSource = { uri: normalizedURL };
 
   return (

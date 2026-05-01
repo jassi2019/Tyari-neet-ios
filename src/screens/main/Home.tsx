@@ -317,10 +317,10 @@ export const Home = ({ navigation }: HomeScreenProps) => {
           </View>
 
           </View>
-          {/* Footer Image - edge to edge */}
           <TouchableOpacity activeOpacity={0.9} onPress={goToFreeContent} style={styles.footerWrap}>
             <Image source={footerImage} style={styles.footerImg} />
           </TouchableOpacity>
+          <View style={{ height: 20, backgroundColor: '#fff' }} />
       </View>
       </ScrollView>
 

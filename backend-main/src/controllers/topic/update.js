@@ -16,7 +16,7 @@ const updateV1 = async (req, res, next) => {
       subjectId,
       classId,
       explanationContent,
-      revisionRecallContent,
+      revisionContent,
       hiddenLinksContent,
       exerciseRevivalContent,
       masterExemplarContent,
@@ -38,7 +38,7 @@ const updateV1 = async (req, res, next) => {
       resolvedContentURL = getDesignViewUrl(design) || contentURL;
     }
 
-    // Build update payload only with defined fields, so unrelated slots are not overwritten.
+    // Build update payload only with defined fields, so unrelated slots aren't overwritten.
     const updatePayload = {
       name,
       description,
@@ -53,7 +53,7 @@ const updateV1 = async (req, res, next) => {
     };
     const featureFields = {
       explanationContent,
-      revisionRecallContent,
+      revisionContent,
       hiddenLinksContent,
       exerciseRevivalContent,
       masterExemplarContent,

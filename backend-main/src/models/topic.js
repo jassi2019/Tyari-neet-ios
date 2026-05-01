@@ -31,15 +31,36 @@ const Topic = db.define(
       type: DataTypes.STRING,
       allowNull: false,
     },
-    // Per-feature content slots. Each is a JSON object: { url, thumbnail, contentId, description }.
-    // Falls back to legacy contentURL/contentId/contentThumbnail when null.
-    explanationContent: { type: DataTypes.JSONB, allowNull: true },
-    revisionRecallContent: { type: DataTypes.JSONB, allowNull: true },
-    hiddenLinksContent: { type: DataTypes.JSONB, allowNull: true },
-    exerciseRevivalContent: { type: DataTypes.JSONB, allowNull: true },
-    masterExemplarContent: { type: DataTypes.JSONB, allowNull: true },
-    pyqContent: { type: DataTypes.JSONB, allowNull: true },
-    chapterCheckpointContent: { type: DataTypes.JSONB, allowNull: true },
+    // Per-feature content slots — each stores a content URL string.
+    // Falls back to legacy contentURL when null.
+    explanationContent: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    revisionContent: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    hiddenLinksContent: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    exerciseRevivalContent: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    masterExemplarContent: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    pyqContent: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    chapterCheckpointContent: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
     sequence: {
       type: DataTypes.INTEGER,
       allowNull: false,

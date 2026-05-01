@@ -11,7 +11,7 @@ const db = require("../src/config/db");
 
 const COLUMNS = [
   "explanationContent",
-  "revisionRecallContent",
+  "revisionContent",
   "hiddenLinksContent",
   "exerciseRevivalContent",
   "masterExemplarContent",
@@ -26,7 +26,7 @@ const COLUMNS = [
 
     for (const col of COLUMNS) {
       // Postgres-friendly idempotent add. Quoted to preserve camelCase.
-      const sql = `ALTER TABLE "topics" ADD COLUMN IF NOT EXISTS "${col}" JSONB NULL;`;
+      const sql = `ALTER TABLE "topics" ADD COLUMN IF NOT EXISTS "${col}" TEXT NULL;`;
       await db.query(sql);
       console.log(`  ✓ ${col}`);
     }
