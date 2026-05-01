@@ -19,7 +19,7 @@
       },
       "env": {
         "EXPO_PUBLIC_BACKEND_URL": "https://api.taiyarineetki.com",
-        "EXPO_PUBLIC_RAZORPAY_KEY_ID": "rzp_live_SjleB5fB8ZW7pb"
+        "EXPO_PUBLIC_RAZORPAY_KEY_ID": "rzp_live_RhvQOAzK6nNUQm"
       }
     },
     "preview": {
@@ -30,7 +30,7 @@
       },
       "env": {
         "EXPO_PUBLIC_BACKEND_URL": "https://api.taiyarineetki.com",
-        "EXPO_PUBLIC_RAZORPAY_KEY_ID": "rzp_live_SjleB5fB8ZW7pb"
+        "EXPO_PUBLIC_RAZORPAY_KEY_ID": "rzp_live_RhvQOAzK6nNUQm"
       }
     },
     "production": {
@@ -38,7 +38,7 @@
       "channel": "production",
       "env": {
         "EXPO_PUBLIC_BACKEND_URL": "https://api.taiyarineetki.com",
-        "EXPO_PUBLIC_RAZORPAY_KEY_ID": "rzp_live_SjleB5fB8ZW7pb"
+        "EXPO_PUBLIC_RAZORPAY_KEY_ID": "rzp_live_RhvQOAzK6nNUQm"
       }
     }
   },
