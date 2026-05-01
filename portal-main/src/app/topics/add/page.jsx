@@ -42,11 +42,30 @@ export default function AddTopicPage() {
   const { showSuccess, showError } = useToast();
   const router = useRouter();
 
+  const FEATURE_TABS = [
+    { key: "explanationContent", label: "💡 Explanation" },
+    { key: "revisionContent", label: "🧠 Revision Recall" },
+    { key: "hiddenLinksContent", label: "🔗 Hidden Links" },
+    { key: "exerciseRevivalContent", label: "📋 Exercise Revival" },
+    { key: "masterExemplarContent", label: "🏆 Master Exemplar" },
+    { key: "pyqContent", label: "📖 PYQs" },
+    { key: "chapterCheckpointContent", label: "🛡️ Chapter Checkpoint" },
+  ];
+
+  const [activeTab, setActiveTab] = useState("explanationContent");
+
   const [formData, setFormData] = useState({
     name: "",
     description: "",
     contentId: "",
     contentURL: "",
+    explanationContent: "",
+    revisionContent: "",
+    hiddenLinksContent: "",
+    exerciseRevivalContent: "",
+    masterExemplarContent: "",
+    pyqContent: "",
+    chapterCheckpointContent: "",
     subjectId: "",
     chapterId: "",
     classId: "",
@@ -90,14 +109,22 @@ export default function AddTopicPage() {
   };
 
   const isDirty = () => {
+    // At least one source of content must be provided: legacy Content URL
+    // OR any of the 7 feature slots.
+    const hasAnyFeatureContent = FEATURE_TABS.some(
+      (t) => (formData[t.key] || "").trim().length > 0
+    );
+    const hasLegacyContent =
+      (formData.contentURL || "").trim().length > 0 ||
+      (formData.contentId || "").trim().length > 0;
+
     if (
       formData.name === "" ||
       formData.description === "" ||
-      formData.contentId === "" ||
-      formData.contentURL === "" ||
       formData.subjectId === "" ||
       formData.chapterId === "" ||
-      formData.classId === ""
+      formData.classId === "" ||
+      (!hasLegacyContent && !hasAnyFeatureContent)
     ) {
       return true;
     }
@@ -364,9 +391,74 @@ export default function AddTopicPage() {
                     </div>
                   </div>
 
+                  {/* Feature Content Editors — 7 isolated slots, no mixing */}
+                  <div className="space-y-4">
+                    <h2 className="text-xl font-semibold">Feature Content</h2>
+                    <p className="text-sm text-muted-foreground">
+                      Har feature ka content alag add karo — app mein sirf usi feature ka content dikhega. Mix nahi hoga.
+                    </p>
+
+                    {/* Tabs */}
+                    <div className="flex flex-wrap gap-2">
+                      {FEATURE_TABS.map((tab) => (
+                        <button
+                          key={tab.key}
+                          type="button"
+                          onClick={() => setActiveTab(tab.key)}
+                          className={`px-3 py-1.5 text-sm rounded-full border transition-all ${
+                            activeTab === tab.key
+                              ? "bg-primary text-primary-foreground border-primary"
+                              : "border-border hover:bg-muted"
+                          }`}
+                        >
+                          {tab.label}
+                          {formData[tab.key] ? " ✓" : ""}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Editor for active tab */}
+                    {FEATURE_TABS.map((tab) => (
+                      <div key={tab.key} className={activeTab === tab.key ? "block" : "hidden"}>
+                        <div className="border rounded-lg overflow-hidden">
+                          {/* Toolbar */}
+                          <div className="flex flex-wrap gap-1 p-2 border-b bg-muted/30">
+                            {[
+                              { cmd: "bold", label: "B", style: "font-bold" },
+                              { cmd: "italic", label: "I", style: "italic" },
+                              { cmd: "underline", label: "U", style: "underline" },
+                            ].map(({ cmd, label, style }) => (
+                              <button
+                                key={cmd}
+                                type="button"
+                                onMouseDown={(e) => { e.preventDefault(); document.execCommand(cmd, false); }}
+                                className={`px-3 py-1 text-sm rounded border border-border hover:bg-muted ${style}`}
+                              >{label}</button>
+                            ))}
+                            <button type="button" onMouseDown={(e) => { e.preventDefault(); document.execCommand("formatBlock", false, "h2"); }} className="px-3 py-1 text-sm rounded border border-border hover:bg-muted font-semibold">H2</button>
+                            <button type="button" onMouseDown={(e) => { e.preventDefault(); document.execCommand("formatBlock", false, "h3"); }} className="px-3 py-1 text-sm rounded border border-border hover:bg-muted font-semibold">H3</button>
+                            <button type="button" onMouseDown={(e) => { e.preventDefault(); document.execCommand("insertUnorderedList", false); }} className="px-3 py-1 text-sm rounded border border-border hover:bg-muted">• List</button>
+                            <button type="button" onMouseDown={(e) => { e.preventDefault(); document.execCommand("insertOrderedList", false); }} className="px-3 py-1 text-sm rounded border border-border hover:bg-muted">1. List</button>
+                            <button type="button" onMouseDown={(e) => { e.preventDefault(); const url = window.prompt("Image URL:"); if (url) document.execCommand("insertImage", false, url); }} className="px-3 py-1 text-sm rounded border border-border hover:bg-muted">🖼 Image</button>
+                            <button type="button" onMouseDown={(e) => { e.preventDefault(); document.execCommand("removeFormat", false); }} className="px-3 py-1 text-sm rounded border border-border hover:bg-muted text-red-500">Clear</button>
+                          </div>
+                          {/* Editor */}
+                          <div
+                            contentEditable
+                            suppressContentEditableWarning
+                            onInput={(e) => setFormData((prev) => ({ ...prev, [tab.key]: e.currentTarget.innerHTML }))}
+                            dangerouslySetInnerHTML={{ __html: formData[tab.key] || "" }}
+                            className="min-h-[300px] p-4 outline-none prose prose-sm max-w-none dark:prose-invert"
+                            style={{ lineHeight: "1.8" }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
                   {/* Content Selection */}
                   <div className="space-y-4">
-                    <h2 className="text-xl font-semibold">Content Selection</h2>
+                    <h2 className="text-xl font-semibold">Content Selection (Optional — Canva)</h2>
                     <p className="text-sm text-muted-foreground">
                       Search for designs to select content for the topic
                     </p>
