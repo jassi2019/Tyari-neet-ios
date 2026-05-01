@@ -2,7 +2,7 @@
   "expo": {
     "name": "Taiyari NEET ki",
     "slug": "taiyari-neet-ki",
-    "version": "1.0.3",
+    "version": "1.0.4",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "icon": "./assets/icon.png",
@@ -11,8 +11,13 @@
       "resizeMode": "contain",
       "backgroundColor": "#F59E0B"
     },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
     "updates": {
-      "fallbackToCacheTimeout": 0
+      "url": "https://u.expo.dev/e55c6314-0b1e-43af-a737-ce4557b6f804",
+      "fallbackToCacheTimeout": 0,
+      "checkAutomatically": "ON_LOAD"
     },
     "assetBundlePatterns": [
       "**/*"
@@ -23,7 +28,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.taiyarineetki.educationapp",
-      "buildNumber": "1.0.3",
+      "buildNumber": "1.0.4",
       "jsEngine": "hermes",
       "infoPlist": {
         "NSCameraUsageDescription": "This app requires camera access for user uploads and verification.",
@@ -42,7 +47,7 @@
     },
     "android": {
       "package": "com.taiyarineetki.app",
-      "versionCode": 2,
+      "versionCode": 3,
       "jsEngine": "hermes",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",

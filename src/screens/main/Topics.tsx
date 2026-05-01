@@ -29,6 +29,7 @@ type TopicsScreenProps = {
       chapterTitle?: string;
       subjectTitle?: string;
       chapterNumber?: number;
+      featureName?: string;
     };
   };
 };
@@ -54,6 +55,7 @@ const Topics = ({ navigation, route }: TopicsScreenProps) => {
   const chapterTitle = route?.params?.chapterTitle || 'Topics';
   const subjectTitle = route?.params?.subjectTitle;
   const chapterNumber = route?.params?.chapterNumber;
+  const featureName = route?.params?.featureName;
 
   const { isGuest, user } = useAuth();
   const [showPremiumModal, setShowPremiumModal] = useState(false);
@@ -102,7 +104,7 @@ const Topics = ({ navigation, route }: TopicsScreenProps) => {
         return;
       }
     }
-    navigation.navigate('TopicContent', { topic });
+    navigation.navigate('TopicContent', { topic, featureName });
   };
 
   if (!isGuest && (isLoading || favoritesLoading)) {

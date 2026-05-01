@@ -21,6 +21,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 type SubjectsScreenProps = {
   navigation: any;
+  route?: { params?: { featureName?: string } };
 };
 
 type SubjectMeta = {
@@ -56,7 +57,8 @@ const getMetaFor = (name: string): SubjectMeta => {
   return SUBJECT_META[key] || FALLBACK_META;
 };
 
-export const Subjects = ({ navigation }: SubjectsScreenProps) => {
+export const Subjects = ({ navigation, route }: SubjectsScreenProps) => {
+  const featureName = route?.params?.featureName;
   const { isGuest } = useAuth();
   const { data, isLoading, error } = useGetAllSubjects({ enabled: !isGuest });
   const { data: classesData } = useGetAllClasses({ enabled: !isGuest });
@@ -107,6 +109,7 @@ export const Subjects = ({ navigation }: SubjectsScreenProps) => {
       subjectId: subject.id,
       subjectTitle: subject.name,
       classId,
+      featureName,
     });
   };
 
@@ -140,12 +143,12 @@ export const Subjects = ({ navigation }: SubjectsScreenProps) => {
             <TouchableOpacity onPress={handleBack} style={styles.backBtn} activeOpacity={0.7}>
               <ChevronLeft size={22} color="#111" />
             </TouchableOpacity>
-            <Text style={styles.topTitle}>Subjects</Text>
+            <Text style={styles.topTitle}>{featureName || 'Subjects'}</Text>
           </View>
 
           <View style={styles.headerPanel}>
             <Text style={styles.headerGreet}>Choose your subject 📚</Text>
-            <Text style={styles.headerTitle}>Explore & Master NEET</Text>
+            <Text style={styles.headerTitle}>{featureName ? featureName : 'Explore & Master NEET'}</Text>
           </View>
         </View>
 

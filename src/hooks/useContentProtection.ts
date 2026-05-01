@@ -1,6 +1,6 @@
+import Constants from 'expo-constants';
 import { useEffect } from 'react';
 import { Platform } from 'react-native';
-import * as ScreenCapture from 'expo-screen-capture';
 
 type Options = {
   enabled?: boolean;
@@ -16,27 +16,42 @@ type Options = {
   appSwitcherBlurIntensity?: number;
 };
 
+const isExpoGo = Constants.appOwnership === 'expo';
+
 export function useContentProtection(options: Options = {}) {
   const enabled = options.enabled ?? Platform.OS !== 'web';
   const key = options.key ?? 'default';
   const blurIntensity = options.appSwitcherBlurIntensity ?? 0.6;
 
   useEffect(() => {
-    if (!enabled) return;
+    if (!enabled || isExpoGo) return;
 
-    ScreenCapture.preventScreenCaptureAsync(key).catch(() => undefined);
+    let cleanup = () => {};
 
-    // Adds an extra layer of privacy for iOS when app goes to background/app switcher.
-    if (Platform.OS === 'ios') {
-      ScreenCapture.enableAppSwitcherProtectionAsync(blurIntensity).catch(() => undefined);
-    }
-
-    return () => {
-      ScreenCapture.allowScreenCaptureAsync(key).catch(() => undefined);
-      if (Platform.OS === 'ios') {
-        ScreenCapture.disableAppSwitcherProtectionAsync().catch(() => undefined);
+    (async () => {
+      try {
+        const ScreenCapture = await import('expo-screen-capture');
+        await ScreenCapture.preventScreenCaptureAsync(key);
+        if (
+          Platform.OS === 'ios' &&
+          typeof ScreenCapture.enableAppSwitcherProtectionAsync === 'function'
+        ) {
+          await ScreenCapture.enableAppSwitcherProtectionAsync(blurIntensity);
+        }
+        cleanup = () => {
+          ScreenCapture.allowScreenCaptureAsync(key).catch(() => undefined);
+          if (
+            Platform.OS === 'ios' &&
+            typeof ScreenCapture.disableAppSwitcherProtectionAsync === 'function'
+          ) {
+            ScreenCapture.disableAppSwitcherProtectionAsync().catch(() => undefined);
+          }
+        };
+      } catch {
+        // Native module unavailable (Expo Go) — skip
       }
-    };
+    })();
+
+    return () => cleanup();
   }, [enabled, key, blurIntensity]);
 }
-
