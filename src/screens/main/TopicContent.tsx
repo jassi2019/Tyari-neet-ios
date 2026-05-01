@@ -1,6 +1,7 @@
 import PlatformWebView from '@/components/PlatformWebView';
 import { useAuth } from '@/contexts/AuthContext';
-import { useGetTopicById } from '@/hooks/api/topics';
+import { useFeature } from '@/contexts/FeatureContext';
+import { useGetTopicById, useGetTopicFeatureContent } from '@/hooks/api/topics';
 import { useContentProtection } from '@/hooks/useContentProtection';
 import { useProgress } from '@/hooks/useProgress';
 import { isPaidSubscriptionActive, isPremiumServiceType } from '@/lib/subscription';
@@ -44,11 +45,27 @@ type TopicContentProps = {
 
 export const TopicContent = ({ navigation, route }: TopicContentProps) => {
   const { isGuest, user } = useAuth();
+  const { activeFeature, setActiveFeature } = useFeature();
   const topic = route?.params?.topic;
   const topicId = topic?.id || '';
   const isPremiumTopic = isPremiumServiceType(topic?.serviceType);
   const hasPremium = isPaidSubscriptionActive(user?.subscription);
   const { markCompleted } = useProgress();
+
+  // Clear the selected feature once user leaves this screen so the next browse
+  // (without coming via Home box) starts clean.
+  React.useEffect(() => {
+    return () => {
+      setActiveFeature(null);
+    };
+  }, [setActiveFeature]);
+
+  // Per-feature content slot — only fetched when user came via a Home box.
+  const {
+    data: featureResponse,
+  } = useGetTopicFeatureContent(topicId, activeFeature ?? 'explanation', {
+    enabled: !!topicId && !!activeFeature && (!isPremiumTopic || hasPremium) && !isGuest,
+  });
 
   // Mark topic as completed once when the user can actually view it.
   React.useEffect(() => {
@@ -72,7 +89,11 @@ export const TopicContent = ({ navigation, route }: TopicContentProps) => {
   });
 
   const effectiveTopic = !isGuest ? topicResponse?.data || topic : topic;
-  const rawURL = String(effectiveTopic?.contentURL || '').trim();
+  // If user came via a Home feature box, prefer that feature's content slot.
+  const featureUrl = featureResponse?.data?.url;
+  const rawURL = String(
+    (activeFeature && featureUrl) ? featureUrl : effectiveTopic?.contentURL || ''
+  ).trim();
   const isCanvaContent = /canva\.com/i.test(rawURL);
   const isInsecureRemoteUrl = /^http:\/\//i.test(rawURL) && !/^http:\/\/(localhost|127\.0\.0\.1)/i.test(rawURL);
   const normalizedURL = isInsecureRemoteUrl ? rawURL.replace(/^http:\/\//i, 'https://') : rawURL;

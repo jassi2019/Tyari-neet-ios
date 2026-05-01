@@ -1,10 +1,14 @@
+import { FeatureDetailModal, FeatureDetail } from '@/components/FeatureDetailModal/FeatureDetailModal';
 import { NotificationsModal } from '@/components/NotificationsModal/NotificationsModal';
 import { StreakCalendar } from '@/components/StreakCalendar/StreakCalendar';
 import { useAuth } from '@/contexts/AuthContext';
+import { useFeature } from '@/contexts/FeatureContext';
 import { useGetProfile } from '@/hooks/api/user';
 import { useProgress } from '@/hooks/useProgress';
 import { useStreak } from '@/hooks/useStreak';
 import { useGetHomeContent } from '@/hooks/api/homecontent';
+import { useContentProtection } from '@/hooks/useContentProtection';
+import type { TFeatureType } from '@/hooks/api/topics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Bell } from 'lucide-react-native';
 import React, { useMemo, useState } from 'react';
@@ -30,14 +34,34 @@ type HomeScreenProps = {
   navigation: any;
 };
 
-const DEFAULT_FEATURES = [
-  { icon: '💡', num: '1.', name: 'Explanation', desc: 'Detailed explanation of every topic' },
-  { icon: '🧠', num: '2.', name: 'Revision Recall Station', desc: 'Smart revision to retain better' },
-  { icon: '🔗', num: '3.', name: 'Hidden Links', desc: 'Connect concepts unlock clarity' },
-  { icon: '📋', num: '4.', name: 'Exercise Revival', desc: 'From Back exercise to Mastery' },
-  { icon: '🏆', num: '5.', name: 'Master Exemplar', desc: 'Exemplar Deep Practice Zone' },
-  { icon: '📖', num: '6.', name: 'Previous Year Questions', desc: 'PYQ to Question Mastery' },
-  { icon: '🛡️', num: '7.', name: 'Chapter Check Point', desc: 'Full chapter test to check your real preparation' },
+type DefaultFeature = {
+  icon: string;
+  num: string;
+  name: string;
+  desc: string;
+  featureType: TFeatureType;
+};
+
+const DEFAULT_FEATURES: DefaultFeature[] = [
+  { icon: '💡', num: '1.', name: 'Explanation', desc: 'Detailed explanation of every topic', featureType: 'explanation' },
+  { icon: '🧠', num: '2.', name: 'Revision Recall Station', desc: 'Smart revision to retain better', featureType: 'revision_recall' },
+  { icon: '🔗', num: '3.', name: 'Hidden Links', desc: 'Connect concepts unlock clarity', featureType: 'hidden_links' },
+  { icon: '📋', num: '4.', name: 'Exercise Revival', desc: 'From Back exercise to Mastery', featureType: 'exercise_revival' },
+  { icon: '🏆', num: '5.', name: 'Master Exemplar', desc: 'Exemplar Deep Practice Zone', featureType: 'master_exemplar' },
+  { icon: '📖', num: '6.', name: 'Previous Year Questions', desc: 'PYQ to Question Mastery', featureType: 'pyq' },
+  { icon: '🛡️', num: '7.', name: 'Chapter Check Point', desc: 'Full chapter test to check your real preparation', featureType: 'chapter_checkpoint' },
+];
+
+// Map admin-configured titles back to a feature type, so admin can rename freely
+// while we still know which content slot to load.
+const FEATURE_TYPE_BY_INDEX: TFeatureType[] = [
+  'explanation',
+  'revision_recall',
+  'hidden_links',
+  'exercise_revival',
+  'master_exemplar',
+  'pyq',
+  'chapter_checkpoint',
 ];
 
 const DEFAULT_TESTS = [
@@ -49,24 +73,30 @@ const DEFAULT_TESTS = [
 export const Home = ({ navigation }: HomeScreenProps) => {
   const { isGuest } = useAuth();
   const { data: profile } = useGetProfile({ enabled: !isGuest });
-  const { data: homeContent } = useGetHomeContent();
+  const { data: homeContent, isSuccess: homeContentLoaded } = useGetHomeContent();
 
   const FEATURES = useMemo(() => {
-    const apiFeatures = homeContent?.data?.filter((i: any) => i.section === 'feature') || [];
-    if (apiFeatures.length > 0) {
+    // Trust API once it has responded — empty array means admin hid them all.
+    if (homeContentLoaded && Array.isArray(homeContent?.data)) {
+      const apiFeatures = homeContent.data
+        .filter((i: any) => i.section === 'feature' && i.isActive !== false);
       return apiFeatures.map((f: any, i: number) => ({
         icon: f.icon || '📚',
         num: `${i + 1}.`,
         name: f.title,
         desc: f.description || '',
+        // Position-based mapping: admin's nth feature card opens nth content slot.
+        featureType: FEATURE_TYPE_BY_INDEX[i] ?? 'explanation',
       }));
     }
+    // Show defaults only while API hasn't loaded yet (offline / first paint).
     return DEFAULT_FEATURES;
-  }, [homeContent]);
+  }, [homeContent, homeContentLoaded]);
 
   const TESTS = useMemo(() => {
-    const apiTests = homeContent?.data?.filter((i: any) => i.section === 'test') || [];
-    if (apiTests.length > 0) {
+    if (homeContentLoaded && Array.isArray(homeContent?.data)) {
+      const apiTests = homeContent.data
+        .filter((i: any) => i.section === 'test' && i.isActive !== false);
       return apiTests.map((t: any) => ({
         icon: t.icon || '📋',
         name: t.title,
@@ -76,7 +106,7 @@ export const Home = ({ navigation }: HomeScreenProps) => {
       }));
     }
     return DEFAULT_TESTS;
-  }, [homeContent]);
+  }, [homeContent, homeContentLoaded]);
 
   const displayName = isGuest
     ? 'Future Doctor'
@@ -88,9 +118,21 @@ export const Home = ({ navigation }: HomeScreenProps) => {
     navigation.navigate('MainTabs', { screen: 'SubjectsTab' });
   };
 
+  useContentProtection({ key: 'home-screen' });
+
+  const { setActiveFeature: setActiveFeatureType } = useFeature();
   const { currentStreak, longestStreak, visitedDates, totalDaysStudied } = useStreak();
   const [streakModalOpen, setStreakModalOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
+  const [activeFeature, setActiveFeature] = useState<(FeatureDetail & { featureType?: TFeatureType }) | null>(null);
+
+  const handleFeatureStart = () => {
+    if (activeFeature?.featureType) {
+      setActiveFeatureType(activeFeature.featureType);
+    }
+    setActiveFeature(null);
+    navigation.navigate('MainTabs', { screen: 'SubjectsTab' });
+  };
 
   const { completedTopics } = useProgress();
   const studyStats = useMemo(() => {
@@ -174,11 +216,10 @@ export const Home = ({ navigation }: HomeScreenProps) => {
                   key={i}
                   style={styles.featCard}
                   activeOpacity={0.7}
-                  onPress={goToFreeContent}
+                  onPress={() => setActiveFeature(f)}
                 >
-                  <Text style={styles.featIco}>{f.icon}</Text>
-                  <Text style={styles.featNum}>{f.num} {f.name}</Text>
-                  <Text style={styles.featDesc}>{f.desc}</Text>
+                  <Text style={styles.featIco} selectable={false}>{f.icon}</Text>
+                  <Text style={styles.featNum} selectable={false}>{f.num} {f.name}</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -280,7 +321,6 @@ export const Home = ({ navigation }: HomeScreenProps) => {
           <TouchableOpacity activeOpacity={0.9} onPress={goToFreeContent} style={styles.footerWrap}>
             <Image source={footerImage} style={styles.footerImg} />
           </TouchableOpacity>
-          <View style={{ height: 100, backgroundColor: '#fff' }} />
       </View>
       </ScrollView>
 
@@ -296,6 +336,13 @@ export const Home = ({ navigation }: HomeScreenProps) => {
       <NotificationsModal
         visible={notifOpen}
         onClose={() => setNotifOpen(false)}
+      />
+
+      <FeatureDetailModal
+        visible={activeFeature !== null}
+        feature={activeFeature}
+        onClose={() => setActiveFeature(null)}
+        onStart={handleFeatureStart}
       />
     </SafeAreaView>
     </LinearGradient>
@@ -378,11 +425,11 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   heroBannerImg: {
-    width: '100%',
-    aspectRatio: 16 / 9,
+    width: width - 28,
+    height: ((width - 28) * 709) / 1600,
     borderRadius: 14,
-    resizeMode: 'contain',
-    backgroundColor: '#fff',
+    resizeMode: 'stretch',
+    backgroundColor: '#FCD34D',
   },
   cardBody: {
     backgroundColor: '#fff',
@@ -508,9 +555,9 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   footerImg: {
-    width: '100%',
-    height: 150,
-    resizeMode: 'cover',
+    width: width,
+    height: (width * 529) / 1504,
+    resizeMode: 'stretch',
     marginBottom: 0,
   },
 });

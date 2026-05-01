@@ -8,6 +8,7 @@ const getByIdV1 = require("../../controllers/topic/get.by.id");
 const updateV1 = require("../../controllers/topic/update");
 const deleteV1 = require("../../controllers/topic/delete");
 const getFreeV1 = require("../../controllers/topic/get.free");
+const getFeatureContentV1 = require("../../controllers/topic/get.feature.content");
 
 const authMiddleware = require("../../middlewares/auth");
 const { isAdminRole } = require("../../middlewares/auth.z");
@@ -272,6 +273,11 @@ router
   .get(authMiddleware, getV1);
 
 router.route("/free").get(authMiddleware, getFreeV1);
+
+// Per-feature content slot — gated by subscription same as topic content
+router
+  .route("/:topicId/feature/:featureType")
+  .get(authMiddleware, isSubscribed, getFeatureContentV1);
 
 router
   .route("/:topicId")

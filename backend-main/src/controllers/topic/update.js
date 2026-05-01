@@ -15,6 +15,13 @@ const updateV1 = async (req, res, next) => {
       chapterId,
       subjectId,
       classId,
+      explanationContent,
+      revisionRecallContent,
+      hiddenLinksContent,
+      exerciseRevivalContent,
+      masterExemplarContent,
+      pyqContent,
+      chapterCheckpointContent,
     } = req.body;
 
     let contentThumbnail = undefined;
@@ -31,21 +38,33 @@ const updateV1 = async (req, res, next) => {
       resolvedContentURL = getDesignViewUrl(design) || contentURL;
     }
 
-    const doc = await Topic.update(
-      {
-        name,
-        description,
-        contentURL: resolvedContentURL,
-        contentThumbnail,
-        contentId,
-        sequence,
-        serviceType,
-        chapterId,
-        subjectId,
-        classId,
-      },
-      { where: { id: topicId } }
-    );
+    // Build update payload only with defined fields, so unrelated slots are not overwritten.
+    const updatePayload = {
+      name,
+      description,
+      contentURL: resolvedContentURL,
+      contentThumbnail,
+      contentId,
+      sequence,
+      serviceType,
+      chapterId,
+      subjectId,
+      classId,
+    };
+    const featureFields = {
+      explanationContent,
+      revisionRecallContent,
+      hiddenLinksContent,
+      exerciseRevivalContent,
+      masterExemplarContent,
+      pyqContent,
+      chapterCheckpointContent,
+    };
+    for (const [key, value] of Object.entries(featureFields)) {
+      if (value !== undefined) updatePayload[key] = value;
+    }
+
+    const doc = await Topic.update(updatePayload, { where: { id: topicId } });
 
     return res
       .status(200)

@@ -24,6 +24,7 @@
     },
     "preview": {
       "distribution": "internal",
+      "channel": "preview",
       "env": {
         "EXPO_PUBLIC_BACKEND_URL": "https://api.taiyarineetki.com",
         "EXPO_PUBLIC_RAZORPAY_KEY_ID": "rzp_live_ShhCLMHs3DIqZo"
@@ -31,6 +32,7 @@
     },
     "production": {
       "autoIncrement": true,
+      "channel": "production",
       "env": {
         "EXPO_PUBLIC_BACKEND_URL": "https://api.taiyarineetki.com",
         "EXPO_PUBLIC_RAZORPAY_KEY_ID": "rzp_live_ShhCLMHs3DIqZo"

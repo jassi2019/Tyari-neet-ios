@@ -9,6 +9,8 @@ export const useGetHomeContent = (section?: string) => {
       const res = await api.get(`/api/v1/home-content${params}`);
       return res.data;
     },
-    staleTime: 5 * 60 * 1000, // cache 5 min
+    staleTime: 30 * 1000, // 30s — quick reflect of admin toggles
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
   });
 };

@@ -31,6 +31,15 @@ const Topic = db.define(
       type: DataTypes.STRING,
       allowNull: false,
     },
+    // Per-feature content slots. Each is a JSON object: { url, thumbnail, contentId, description }.
+    // Falls back to legacy contentURL/contentId/contentThumbnail when null.
+    explanationContent: { type: DataTypes.JSONB, allowNull: true },
+    revisionRecallContent: { type: DataTypes.JSONB, allowNull: true },
+    hiddenLinksContent: { type: DataTypes.JSONB, allowNull: true },
+    exerciseRevivalContent: { type: DataTypes.JSONB, allowNull: true },
+    masterExemplarContent: { type: DataTypes.JSONB, allowNull: true },
+    pyqContent: { type: DataTypes.JSONB, allowNull: true },
+    chapterCheckpointContent: { type: DataTypes.JSONB, allowNull: true },
     sequence: {
       type: DataTypes.INTEGER,
       allowNull: false,

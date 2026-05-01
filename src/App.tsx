@@ -10,6 +10,7 @@ import { BottomNavProvider } from './components/BottomNavBar/BottomNavBar';
 import ErrorBoundary from './components/ErrorBoundary';
 import ErrorFallback from './components/ErrorFallback';
 import { AuthProvider } from './contexts/AuthContext';
+import { FeatureProvider } from './contexts/FeatureContext';
 import RootNavigator from './navigation/RootNavigator';
 
 enableScreens();
@@ -21,14 +22,16 @@ export default function App() {
     <ErrorBoundary FallbackComponent={ErrorFallback}>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <BottomNavProvider>
-            <SafeAreaProvider>
-              <NavigationContainer>
-                <RootNavigator />
-                <StatusBar style="auto" />
-              </NavigationContainer>
-            </SafeAreaProvider>
-          </BottomNavProvider>
+          <FeatureProvider>
+            <BottomNavProvider>
+              <SafeAreaProvider>
+                <NavigationContainer>
+                  <RootNavigator />
+                  <StatusBar style="auto" />
+                </NavigationContainer>
+              </SafeAreaProvider>
+            </BottomNavProvider>
+          </FeatureProvider>
         </AuthProvider>
       </QueryClientProvider>
     </ErrorBoundary>

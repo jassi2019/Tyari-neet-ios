@@ -13,6 +13,13 @@ const createV1 = async (req, res, next) => {
       chapterId,
       subjectId,
       classId,
+      explanationContent,
+      revisionRecallContent,
+      hiddenLinksContent,
+      exerciseRevivalContent,
+      masterExemplarContent,
+      pyqContent,
+      chapterCheckpointContent,
     } = req.body;
 
     const {
@@ -32,6 +39,13 @@ const createV1 = async (req, res, next) => {
       chapterId,
       subjectId,
       classId,
+      explanationContent: explanationContent || null,
+      revisionRecallContent: revisionRecallContent || null,
+      hiddenLinksContent: hiddenLinksContent || null,
+      exerciseRevivalContent: exerciseRevivalContent || null,
+      masterExemplarContent: masterExemplarContent || null,
+      pyqContent: pyqContent || null,
+      chapterCheckpointContent: chapterCheckpointContent || null,
     });
 
     return res
