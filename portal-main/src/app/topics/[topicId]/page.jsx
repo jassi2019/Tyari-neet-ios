@@ -21,7 +21,6 @@ import {
   Search,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import FeatureSlots, { FEATURE_SLOTS } from "@/components/custom/FeatureSlots";
 import { getTopic, updateTopic } from "@/services/topics";
 import { getChapters } from "@/services/chapter";
 import { getSubjects } from "@/services/subject";
@@ -621,16 +620,6 @@ export default function EditTopicPage() {
                 </div>
               </CardContent>
             </Card>
-
-            <FeatureSlots
-              value={FEATURE_SLOTS.reduce((acc, s) => {
-                acc[s.key] = formData[s.key] ?? null;
-                return acc;
-              }, {})}
-              onChange={(next) =>
-                setFormData((prev) => ({ ...prev, ...next }))
-              }
-            />
 
             <div className="flex justify-end gap-2">
               <Button
