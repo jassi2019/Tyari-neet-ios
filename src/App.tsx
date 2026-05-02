@@ -18,10 +18,10 @@ enableScreens();
 
 const queryClient = new QueryClient();
 
-// App-wide screenshot/recording block. Stays active for the entire app lifetime
-// so every screen is covered, not just Home/TopicContent.
+// App-wide screenshot/recording block — prevents screen capture on all screens.
+// appSwitcherBlurIntensity kept low (0.15) so iOS doesn't show a black/blurred screen on launch.
 function AppShell() {
-  useContentProtection({ key: 'app-global', appSwitcherBlurIntensity: 0.7 });
+  useContentProtection({ key: 'app-global', appSwitcherBlurIntensity: 0.15 });
   return <RootNavigator />;
 }
 
