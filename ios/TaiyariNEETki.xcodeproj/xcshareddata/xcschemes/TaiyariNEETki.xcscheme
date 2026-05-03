@@ -15,9 +15,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-               BuildableName = "EducationApp.app"
-               BlueprintName = "EducationApp"
-               ReferencedContainer = "container:EducationApp.xcodeproj">
+               BuildableName = "TaiyariNEETki.app"
+               BlueprintName = "TaiyariNEETki"
+               ReferencedContainer = "container:TaiyariNEETki.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -33,15 +33,15 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "00E356ED1AD99517003FC87E"
-               BuildableName = "EducationAppTests.xctest"
-               BlueprintName = "EducationAppTests"
-               ReferencedContainer = "container:EducationApp.xcodeproj">
+               BuildableName = "TaiyariNEETkiTests.xctest"
+               BlueprintName = "TaiyariNEETkiTests"
+               ReferencedContainer = "container:TaiyariNEETki.xcodeproj">
             </BuildableReference>
          </TestableReference>
       </Testables>
    </TestAction>
    <LaunchAction
-      buildConfiguration = "Release"
+      buildConfiguration = "Debug"
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       launchStyle = "0"
@@ -55,14 +55,11 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-            BuildableName = "EducationApp.app"
-            BlueprintName = "EducationApp"
-            ReferencedContainer = "container:EducationApp.xcodeproj">
+            BuildableName = "TaiyariNEETki.app"
+            BlueprintName = "TaiyariNEETki"
+            ReferencedContainer = "container:TaiyariNEETki.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
-      <StoreKitConfigurationFileReference
-         identifier = "../storekit_config.storekit">
-      </StoreKitConfigurationFileReference>
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "Release"
@@ -75,9 +72,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-            BuildableName = "EducationApp.app"
-            BlueprintName = "EducationApp"
-            ReferencedContainer = "container:EducationApp.xcodeproj">
+            BuildableName = "TaiyariNEETki.app"
+            BlueprintName = "TaiyariNEETki"
+            ReferencedContainer = "container:TaiyariNEETki.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

@@ -6,10 +6,13 @@ import type { TRazorpayOptions, TRazorpayPaymentResult } from './razorpay.types'
 const RazorpaySdk = require('react-native-razorpay');
 
 export function openRazorpay(options: TRazorpayOptions): Promise<TRazorpayPaymentResult> {
+  console.log('✅ Using Android Razorpay native implementation');
+
   const Razorpay = RazorpaySdk?.default ?? RazorpaySdk;
+  console.log('Razorpay module:', Razorpay);
+
   return Razorpay.open(options) as Promise<TRazorpayPaymentResult>;
 }
-
 export default {
   openRazorpay,
 };

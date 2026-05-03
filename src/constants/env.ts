@@ -104,9 +104,10 @@ const resolveBackendUrl = () => {
 };
 
 const env: TEnv = {
-  backendUrl: resolveBackendUrl(),
+  backendUrl: 'https://api.taiyarineetki.com', // resolveBackendUrl(),
   // Android-only (Razorpay). Safe to ship as EXPO_PUBLIC_* since this is not a secret.
-  razorpayKeyId: (process.env.EXPO_PUBLIC_RAZORPAY_KEY_ID || '').trim() || null,
+  // razorpayKeyId:'rzp_test_Skbk3DnbPc9I6f',
+  razorpayKeyId:'rzp_live_Sk4vSpgDHyeyc4',
 };
 
 export default env;

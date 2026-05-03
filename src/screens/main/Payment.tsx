@@ -31,6 +31,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import RazorpayCheckout from 'react-native-razorpay';
 
 type PaymentScreenProps = {
   navigation: any;
@@ -107,7 +108,30 @@ export const PaymentScreen = ({ navigation, route }: PaymentScreenProps) => {
   const [storeProductError, setStoreProductError] = React.useState<string | null>(null);
 
   const iapReady = Platform.OS === 'ios' && isIapAvailable();
-
+    const orderOptions = {
+    description: 'Credits towards consultation',
+    image: 'https://i.imgur.com/3g7nmJC.jpg',
+    currency: 'INR',
+    key: 'rzp_test_Skbk3DnbPc9I6f',
+    amount: '10000',
+    name: 'Acme Corp',
+    order_id: 'order_SkbtFtFcKdKdcV',//Replace this with an order_id created using Orders API.
+    prefill: {
+      email: 'gaurav.kumar@example.com',
+      contact: '+919876543210',
+      name: 'Gaurav Kumar'
+    },
+    theme: {color: '#53a20e'}
+  }
+      // const order = {
+      //     id: 'order_SkbtFtFcKdKdcV',
+      //     amount: 10000,
+      //     currency: 'INR',
+      //     notes: {
+      //       email: 'test@example.com',
+      //       name: 'Test User',
+      //     },
+      //   };
   React.useEffect(() => {
     let cancelled = false;
 
@@ -155,11 +179,11 @@ export const PaymentScreen = ({ navigation, route }: PaymentScreenProps) => {
     Alert.alert(
       'Development Build Required',
       'In-app purchases require a development build.\n\n' +
-        'Expo Go does not support native IAP modules.\n\n' +
-        'To enable IAP:\n' +
-        '1. Run: eas build --profile development --platform ios\n' +
-        '2. Install the build on your iPhone\n' +
-        '3. Run: npx expo start --dev-client'
+      'Expo Go does not support native IAP modules.\n\n' +
+      'To enable IAP:\n' +
+      '1. Run: eas build --profile development --platform ios\n' +
+      '2. Install the build on your iPhone\n' +
+      '3. Run: npx expo start --dev-client'
     );
   };
 
@@ -169,11 +193,19 @@ export const PaymentScreen = ({ navigation, route }: PaymentScreenProps) => {
 
       try {
         const orderRes = await createOrderAsync(plan.id);
+        // const order = {
+        //   id: 'order_SkbtFtFcKdKdcV',
+        //   amount: 10000,
+        //   currency: 'INR',
+        //   notes: {
+        //     email: 'test@example.com',
+        //     name: 'Test User',
+        //   },
+        // };
         const order = orderRes?.data;
         if (!order) {
           throw new Error('Unable to create order. Please try again.');
         }
-
         const payment = await initiateRazorpayPayment({ order, plan });
 
         await createRazorpaySubscriptionAsync({
@@ -263,7 +295,7 @@ export const PaymentScreen = ({ navigation, route }: PaymentScreenProps) => {
 
     try {
       const purchase = await purchaseAppleProduct(appleProductId, storeProduct.type);
-      
+
       await createAppleSubscriptionAsync({
         planId: plan.id,
         productId: purchase.productId,
@@ -554,7 +586,6 @@ export const PaymentScreen = ({ navigation, route }: PaymentScreenProps) => {
             </View>
           </View>
         )}
-
         <TouchableOpacity
           onPress={handlePayment}
           // Allow tap to show helpful alerts even when IAP isn't ready (Expo Go, missing config).

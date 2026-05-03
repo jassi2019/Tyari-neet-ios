@@ -84,19 +84,48 @@ export const initiateRazorpayPayment = async ({
     throw new Error('Invalid order amount.');
   }
 
-  const result = await openRazorpay({
-    description: plan.name,
+  if (!String(order.id || '').startsWith('order_')) {
+    throw new Error('Invalid Razorpay order id returned by the server.');
+  }
+
+  console.log('Initiating Razorpay payment', {
+    orderId: order.id,
+    amount: payableAmountPaise,
     currency: order.currency || 'INR',
-    key: env.razorpayKeyId,
-    amount: String(payableAmountPaise), // paise (as returned by Razorpay order API)
-    name: 'Taiyari NEET Ki',
-    order_id: order.id,
-    prefill: {
-      email: order.notes?.email,
-      name: order.notes?.name,
-    },
-    theme: { color: '#F1BB3E' },
+    planId: plan.id,
+    razorpayKeyPrefix: env.razorpayKeyId.split('_').slice(0, 2).join('_'),
   });
+
+  let result;
+  try {
+    result = await openRazorpay({
+      description: plan.name,
+      currency: order.currency || 'INR',
+      key: env.razorpayKeyId,
+      amount: payableAmountPaise, // paise (as returned by Razorpay order API)
+      name: 'Taiyari NEET Ki',
+      order_id: order.id,
+      prefill: {
+        email: order.notes?.email,
+        name: order.notes?.name,
+      },
+      theme: { color: '#F1BB3E' },
+    });
+  } catch (error: any) {
+    const rawMessage = String(error?.description || error?.message || error || '');
+    const normalizedMessage = rawMessage.toLowerCase();
+
+    if (
+      normalizedMessage.includes('http response code failure') ||
+      normalizedMessage.includes('checkout/public')
+    ) {
+      throw new Error(
+        'Razorpay checkout could not be loaded. This usually means the app key and the server-created order are from different Razorpay modes (test vs live). Check EXPO_PUBLIC_RAZORPAY_KEY_ID and the backend RAZORPAY_KEY_ID/RAZORPAY_KEY_SECRET.'
+      );
+    }
+
+    throw error;
+  }
 
   if (!result) {
     throw new Error(
