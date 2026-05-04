@@ -14,6 +14,13 @@ import {
   Menu,
   Home,
   X,
+  Lightbulb,
+  Brain,
+  Link2,
+  ClipboardList,
+  Trophy,
+  FileText,
+  Shield,
 } from "lucide-react";
 import { useSidebar } from "./sidebar-provider";
 
@@ -25,6 +32,16 @@ const navigation = [
   { name: "Topics", href: "/topics", icon: ListOrdered },
   { name: "Questions", href: "/questions", icon: HelpCircle },
   { name: "Home Content", href: "/home-content", icon: LayoutDashboard },
+];
+
+const featureNavigation = [
+  { name: "Explanation", href: "/topics?feature=explanation", icon: Lightbulb },
+  { name: "Revision Recall", href: "/topics?feature=revision_recall", icon: Brain },
+  { name: "Hidden Links", href: "/topics?feature=hidden_links", icon: Link2 },
+  { name: "Exercise Revival", href: "/topics?feature=exercise_revival", icon: ClipboardList },
+  { name: "Master Exemplar", href: "/topics?feature=master_exemplar", icon: Trophy },
+  { name: "PYQs", href: "/topics?feature=pyq", icon: FileText },
+  { name: "Chapter Checkpoint", href: "/topics?feature=chapter_checkpoint", icon: Shield },
 ];
 
 export default function Sidebar() {
@@ -82,7 +99,7 @@ export default function Sidebar() {
           {navigation.map((item) => {
             const isActive =
               pathname === item.href ||
-              (item.name !== "Dashboard" && pathname.startsWith(item.href));
+              (item.name !== "Dashboard" && pathname.startsWith(item.href) && !pathname.includes("?"));
             return (
               <Link
                 key={item.name}
@@ -100,6 +117,29 @@ export default function Sidebar() {
                 {isActive && (
                   <span className="ml-auto w-1.5 h-1.5 rounded-full bg-primary-foreground opacity-70" />
                 )}
+              </Link>
+            );
+          })}
+
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 mb-3 mt-6">
+            Feature Content
+          </p>
+          {featureNavigation.map((item) => {
+            const isActive = pathname + (typeof window !== "undefined" ? window.location.search : "") === item.href;
+            return (
+              <Link
+                key={item.name}
+                href={item.href}
+                onClick={() => setIsOpen(false)}
+                className={cn(
+                  "flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-all duration-150",
+                  isActive
+                    ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25"
+                    : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                )}
+              >
+                <item.icon className="h-4 w-4 flex-shrink-0" />
+                {item.name}
               </Link>
             );
           })}

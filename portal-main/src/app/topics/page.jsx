@@ -21,13 +21,26 @@ import {
   Trash,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Loader from "@/components/custom/loader";
 import useToast from "@/hooks/useToast";
 import { getTopics, deleteTopic } from "@/services/topics";
 import Image from "next/image";
 
+const FEATURE_LABELS = {
+  explanation: "💡 Explanation",
+  revision_recall: "🧠 Revision Recall",
+  hidden_links: "🔗 Hidden Links",
+  exercise_revival: "📋 Exercise Revival",
+  master_exemplar: "🏆 Master Exemplar",
+  pyq: "📖 PYQs",
+  chapter_checkpoint: "🛡️ Chapter Checkpoint",
+};
+
 export default function TopicsPage() {
+  const searchParams = useSearchParams();
+  const featureFilter = searchParams.get("feature");
+  const featureLabel = featureFilter ? FEATURE_LABELS[featureFilter] || featureFilter : null;
   const [isLoading, setIsLoading] = useState(false);
   const [topics, setTopics] = useState([]);
 
@@ -56,7 +69,8 @@ export default function TopicsPage() {
   };
 
   const onEditTopic = (topicId) => {
-    router.push(`/topics/${topicId}`);
+    const featureParam = featureFilter ? `?feature=${featureFilter}` : "";
+    router.push(`/topics/${topicId}${featureParam}`);
   };
 
   const onDeleteTopic = async (topicId) => {
@@ -86,10 +100,10 @@ export default function TopicsPage() {
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
               <h1 className="text-3xl sm:text-4xl font-bold tracking-tight bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-                Topics
+                {featureLabel ? `${featureLabel} Content` : "Topics"}
               </h1>
               <p className="text-muted-foreground mt-2 text-lg">
-                Master your NEET preparation one topic at a time
+                {featureLabel ? `Add/edit ${featureLabel} content for each topic` : "Master your NEET preparation one topic at a time"}
               </p>
             </div>
             <Button

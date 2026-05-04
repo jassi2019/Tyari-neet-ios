@@ -27,7 +27,7 @@ import { getSubjects } from "@/services/subject";
 import { getClasses } from "@/services/class";
 import { getDesigns } from "@/services/canva";
 import useToast from "@/hooks/useToast";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Loader from "@/components/custom/loader";
 
 export default function EditTopicPage() {
@@ -43,6 +43,8 @@ export default function EditTopicPage() {
   const { showSuccess, showError } = useToast();
   const router = useRouter();
   const { topicId } = useParams();
+  const searchParams = useSearchParams();
+  const featureFromURL = searchParams.get("feature");
 
   const FEATURE_TABS = [
     { key: "explanationContent", label: "💡 Explanation" },
@@ -54,7 +56,19 @@ export default function EditTopicPage() {
     { key: "chapterCheckpointContent", label: "🛡️ Chapter Checkpoint" },
   ];
 
-  const [activeTab, setActiveTab] = useState("explanationContent");
+  const FEATURE_TO_TAB = {
+    explanation: "explanationContent",
+    revision_recall: "revisionContent",
+    hidden_links: "hiddenLinksContent",
+    exercise_revival: "exerciseRevivalContent",
+    master_exemplar: "masterExemplarContent",
+    pyq: "pyqContent",
+    chapter_checkpoint: "chapterCheckpointContent",
+  };
+
+  const [activeTab, setActiveTab] = useState(
+    featureFromURL ? (FEATURE_TO_TAB[featureFromURL] || "explanationContent") : "explanationContent"
+  );
 
   const [formData, setFormData] = useState({
     name: "",
