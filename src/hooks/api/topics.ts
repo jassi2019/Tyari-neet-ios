@@ -19,8 +19,9 @@ const getFreeTopics = (): TApiPromise<TTopic[]> => {
   return api.get(`/api/v1/topics/free`);
 };
 
-const getTopicByTopicId = (topicId: string): TApiPromise<TTopic> => {
-  return api.get(`/api/v1/topics/${topicId}`);
+const getTopicByTopicId = (topicId: string, featureType?: string): TApiPromise<TTopic> => {
+  const params = featureType ? `?featureType=${featureType}` : '';
+  return api.get(`/api/v1/topics/${topicId}${params}`);
 };
 
 export type TFeatureType =
@@ -84,10 +85,10 @@ export const useGetLastReadTopic = (options?: TQueryOpts<TLastRead>) => {
   });
 };
 
-export const useGetTopicById = (topicId: string, options?: TQueryOpts<TTopic>) => {
+export const useGetTopicById = (topicId: string, options?: TQueryOpts<TTopic>, featureType?: string) => {
   return useQuery({
-    queryKey: ['topics', topicId],
-    queryFn: () => getTopicByTopicId(topicId),
+    queryKey: ['topics', topicId, featureType],
+    queryFn: () => getTopicByTopicId(topicId, featureType),
     ...options,
   });
 };

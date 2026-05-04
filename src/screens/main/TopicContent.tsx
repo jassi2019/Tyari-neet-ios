@@ -91,7 +91,7 @@ export const TopicContent = ({ navigation, route }: TopicContentProps) => {
   } = useGetTopicById(topicId, {
     enabled: !isGuest && !!topicId && (!isPremiumTopic || hasPremium),
     retry: false,
-  });
+  }, activeFeature || undefined);
 
   const effectiveTopic = !isGuest ? topicResponse?.data || topic : topic;
 
