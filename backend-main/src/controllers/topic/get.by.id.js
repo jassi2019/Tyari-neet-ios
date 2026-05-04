@@ -27,10 +27,13 @@ const getByIdV1 = async (req, res, next) => {
         }
       }
     } else {
-      // No featureType specified — null out ALL content fields
+      // No featureType specified — null out ALL content fields + legacy URL
       for (const field of ALL_CONTENT_FIELDS) {
         plain[field] = null;
       }
+      plain.contentURL = null;
+      plain.contentThumbnail = null;
+      plain.contentId = null;
     }
 
     return res
