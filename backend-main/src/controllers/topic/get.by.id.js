@@ -16,8 +16,9 @@ const getByIdV1 = async (req, res, next) => {
 
     const plain = doc.toJSON();
 
-    // If featureType is specified, only return that feature's content.
-    // Null out all other content fields so app doesn't show wrong content.
+    // Always null out all 7 content fields by default.
+    // Only return content for the requested featureType.
+    // This prevents the app from showing wrong/all content.
     if (featureType && FEATURE_TYPE_TO_FIELD[featureType]) {
       const keepField = FEATURE_TYPE_TO_FIELD[featureType];
       for (const field of ALL_CONTENT_FIELDS) {
@@ -25,9 +26,10 @@ const getByIdV1 = async (req, res, next) => {
           plain[field] = null;
         }
       }
-      // Also null out legacy contentURL so it doesn't fallback
-      if (plain[keepField]) {
-        plain.contentURL = null;
+    } else {
+      // No featureType specified — null out ALL content fields
+      for (const field of ALL_CONTENT_FIELDS) {
+        plain[field] = null;
       }
     }
 
