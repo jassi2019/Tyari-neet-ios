@@ -1,7 +1,8 @@
 import axiosInstance from "./axios";
 
-export const getTopics = async () => {
-  const response = await axiosInstance.get("/api/v1/topics");
+export const getTopics = async (featureType) => {
+  const params = featureType ? `?featureType=${featureType}` : "";
+  const response = await axiosInstance.get(`/api/v1/topics${params}`);
   return response.data;
 };
 

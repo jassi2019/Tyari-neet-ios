@@ -49,7 +49,7 @@ function TopicsPageInner() {
   const loadTopics = async () => {
     setIsLoading(true);
     try {
-      const { data } = await getTopics();
+      const { data } = await getTopics(featureFilter);
       setTopics(data);
     } catch (error) {
       showError(error);
@@ -60,7 +60,7 @@ function TopicsPageInner() {
 
   useEffect(() => {
     loadTopics();
-  }, []);
+  }, [featureFilter]);
 
   const router = useRouter();
 

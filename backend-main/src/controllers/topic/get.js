@@ -1,8 +1,10 @@
+const { Op } = require("sequelize");
 const { Topic, Subject, Chapter, Class } = require("../../models");
+const { FEATURE_TYPE_TO_FIELD } = require("../../constants");
 
 const getV1 = async (req, res, next) => {
   try {
-    const { subjectId, classId, chapterId } = req.query;
+    const { subjectId, classId, chapterId, featureType } = req.query;
 
     const query = {};
 
@@ -16,6 +18,12 @@ const getV1 = async (req, res, next) => {
 
     if (chapterId) {
       query.chapterId = chapterId;
+    }
+
+    // If featureType specified, only return topics that have content for that feature
+    if (featureType && FEATURE_TYPE_TO_FIELD[featureType]) {
+      const field = FEATURE_TYPE_TO_FIELD[featureType];
+      query[field] = { [Op.and]: [{ [Op.ne]: null }, { [Op.ne]: "" }] };
     }
 
     const docs = await Topic.findAll({
