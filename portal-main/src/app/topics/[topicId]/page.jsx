@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -30,7 +30,7 @@ import useToast from "@/hooks/useToast";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Loader from "@/components/custom/loader";
 
-export default function EditTopicPage() {
+function EditTopicPageInner() {
   const [subjects, setSubjects] = useState([]);
   const [classes, setClasses] = useState([]);
   const [chapters, setChapters] = useState([]);
@@ -649,5 +649,13 @@ export default function EditTopicPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function EditTopicPage() {
+  return (
+    <Suspense fallback={<div />}>
+      <EditTopicPageInner />
+    </Suspense>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -37,7 +37,7 @@ const FEATURE_LABELS = {
   chapter_checkpoint: "🛡️ Chapter Checkpoint",
 };
 
-export default function TopicsPage() {
+function TopicsPageInner() {
   const searchParams = useSearchParams();
   const featureFilter = searchParams.get("feature");
   const featureLabel = featureFilter ? FEATURE_LABELS[featureFilter] || featureFilter : null;
@@ -220,5 +220,13 @@ export default function TopicsPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function TopicsPage() {
+  return (
+    <Suspense fallback={<div />}>
+      <TopicsPageInner />
+    </Suspense>
   );
 }
