@@ -106,9 +106,7 @@ export default function MembersPage() {
                         <td className="px-4 py-3"><div className="flex items-center gap-1.5 text-sm text-muted-foreground"><Mail className="h-3.5 w-3.5" />{user.email}</div></td>
                         <td className="px-4 py-3"><div className="flex items-center gap-1.5 text-sm text-muted-foreground"><Calendar className="h-3.5 w-3.5" />{formatDate(user.createdAt)}</div></td>
                         <td className="px-4 py-3"><Badge variant="outline" className="text-xs">{user.registrationSource || "APP"}</Badge></td>
-                        <td className="px-4 py-3"><div className="flex gap-1"><button onClick={()=>{setSelectedUser(user);setGrantForm({planId:"",endDate:"",notes:""});}} className="p-1.5 rounded hover:bg-green-50" title="Grant Subscription"><Gift className="h-3.5 w-3.5 text-green-600"/></button></div></td>
                         <td className="px-4 py-3"><Badge variant={sub.variant} className="text-xs">{sub.label === "Premium" && <Crown className="h-3 w-3 mr-1" />}{sub.label}</Badge></td>
-                        <td className="px-4 py-3"><div className="flex gap-1"><button onClick={()=>{setSelectedUser(user);setGrantForm({planId:"",endDate:"",notes:""});}} className="p-1.5 rounded hover:bg-green-50" title="Grant Subscription"><Gift className="h-3.5 w-3.5 text-green-600"/></button></div></td>
                       </tr>
                     );
                   })}
