@@ -1,8 +1,8 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 body {
   font-family: 'Inter', Arial, Helvetica, sans-serif;
@@ -37,7 +37,6 @@ body {
     --radius: 0.75rem;
   }
 
-  /* Daily color themes - auto applied via JS */
   .theme-monday {
     --primary: 245 82% 67%;
     --accent: 245 82% 67%;
@@ -84,7 +83,6 @@ body {
   }
 }
 
-/* Scrollbar styling */
 ::-webkit-scrollbar {
   width: 6px;
 }

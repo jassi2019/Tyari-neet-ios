@@ -18,6 +18,7 @@ export default function RootLayout({ children }) {
     const themeClass = dayThemes[today];
     document.documentElement.classList.forEach((c) => { if (c.startsWith("theme-")) document.documentElement.classList.remove(c); });
     document.documentElement.classList.add(themeClass);
+    document.body.classList.add(themeClass);
   }, []);
 
   return (
