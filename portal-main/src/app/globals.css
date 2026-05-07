@@ -36,6 +36,43 @@ body {
     --chart-5: 197 80% 55%;
     --radius: 0.75rem;
   }
+
+  /* Daily color themes - auto applied via JS */
+  .theme-monday {
+    --primary: 245 82% 67%;
+    --accent: 245 82% 67%;
+    --ring: 245 82% 67%;
+  }
+  .theme-tuesday {
+    --primary: 173 58% 39%;
+    --accent: 173 58% 39%;
+    --ring: 173 58% 39%;
+  }
+  .theme-wednesday {
+    --primary: 25 95% 53%;
+    --accent: 25 95% 53%;
+    --ring: 25 95% 53%;
+  }
+  .theme-thursday {
+    --primary: 340 75% 55%;
+    --accent: 340 75% 55%;
+    --ring: 340 75% 55%;
+  }
+  .theme-friday {
+    --primary: 199 89% 48%;
+    --accent: 199 89% 48%;
+    --ring: 199 89% 48%;
+  }
+  .theme-saturday {
+    --primary: 271 76% 53%;
+    --accent: 271 76% 53%;
+    --ring: 271 76% 53%;
+  }
+  .theme-sunday {
+    --primary: 142 71% 45%;
+    --accent: 142 71% 45%;
+    --ring: 142 71% 45%;
+  }
 }
 
 @layer base {
@@ -59,5 +96,5 @@ body {
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(245, 82%, 67%);
+  background: hsl(var(--primary));
 }

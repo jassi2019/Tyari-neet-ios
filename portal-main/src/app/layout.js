@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect } from "react";
+
 import "./globals.css";
 import Sidebar from "@/components/custom/sidebar";
 import { SidebarProvider } from "@/components/custom/sidebar-provider";
@@ -9,6 +11,14 @@ import { usePathname } from "next/navigation";
 export default function RootLayout({ children }) {
   const pathname = usePathname();
   const isAdmin = pathname.startsWith("/admin") || pathname.startsWith("/auth") || pathname.includes("/chapters") || pathname.includes("/classes") || pathname.includes("/subjects") || pathname.includes("/topics") || pathname.includes("/questions") || pathname.includes("/home-content") || pathname.includes("/members");
+
+  const dayThemes = ["theme-sunday", "theme-monday", "theme-tuesday", "theme-wednesday", "theme-thursday", "theme-friday", "theme-saturday"];
+  useEffect(() => {
+    const today = new Date().getDay();
+    const themeClass = dayThemes[today];
+    document.documentElement.classList.forEach((c) => { if (c.startsWith("theme-")) document.documentElement.classList.remove(c); });
+    document.documentElement.classList.add(themeClass);
+  }, []);
 
   return (
     <html lang="en" className={isAdmin ? "overflow-hidden" : ""}>
