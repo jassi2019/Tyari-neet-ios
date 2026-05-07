@@ -39,8 +39,8 @@ export default function MembersPage() {
   const handleSearch = (e) => { e.preventDefault(); setPage(1); setSearch(searchInput); };
 
   const getSubscriptionStatus = (user) => {
-    if (!user.subscriptions || user.subscriptions.length === 0) return { label: "Free", variant: "secondary" };
-    const active = user.subscriptions.find((s) => s.paymentStatus === "SUCCESS" && new Date(s.endDate) > new Date());
+    if (!user.Subscriptions || user.Subscriptions.length === 0) return { label: "Free", variant: "secondary" };
+    const active = user.Subscriptions.find((s) => s.paymentStatus === "SUCCESS" && new Date(s.endDate) > new Date());
     if (active) return { label: "Premium", variant: "default" };
     return { label: "Expired", variant: "destructive" };
   };

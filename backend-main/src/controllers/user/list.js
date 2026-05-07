@@ -25,7 +25,7 @@ const listUsersV1 = async (req, res, next) => {
       include: [
         {
           model: Subscription,
-          as: "subscriptions",
+          as: "Subscriptions",
           required: false,
           include: [
             {
