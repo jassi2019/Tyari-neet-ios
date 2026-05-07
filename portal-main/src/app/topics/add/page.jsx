@@ -11,13 +11,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import Image from "next/image";
 import {
   BookOpen,
   BookType,
   GraduationCap,
   IndianRupee,
   ListOrdered,
-
+  Search,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { createTopic } from "@/services/topics";
@@ -25,6 +26,7 @@ import { getChapters } from "@/services/chapter";
 import { getSubjects } from "@/services/subject";
 import { getClasses } from "@/services/class";
 import PDFUpload from "@/components/custom/pdf-upload";
+import { getDesigns } from "@/services/canva";
 import useToast from "@/hooks/useToast";
 import { useRouter } from "next/navigation";
 import Loader from "@/components/custom/loader";
@@ -33,7 +35,11 @@ export default function AddTopicPage() {
   const [subjects, setSubjects] = useState([]);
   const [classes, setClasses] = useState([]);
   const [chapters, setChapters] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const [hasSearched, setHasSearched] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
   const { showSuccess, showError } = useToast();
   const router = useRouter();
 
@@ -48,11 +54,11 @@ export default function AddTopicPage() {
   ];
 
   const [activeTab, setActiveTab] = useState("explanationContent");
-  const [featureMode, setFeatureMode] = useState({});
 
   const [formData, setFormData] = useState({
     name: "",
     description: "",
+    contentId: "",
     contentURL: "",
     explanationContent: "",
     revisionContent: "",
@@ -111,7 +117,7 @@ export default function AddTopicPage() {
     );
     const hasLegacyContent =
       (formData.contentURL || "").trim().length > 0 ||
-      false;
+      (formData.contentId || "").trim().length > 0;
 
     if (
       formData.name === "" ||
@@ -126,6 +132,24 @@ export default function AddTopicPage() {
     return false;
   };
 
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) {
+      showError("Please enter a search query");
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      const { data: searchData } = await getDesigns(searchQuery.trim());
+      setSearchResults(searchData);
+      setHasSearched(true);
+    } catch (error) {
+      showError(error);
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  };
 
   useEffect(() => {
     loadInitials();
@@ -203,14 +227,26 @@ export default function AddTopicPage() {
                         />
                       </div>
 
-                      <PDFUpload
-                        label="Content PDF (Main)"
-                        currentUrl={formData.contentURL}
-                        onUploadComplete={(url) => setFormData({ ...formData, contentURL: url })}
-                      />
                       <div className="space-y-2">
-                        <label htmlFor="contentURL" className="text-sm font-medium">Or paste Content URL manually</label>
-                        <Input id="contentURL" value={formData.contentURL} onChange={(e) => setFormData({ ...formData, contentURL: e.target.value })} placeholder="https://..." className="shadow-sm" />
+                        <label
+                          htmlFor="contentURL"
+                          className="text-sm font-medium"
+                        >
+                          Content URL
+                        </label>
+                        <Input
+                          id="contentURL"
+                          value={formData.contentURL}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              contentURL: e.target.value,
+                            })
+                          }
+                          placeholder="Enter content URL"
+                          required
+                          className="shadow-sm"
+                        />
                       </div>
                     </div>
                   </div>
@@ -385,47 +421,150 @@ export default function AddTopicPage() {
                     {/* Editor for active tab */}
                     {FEATURE_TABS.map((tab) => (
                       <div key={tab.key} className={activeTab === tab.key ? "block" : "hidden"}>
-                        <div className="flex gap-2 mb-3">
-                          <button type="button" onClick={() => setFeatureMode((p) => ({ ...p, [tab.key]: "pdf" }))}
-                            className={`px-3 py-1 text-sm rounded border ${(featureMode[tab.key] || "pdf") === "pdf" ? "bg-primary text-primary-foreground" : "border-border hover:bg-muted"}`}>
-                            PDF Upload
-                          </button>
-                          <button type="button" onClick={() => setFeatureMode((p) => ({ ...p, [tab.key]: "html" }))}
-                            className={`px-3 py-1 text-sm rounded border ${featureMode[tab.key] === "html" ? "bg-primary text-primary-foreground" : "border-border hover:bg-muted"}`}>
-                            Rich Text
-                          </button>
-                        </div>
-
-                        {(featureMode[tab.key] || "pdf") === "pdf" ? (
-                          <PDFUpload
-                            label={`Upload PDF for ${tab.label}`}
-                            currentUrl={formData[tab.key]}
-                            onUploadComplete={(url) => setFormData((prev) => ({ ...prev, [tab.key]: url }))}
-                          />
-                        ) : (
-                          <div className="border rounded-lg overflow-hidden">
-                            <div className="flex flex-wrap gap-1 p-2 border-b bg-muted/30">
-                              {[{ cmd: "bold", label: "B", style: "font-bold" },{ cmd: "italic", label: "I", style: "italic" },{ cmd: "underline", label: "U", style: "underline" }].map(({ cmd, label, style }) => (
-                                <button key={cmd} type="button" onMouseDown={(e) => { e.preventDefault(); document.execCommand(cmd, false); }} className={`px-3 py-1 text-sm rounded border border-border hover:bg-muted ${style}`}>{label}</button>
-                              ))}
-                              <button type="button" onMouseDown={(e) => { e.preventDefault(); document.execCommand("formatBlock", false, "h2"); }} className="px-3 py-1 text-sm rounded border border-border hover:bg-muted font-semibold">H2</button>
-                              <button type="button" onMouseDown={(e) => { e.preventDefault(); document.execCommand("formatBlock", false, "h3"); }} className="px-3 py-1 text-sm rounded border border-border hover:bg-muted font-semibold">H3</button>
-                              <button type="button" onMouseDown={(e) => { e.preventDefault(); document.execCommand("removeFormat", false); }} className="px-3 py-1 text-sm rounded border border-border hover:bg-muted text-red-500">Clear</button>
-                            </div>
-                            <div contentEditable suppressContentEditableWarning
-                              onInput={(e) => setFormData((prev) => ({ ...prev, [tab.key]: e.currentTarget.innerHTML }))}
-                              dangerouslySetInnerHTML={{ __html: formData[tab.key] || "" }}
-                              className="min-h-[300px] p-4 outline-none prose prose-sm max-w-none"
-                              style={{ lineHeight: "1.8" }}
-                            />
+                        <div className="border rounded-lg overflow-hidden">
+                          {/* Toolbar */}
+                          <div className="flex flex-wrap gap-1 p-2 border-b bg-muted/30">
+                            {[
+                              { cmd: "bold", label: "B", style: "font-bold" },
+                              { cmd: "italic", label: "I", style: "italic" },
+                              { cmd: "underline", label: "U", style: "underline" },
+                            ].map(({ cmd, label, style }) => (
+                              <button
+                                key={cmd}
+                                type="button"
+                                onMouseDown={(e) => { e.preventDefault(); document.execCommand(cmd, false); }}
+                                className={`px-3 py-1 text-sm rounded border border-border hover:bg-muted ${style}`}
+                              >{label}</button>
+                            ))}
+                            <button type="button" onMouseDown={(e) => { e.preventDefault(); document.execCommand("formatBlock", false, "h2"); }} className="px-3 py-1 text-sm rounded border border-border hover:bg-muted font-semibold">H2</button>
+                            <button type="button" onMouseDown={(e) => { e.preventDefault(); document.execCommand("formatBlock", false, "h3"); }} className="px-3 py-1 text-sm rounded border border-border hover:bg-muted font-semibold">H3</button>
+                            <button type="button" onMouseDown={(e) => { e.preventDefault(); document.execCommand("insertUnorderedList", false); }} className="px-3 py-1 text-sm rounded border border-border hover:bg-muted">• List</button>
+                            <button type="button" onMouseDown={(e) => { e.preventDefault(); document.execCommand("insertOrderedList", false); }} className="px-3 py-1 text-sm rounded border border-border hover:bg-muted">1. List</button>
+                            <button type="button" onMouseDown={(e) => { e.preventDefault(); const url = window.prompt("Image URL:"); if (url) document.execCommand("insertImage", false, url); }} className="px-3 py-1 text-sm rounded border border-border hover:bg-muted">🖼 Image</button>
+                            <button type="button" onMouseDown={(e) => { e.preventDefault(); document.execCommand("removeFormat", false); }} className="px-3 py-1 text-sm rounded border border-border hover:bg-muted text-red-500">Clear</button>
                           </div>
-                        )}
+                          {/* Editor */}
+                          <div
+                            contentEditable
+                            suppressContentEditableWarning
+                            onInput={(e) => setFormData((prev) => ({ ...prev, [tab.key]: e.currentTarget.innerHTML }))}
+                            dangerouslySetInnerHTML={{ __html: formData[tab.key] || "" }}
+                            className="min-h-[300px] p-4 outline-none prose prose-sm max-w-none dark:prose-invert"
+                            style={{ lineHeight: "1.8" }}
+                          />
+                        </div>
                       </div>
                     ))}
                   </div>
+
+                  {/* Content Selection */}
+                  <div className="space-y-4">
+                    <h2 className="text-xl font-semibold">Content Selection (Optional — Canva)</h2>
+                    <p className="text-sm text-muted-foreground">
+                      Search for designs to select content for the topic
+                    </p>
+
+                    {/* Search Input and Button */}
+                    <div className="flex gap-2">
+                      <div className="flex-1">
+                        <Input
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          placeholder="Enter search query for designs..."
+                          className="shadow-sm"
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              handleSearch();
+                            }
+                          }}
+                        />
+                      </div>
+                      <Button
+                        type="button"
+                        onClick={handleSearch}
+                        disabled={isSearching || !searchQuery.trim()}
+                        className="flex items-center gap-2"
+                      >
+                        <Search className="w-4 h-4" />
+                        {isSearching ? "Searching..." : "Search"}
+                      </Button>
+                    </div>
+
+                    {/* Search Results */}
+                    {!hasSearched ? (
+                      <div className="text-center py-12 text-muted-foreground">
+                        <Search className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                        <p className="text-lg">
+                          Enter a search query to find designs
+                        </p>
+                        <p className="text-sm">
+                          Use keywords to search for relevant content
+                        </p>
+                      </div>
+                    ) : searchResults.length === 0 ? (
+                      <div className="text-center py-12 text-muted-foreground">
+                        <Search className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                        <p className="text-lg">No designs found</p>
+                        <p className="text-sm">
+                          Try different keywords or search terms
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {searchResults
+                          .filter(
+                            (content) =>
+                              content.thumbnail && content.thumbnail.url
+                          )
+                          .map((content) => (
+                            <div
+                              key={content.id}
+                              className={`relative border rounded-lg cursor-pointer hover:bg-muted/50 transition-all ${
+                                formData.contentId === content.id
+                                  ? "border-primary bg-primary/5"
+                                  : ""
+                              }`}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                setFormData({
+                                  ...formData,
+                                  contentId: content.id,
+                                });
+                              }}
+                            >
+                              <input
+                                type="radio"
+                                name="content"
+                                id={content.id}
+                                value={content.id}
+                                checked={formData.contentId === content.id}
+                                onChange={() => {}}
+                                className="sr-only"
+                              />
+                              <div className="flex items-center gap-4 p-4">
+                                <div className="relative w-[200px] h-[200px] rounded-md overflow-hidden">
+                                  <Image
+                                    src={content.thumbnail.url}
+                                    alt={content.title || content.id}
+                                    fill
+                                    className="object-contain"
+                                    priority
+                                  />
+                                </div>
+                                <div>
+                                  <h3 className="font-medium">
+                                    {content.title}
+                                  </h3>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </CardContent>
-            </Card>
             </Card>
 
             <div className="flex justify-end gap-2">
