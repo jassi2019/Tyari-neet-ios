@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getUsers } from "@/services/users";
+import { getUsers, getPlans, grantSubscription, revokeSubscription } from "@/services/users";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import Loader from "@/components/custom/loader";
+import useToast from "@/hooks/useToast";
 import { Search, ChevronLeft, ChevronRight, Users, Mail, Calendar, Crown } from "lucide-react";
 
 export default function MembersPage() {
@@ -17,6 +19,12 @@ export default function MembersPage() {
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const [loading, setLoading] = useState(true);
+  const [plans, setPlans] = useState([]);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [detailUser, setDetailUser] = useState(null);
+  const [grantForm, setGrantForm] = useState({ planId: "", endDate: "", notes: "" });
+  const [granting, setGranting] = useState(false);
+  const { showSuccess, showError } = useToast();
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -35,9 +43,11 @@ export default function MembersPage() {
   };
 
   useEffect(() => { fetchUsers(); }, [page, search]);
+  useEffect(() => { fetchPlans(); }, []);
 
   const handleSearch = (e) => { e.preventDefault(); setPage(1); setSearch(searchInput); };
 
+  const getActiveSub = (u) => u.subscriptions?.find(s => s.paymentStatus==="SUCCESS" && new Date(s.endDate) > new Date()) || null;
   const getSubscriptionStatus = (user) => {
     if (!user.subscriptions || user.subscriptions.length === 0) return { label: "Free", variant: "secondary" };
     const active = user.subscriptions.find((s) => s.paymentStatus === "SUCCESS" && new Date(s.endDate) > new Date());
@@ -47,6 +57,8 @@ export default function MembersPage() {
 
   const formatDate = (d) => new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
 
+  const handleGrant = async () => { if(!grantForm.planId||!grantForm.endDate){showError("Select plan and date");return;} setGranting(true); try{await grantSubscription({userId:selectedUser.id,planId:grantForm.planId,endDate:grantForm.endDate,notes:grantForm.notes});showSuccess("Subscription granted");setSelectedUser(null);setGrantForm({planId:"",endDate:"",notes:""});fetchUsers();}catch(e){showError("Failed");}finally{setGranting(false);} };
+  const handleRevoke = async (sub, name) => { if(!confirm("Revoke subscription for "+name+"?"))return; try{await revokeSubscription(sub.id);showSuccess("Revoked");fetchUsers();}catch(e){showError("Failed");} };
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <div className="mb-8">
@@ -88,11 +100,14 @@ export default function MembersPage() {
                     <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">Joined</th>
                     <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">Source</th>
                     <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">Status</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {users.map((user, idx) => {
                     const sub = getSubscriptionStatus(user);
+  const handleGrant = async () => { if(!grantForm.planId||!grantForm.endDate){showError("Select plan and date");return;} setGranting(true); try{await grantSubscription({userId:selectedUser.id,planId:grantForm.planId,endDate:grantForm.endDate,notes:grantForm.notes});showSuccess("Subscription granted");setSelectedUser(null);setGrantForm({planId:"",endDate:"",notes:""});fetchUsers();}catch(e){showError("Failed");}finally{setGranting(false);} };
+  const handleRevoke = async (sub, name) => { if(!confirm("Revoke subscription for "+name+"?"))return; try{await revokeSubscription(sub.id);showSuccess("Revoked");fetchUsers();}catch(e){showError("Failed");} };
                     return (
                       <tr key={user.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
                         <td className="px-4 py-3 text-sm text-muted-foreground">{(page - 1) * 20 + idx + 1}</td>
@@ -105,7 +120,9 @@ export default function MembersPage() {
                         <td className="px-4 py-3"><div className="flex items-center gap-1.5 text-sm text-muted-foreground"><Mail className="h-3.5 w-3.5" />{user.email}</div></td>
                         <td className="px-4 py-3"><div className="flex items-center gap-1.5 text-sm text-muted-foreground"><Calendar className="h-3.5 w-3.5" />{formatDate(user.createdAt)}</div></td>
                         <td className="px-4 py-3"><Badge variant="outline" className="text-xs">{user.registrationSource || "APP"}</Badge></td>
+                        <td className="px-4 py-3"><div className="flex gap-1"><button onClick={()=>{setSelectedUser(user);setGrantForm({planId:"",endDate:"",notes:""});}} className="p-1.5 rounded hover:bg-green-50" title="Grant Subscription"><Gift className="h-3.5 w-3.5 text-green-600"/></button></div></td>
                         <td className="px-4 py-3"><Badge variant={sub.variant} className="text-xs">{sub.label === "Premium" && <Crown className="h-3 w-3 mr-1" />}{sub.label}</Badge></td>
+                        <td className="px-4 py-3"><div className="flex gap-1"><button onClick={()=>{setSelectedUser(user);setGrantForm({planId:"",endDate:"",notes:""});}} className="p-1.5 rounded hover:bg-green-50" title="Grant Subscription"><Gift className="h-3.5 w-3.5 text-green-600"/></button></div></td>
                       </tr>
                     );
                   })}
@@ -126,5 +143,6 @@ export default function MembersPage() {
         </>
       )}
     </div>
+    <Dialog open={!!selectedUser} onOpenChange={()=>setSelectedUser(null)}><DialogContent className="max-w-md"><DialogHeader><DialogTitle>Grant Subscription</DialogTitle></DialogHeader>{selectedUser&&<div className="space-y-4"><div className="p-3 bg-muted/50 rounded-lg"><p className="font-medium">{selectedUser.name||"No name"}</p><p className="text-sm text-muted-foreground">{selectedUser.email}</p></div><div><label className="text-sm font-medium mb-1 block">Plan</label><select className="w-full border rounded-md px-3 py-2 bg-background" value={grantForm.planId} onChange={(e)=>setGrantForm({...grantForm,planId:e.target.value})}><option value="">Select Plan</option>{plans.map(p=><option key={p.id} value={p.id}>{p.name} - Rs.{p.amount}</option>)}</select></div><div><label className="text-sm font-medium mb-1 block">Access Until</label><Input type="date" value={grantForm.endDate} onChange={(e)=>setGrantForm({...grantForm,endDate:e.target.value})}/></div><div><label className="text-sm font-medium mb-1 block">Notes</label><Input value={grantForm.notes} onChange={(e)=>setGrantForm({...grantForm,notes:e.target.value})} placeholder="e.g. Scholarship, Trial..."/></div><div className="flex gap-2"><Button onClick={handleGrant} disabled={granting} className="flex-1">{granting?"Granting...":"Grant Subscription"}</Button><Button variant="outline" onClick={()=>setSelectedUser(null)}>Cancel</Button></div></div>}</DialogContent></Dialog>
   );
 }

@@ -6,6 +6,9 @@ const createV1 = require("../../controllers/subscription/create");
 const createOrderV1 = require("../../controllers/subscription/create.order");
 const createAppleIapV1 = require("../../controllers/subscription/create.apple.iap");
 const authMiddleware = require("../../middlewares/auth");
+const { isAdminRole } = require("../../middlewares/auth.z");
+const adminGrantV1 = require("../../controllers/subscription/admin.grant");
+const adminRevokeV1 = require("../../controllers/subscription/admin.revoke");
 
 /**
  * @swagger
@@ -113,4 +116,6 @@ router.route("/").post(authMiddleware, createV1);
 router.route("/create-order").post(authMiddleware, createOrderV1);
 router.route("/iap/apple").post(authMiddleware, createAppleIapV1);
 
+router.route("/admin/grant").post(authMiddleware, isAdminRole, adminGrantV1);
+router.route("/admin/revoke/:subscriptionId").put(authMiddleware, isAdminRole, adminRevokeV1);
 module.exports = router;

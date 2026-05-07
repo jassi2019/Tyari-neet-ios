@@ -1,4 +1,4 @@
-const { User, Subscription } = require("../../models");
+const { User, Subscription, Plan } = require("../../models");
 const { Op } = require("sequelize");
 const { ROLES } = require("../../constants");
 
@@ -7,6 +7,7 @@ const listUsersV1 = async (req, res, next) => {
     const page = Math.max(1, parseInt(req.query.page) || 1);
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20));
     const search = (req.query.search || "").trim();
+    const filter = (req.query.filter || "").trim();
     const offset = (page - 1) * limit;
 
     const where = { role: ROLES.USER };
@@ -26,7 +27,14 @@ const listUsersV1 = async (req, res, next) => {
           model: Subscription,
           as: "subscriptions",
           required: false,
-          order: [["createdAt", "DESC"]],
+          include: [
+            {
+              model: Plan,
+              as: "Plan",
+              attributes: ["id", "name", "amount", "validUntil"],
+              required: false,
+            },
+          ],
         },
       ],
       order: [["createdAt", "DESC"]],
