@@ -35,6 +35,8 @@ app.use(express.json({
 }));
 app.use(express.urlencoded({ extended: true, limit: requestBodyLimit }));
 app.use(cors({
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "device-name", "device-id"],
   origin: [
     "https://taiyarineetki.com",
     "https://www.taiyarineetki.com",
