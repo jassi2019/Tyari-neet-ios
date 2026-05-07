@@ -1,5 +1,4 @@
 const { Topic } = require("../../models");
-const { getDesign, getDesignViewUrl } = require("../../services/canva");
 
 const updateV1 = async (req, res, next) => {
   try {
@@ -8,8 +7,8 @@ const updateV1 = async (req, res, next) => {
     const {
       name,
       description,
-      contentId,
       contentURL,
+      contentThumbnail,
       sequence,
       serviceType,
       chapterId,
@@ -24,33 +23,18 @@ const updateV1 = async (req, res, next) => {
       chapterCheckpointContent,
     } = req.body;
 
-    let contentThumbnail = undefined;
-    let resolvedContentURL = contentURL;
-
-    if (contentId) {
-      const {
-        design,
-      } = await getDesign(contentId);
-
-      if (typeof design?.thumbnail?.url === "string" && design.thumbnail.url.trim()) {
-        contentThumbnail = design.thumbnail.url.trim();
-      }
-      resolvedContentURL = getDesignViewUrl(design) || contentURL;
-    }
-
-    // Build update payload only with defined fields, so unrelated slots aren't overwritten.
     const updatePayload = {
       name,
       description,
-      contentURL: resolvedContentURL,
+      contentURL,
       contentThumbnail,
-      contentId,
       sequence,
       serviceType,
       chapterId,
       subjectId,
       classId,
     };
+
     const featureFields = {
       explanationContent,
       revisionContent,

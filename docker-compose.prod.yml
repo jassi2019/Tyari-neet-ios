@@ -33,6 +33,8 @@ services:
         condition: service_healthy
     env_file:
       - ./backend-main/.env
+    volumes:
+      - uploads_data:/app/uploads
     networks:
       - app_network
 
@@ -63,6 +65,7 @@ services:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
+  uploads_data:
     networks:
       - app_network
     depends_on:
@@ -77,3 +80,4 @@ volumes:
   postgres_data:
   caddy_data:
   caddy_config:
+  uploads_data:

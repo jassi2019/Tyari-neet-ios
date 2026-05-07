@@ -1,3 +1,4 @@
+const path = require("path");
 const express = require("express");
 const compression = require("compression");
 const cron = require("node-cron");
@@ -15,7 +16,6 @@ const { logger } = require("./src/utils/logger");
 const errorMiddleware = require("./src/middlewares/error");
 const app = express();
 
-const { renewDesignViewURL } = require("./src/services/canva");
 
 const pinoLogger = pinoHttp({
   logger,
@@ -45,6 +45,7 @@ app.use(cors({
 }));
 app.use(pinoLogger);
 
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use("/api-docs", swaggerUI.serve, swaggerUI.setup(swaggerSpec));
 
 /**
@@ -95,7 +96,6 @@ db.sync({ alter: true })
       logger.info(`Network: http://192.168.1.4:8000`);
     });
 
-    cron.schedule("0 */3 * * *", renewDesignViewURL);
   })
   .catch((err) => {
     logger.error(err);

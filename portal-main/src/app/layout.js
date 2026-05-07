@@ -8,7 +8,7 @@ import { usePathname } from "next/navigation";
 
 export default function RootLayout({ children }) {
   const pathname = usePathname();
-  const isAdmin = pathname.startsWith("/admin") || pathname.startsWith("/auth") || pathname.includes("/chapters") || pathname.includes("/classes") || pathname.includes("/subjects") || pathname.includes("/topics") || pathname.includes("/questions") || pathname.includes("/home-content");
+  const isAdmin = pathname.startsWith("/admin") || pathname.startsWith("/auth") || pathname.includes("/chapters") || pathname.includes("/classes") || pathname.includes("/subjects") || pathname.includes("/topics") || pathname.includes("/questions") || pathname.includes("/home-content") || pathname.includes("/members");
 
   return (
     <html lang="en" className={isAdmin ? "overflow-hidden" : ""}>

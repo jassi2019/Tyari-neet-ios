@@ -6,9 +6,10 @@ const { User } = require("../../models");
 
 const getByIdV1 = require("../../controllers/user/get.by.id");
 const updateV1 = require("../../controllers/user/update");
+const listV1 = require("../../controllers/user/list");
 
 const authMiddleware = require("../../middlewares/auth");
-const { isOwner } = require("../../middlewares/auth.z");
+const { isOwner, isAdminRole } = require("../../middlewares/auth.z");
 
 /**
  * @swagger
@@ -119,6 +120,8 @@ const { isOwner } = require("../../middlewares/auth.z");
  *       500:
  *         description: Internal server error
  */
+
+router.route("/").get(authMiddleware, isAdminRole, listV1);
 
 router
   .route("/:userId")

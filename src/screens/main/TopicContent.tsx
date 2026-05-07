@@ -120,6 +120,12 @@ export const TopicContent = ({ navigation, route }: TopicContentProps) => {
   const isInsecureRemoteUrl = /^http:\/\//i.test(rawURL) && !/^http:\/\/(localhost|127\.0\.0\.1)/i.test(rawURL);
   const normalizedURL = isInsecureRemoteUrl ? rawURL.replace(/^http:\/\//i, 'https://') : rawURL;
 
+  // PDF URLs: wrap in Google Docs Viewer for inline rendering in WebView
+  const isPdfUrl = /.pdf(?|$)/i.test(normalizedURL);
+  const finalURL = isPdfUrl
+    ? `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(normalizedURL)}`
+    : normalizedURL;
+
   // Keep hook execution order stable across all render branches.
   React.useEffect(() => {
     if (!__DEV__) return;
@@ -129,9 +135,13 @@ export const TopicContent = ({ navigation, route }: TopicContentProps) => {
       platform: Platform.OS,
       originalUrl: rawURL,
       normalizedURL,
+      isPdfUrl,
+      finalURL,
       isCanvaContent,
     });
-  }, [effectiveTopic?.id, effectiveTopic?.name, isCanvaContent, normalizedURL, rawURL]);
+  }, [effectiveTopic?.id, effectiveTopic?.name, isCanvaContent, normalizedURL,
+      isPdfUrl,
+      finalURL, rawURL]);
 
   if (!topic) {
     return (
@@ -284,7 +294,7 @@ export const TopicContent = ({ navigation, route }: TopicContentProps) => {
   }
 
   // Keep Canva URL exactly as received from backend.
-  const webViewSource = { uri: normalizedURL };
+  const webViewSource = { uri: finalURL };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }} edges={['top']}>

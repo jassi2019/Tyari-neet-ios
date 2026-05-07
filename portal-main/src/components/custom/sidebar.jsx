@@ -21,6 +21,7 @@ import {
   Trophy,
   FileText,
   Shield,
+  Users,
 } from "lucide-react";
 import { useSidebar } from "./sidebar-provider";
 
@@ -32,6 +33,7 @@ const navigation = [
   { name: "Topics", href: "/topics", icon: ListOrdered },
   { name: "Questions", href: "/questions", icon: HelpCircle },
   { name: "Home Content", href: "/home-content", icon: LayoutDashboard },
+  { name: "Members", href: "/members", icon: Users },
 ];
 
 const featureNavigation = [

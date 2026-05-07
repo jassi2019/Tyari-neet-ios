@@ -18,6 +18,7 @@ const subscriptionRoutes = require("./subscription");
 const deletionRoutes = require("./deletion");
 const questionRoutes = require("./question");
 const homeContentRoutes = require("./homecontent");
+const uploadRoutes = require("./upload");
 
 router.use("/auth", authRoutes);
 router.use("/users", userRoutes);
@@ -36,5 +37,6 @@ router.use("/subscriptions", subscriptionRoutes);
 router.use("/deletions", deletionRoutes);
 router.use("/questions", questionRoutes);
 router.use("/home-content", homeContentRoutes);
+router.use("/uploads", uploadRoutes);
 
 module.exports = router;

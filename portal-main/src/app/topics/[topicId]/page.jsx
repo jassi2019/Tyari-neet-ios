@@ -11,21 +11,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import Image from "next/image";
 import {
   BookOpen,
   BookType,
   GraduationCap,
   IndianRupee,
   ListOrdered,
-  Search,
+
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { getTopic, updateTopic } from "@/services/topics";
 import { getChapters } from "@/services/chapter";
 import { getSubjects } from "@/services/subject";
 import { getClasses } from "@/services/class";
-import { getDesigns } from "@/services/canva";
+import PDFUpload from "@/components/custom/pdf-upload";
 import useToast from "@/hooks/useToast";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Loader from "@/components/custom/loader";
@@ -34,12 +33,7 @@ function EditTopicPageInner() {
   const [subjects, setSubjects] = useState([]);
   const [classes, setClasses] = useState([]);
   const [chapters, setChapters] = useState([]);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState([]);
-  const [hasSearched, setHasSearched] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isSearching, setIsSearching] = useState(false);
-  const [selectedContent, setSelectedContent] = useState(null);
   const { showSuccess, showError } = useToast();
   const router = useRouter();
   const { topicId } = useParams();
@@ -141,8 +135,8 @@ function EditTopicPageInner() {
     if (
       formData.name === "" ||
       formData.description === "" ||
-      formData.contentId === "" ||
-      formData.contentURL === "" ||
+      
+      
       formData.subjectId === "" ||
       formData.chapterId === "" ||
       formData.classId === ""
@@ -152,24 +146,6 @@ function EditTopicPageInner() {
     return false;
   };
 
-  const handleSearch = async () => {
-    if (!searchQuery.trim()) {
-      showError("Please enter a search query");
-      return;
-    }
-
-    setIsSearching(true);
-    try {
-      const { data: searchData } = await getDesigns(searchQuery.trim());
-      setSearchResults(searchData);
-      setHasSearched(true);
-    } catch (error) {
-      showError(error);
-      setSearchResults([]);
-    } finally {
-      setIsSearching(false);
-    }
-  };
 
   useEffect(() => {
     loadInitials();
@@ -485,152 +461,6 @@ function EditTopicPageInner() {
                     ))}
                   </div>
 
-                  {/* Content Selection */}
-                  <div className="space-y-4">
-                    <h2 className="text-xl font-semibold">Content Selection (Canva)</h2>
-
-                    {/* Currently Selected Content */}
-                    {formData.contentThumbnail && (
-                      <div className="space-y-2">
-                        <h3 className="text-lg font-medium">
-                          Currently Selected Content
-                        </h3>
-                        <div className="border border-primary rounded-lg bg-primary/5 p-4">
-                          <div className="flex items-center gap-4">
-                            <div className="relative w-[150px] h-[150px] rounded-md overflow-hidden">
-                              <Image
-                                src={formData.contentThumbnail}
-                                alt={`Content for ${formData.name}`}
-                                fill
-                                className="object-contain"
-                                priority
-                              />
-                            </div>
-                            <div>
-                              <h4 className="font-medium text-lg">
-                                {formData.name}
-                              </h4>
-                              <p className="text-sm text-muted-foreground mt-2">
-                                This is the currently selected content for this
-                                topic
-                              </p>
-                              <p className="text-xs text-muted-foreground mt-1">
-                                Content ID: {formData.contentId}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    <p className="text-sm text-muted-foreground">
-                      Search for designs to change the content for the topic
-                    </p>
-
-                    {/* Search Input and Button */}
-                    <div className="flex gap-2">
-                      <div className="flex-1">
-                        <Input
-                          value={searchQuery}
-                          onChange={(e) => setSearchQuery(e.target.value)}
-                          placeholder="Enter search query for designs..."
-                          className="shadow-sm"
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                              e.preventDefault();
-                              handleSearch();
-                            }
-                          }}
-                        />
-                      </div>
-                      <Button
-                        type="button"
-                        onClick={handleSearch}
-                        disabled={isSearching || !searchQuery.trim()}
-                        className="flex items-center gap-2"
-                      >
-                        <Search className="w-4 h-4" />
-                        {isSearching ? "Searching..." : "Search"}
-                      </Button>
-                    </div>
-
-                    {/* Search Results */}
-                    {!hasSearched ? (
-                      <div className="text-center py-12 text-muted-foreground">
-                        <Search className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                        <p className="text-lg">
-                          Enter a search query to find new designs
-                        </p>
-                        <p className="text-sm">
-                          Use keywords to search for relevant content
-                        </p>
-                      </div>
-                    ) : searchResults.length === 0 ? (
-                      <div className="text-center py-12 text-muted-foreground">
-                        <Search className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                        <p className="text-lg">No designs found</p>
-                        <p className="text-sm">
-                          Try different keywords or search terms
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        <h3 className="text-lg font-medium">Search Results</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {searchResults
-                            .filter(
-                              (content) =>
-                                content.thumbnail && content.thumbnail.url
-                            )
-                            .map((content) => (
-                              <div
-                                key={content.id}
-                                className={`relative border rounded-lg cursor-pointer hover:bg-muted/50 transition-all ${
-                                  formData.contentId === content.id
-                                    ? "border-primary bg-primary/5"
-                                    : ""
-                                }`}
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  setFormData({
-                                    ...formData,
-                                    contentId: content.id,
-                                    contentThumbnail: content.thumbnail.url,
-                                  });
-                                  setSelectedContent(content);
-                                }}
-                              >
-                                <input
-                                  type="radio"
-                                  name="content"
-                                  id={content.id}
-                                  value={content.id}
-                                  checked={formData.contentId === content.id}
-                                  onChange={() => {}}
-                                  className="sr-only"
-                                />
-                                <div className="flex items-center gap-4 p-4">
-                                  <div className="relative w-[200px] h-[200px] rounded-md overflow-hidden">
-                                    <Image
-                                      src={content.thumbnail.url}
-                                      alt={content.title || content.id}
-                                      fill
-                                      className="object-contain"
-                                      priority
-                                    />
-                                  </div>
-                                  <div>
-                                    <h3 className="font-medium">
-                                      {content.title}
-                                    </h3>
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
                 </div>
               </CardContent>
             </Card>

@@ -9,7 +9,7 @@ India's best NEET preparation app — free study material, 10,000+ MCQs, chapter
 - **Admin Portal:** Next.js (App Router) + Tailwind CSS + shadcn/ui
 - **Deployment:** Docker + Docker Compose on Hostinger VPS
 - **Payments:** Razorpay (Android) + Apple IAP (iOS)
-- **Content:** Canva Connect API for design thumbnails
+- **Content:** Direct PDF upload system (stored on VPS)
 - **Email:** Nodemailer + Gmail SMTP
 - **SMS:** Twilio (Phone OTP for password reset)
 
@@ -91,7 +91,8 @@ India's best NEET preparation app — free study material, 10,000+ MCQs, chapter
 - Dark theme dashboard with analytics
 - Class, Subject, Chapter, Topic, Question CRUD management
 - **Home Content CMS:** Manage features, tests, hero banner, footer from admin panel — reflects live in app
-- Canva integration for content thumbnails
+- PDF upload for content management (replaces Canva)
+- Members section to view all registered users
 - SEO-optimized public landing page at root domain
 
 ### Backend API
@@ -296,3 +297,35 @@ Tests login → plan fetch → order create → signature verify → subscriptio
 - Hero banner uses `aspectRatio: 16/9` + `contain` so it never crops on small devices
 - Bottom nav Plus button opens Library tab
 - Native Android `mipmap-*` icons regenerated from `assets/icon.png` via `expo prebuild`
+
+### File Uploads
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/v1/uploads` | Upload PDF file (admin only, max 50MB) |
+| DELETE | `/api/v1/uploads/:filename` | Delete uploaded file (admin only) |
+
+### Users / Members
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/users?page=1&limit=20&search=` | List all users with pagination (admin only) |
+
+### PDF Upload System
+- Admin uploads PDFs via admin panel → stored on VPS at `/app/uploads/`
+- Served at `https://api.taiyarineetki.com/uploads/<filename>.pdf`
+- Mobile app renders PDFs inline via Google Docs Viewer
+- Max file size: 50MB
+- Storage: Docker named volume `uploads_data` (persists across container rebuilds)
+
+### Members Management
+- View all registered users from admin panel at `/members`
+- Search by name or email
+- Shows subscription status (Free / Premium / Expired)
+- Pagination with 20 users per page
+
+### Docker Volumes
+```
+postgres_data    # PostgreSQL database
+caddy_data       # SSL certificates
+caddy_config     # Caddy configuration
+uploads_data     # Uploaded PDF files
+```
