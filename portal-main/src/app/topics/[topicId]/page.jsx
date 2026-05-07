@@ -61,6 +61,7 @@ function EditTopicPageInner() {
   };
 
   const [activeTab, setActiveTab] = useState(
+  const [featureMode, setFeatureMode] = useState({});
     featureFromURL ? (FEATURE_TO_TAB[featureFromURL] || "explanationContent") : "explanationContent"
   );
 
@@ -231,26 +232,14 @@ function EditTopicPageInner() {
                         />
                       </div>
 
+                      <PDFUpload
+                        label="Content PDF (Main)"
+                        currentUrl={formData.contentURL}
+                        onUploadComplete={(url) => setFormData({ ...formData, contentURL: url })}
+                      />
                       <div className="space-y-2">
-                        <label
-                          htmlFor="contentURL"
-                          className="text-sm font-medium"
-                        >
-                          Content URL
-                        </label>
-                        <Input
-                          id="contentURL"
-                          value={formData.contentURL}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              contentURL: e.target.value,
-                            })
-                          }
-                          placeholder="Enter content URL"
-                          required
-                          className="shadow-sm"
-                        />
+                        <label htmlFor="contentURL" className="text-sm font-medium">Or paste Content URL manually</label>
+                        <Input id="contentURL" value={formData.contentURL} onChange={(e) => setFormData({ ...formData, contentURL: e.target.value })} placeholder="https://..." className="shadow-sm" />
                       </div>
                     </div>
                   </div>
@@ -425,47 +414,47 @@ function EditTopicPageInner() {
                     {/* Editor for active tab */}
                     {FEATURE_TABS.map((tab) => (
                       <div key={tab.key} className={activeTab === tab.key ? "block" : "hidden"}>
-                        <div className="border rounded-lg overflow-hidden">
-                          {/* Toolbar */}
-                          <div className="flex flex-wrap gap-1 p-2 border-b bg-muted/30">
-                            {[
-                              { cmd: "bold", label: "B", style: "font-bold" },
-                              { cmd: "italic", label: "I", style: "italic" },
-                              { cmd: "underline", label: "U", style: "underline" },
-                            ].map(({ cmd, label, style }) => (
-                              <button
-                                key={cmd}
-                                type="button"
-                                onMouseDown={(e) => { e.preventDefault(); document.execCommand(cmd, false); }}
-                                className={`px-3 py-1 text-sm rounded border border-border hover:bg-muted ${style}`}
-                              >{label}</button>
-                            ))}
-                            <button type="button" onMouseDown={(e) => { e.preventDefault(); document.execCommand("formatBlock", false, "h2"); }} className="px-3 py-1 text-sm rounded border border-border hover:bg-muted font-semibold">H2</button>
-                            <button type="button" onMouseDown={(e) => { e.preventDefault(); document.execCommand("formatBlock", false, "h3"); }} className="px-3 py-1 text-sm rounded border border-border hover:bg-muted font-semibold">H3</button>
-                            <button type="button" onMouseDown={(e) => { e.preventDefault(); document.execCommand("insertUnorderedList", false); }} className="px-3 py-1 text-sm rounded border border-border hover:bg-muted">• List</button>
-                            <button type="button" onMouseDown={(e) => { e.preventDefault(); document.execCommand("insertOrderedList", false); }} className="px-3 py-1 text-sm rounded border border-border hover:bg-muted">1. List</button>
-                            <button type="button" onMouseDown={(e) => { e.preventDefault(); const url = window.prompt("Image URL:"); if (url) document.execCommand("insertImage", false, url); }} className="px-3 py-1 text-sm rounded border border-border hover:bg-muted">🖼 Image</button>
-                            <button type="button" onMouseDown={(e) => { e.preventDefault(); document.execCommand("removeFormat", false); }} className="px-3 py-1 text-sm rounded border border-border hover:bg-muted text-red-500">Clear</button>
-                          </div>
-                          {/* Editor */}
-                          <div
-                            contentEditable
-                            suppressContentEditableWarning
-                            onInput={(e) => setFormData((prev) => ({ ...prev, [tab.key]: e.currentTarget.innerHTML }))}
-                            dangerouslySetInnerHTML={{ __html: formData[tab.key] || "" }}
-                            className="min-h-[300px] p-4 outline-none prose prose-sm max-w-none dark:prose-invert"
-                            style={{ lineHeight: "1.8" }}
-                          />
+                        <div className="flex gap-2 mb-3">
+                          <button type="button" onClick={() => setFeatureMode((p) => ({ ...p, [tab.key]: "pdf" }))}
+                            className={`px-3 py-1 text-sm rounded border ${(featureMode[tab.key] || "pdf") === "pdf" ? "bg-primary text-primary-foreground" : "border-border hover:bg-muted"}`}>
+                            PDF Upload
+                          </button>
+                          <button type="button" onClick={() => setFeatureMode((p) => ({ ...p, [tab.key]: "html" }))}
+                            className={`px-3 py-1 text-sm rounded border ${featureMode[tab.key] === "html" ? "bg-primary text-primary-foreground" : "border-border hover:bg-muted"}`}>
+                            Rich Text
+                          </button>
                         </div>
+
+                        {(featureMode[tab.key] || "pdf") === "pdf" ? (
+                          <PDFUpload
+                            label={`Upload PDF for ${tab.label}`}
+                            currentUrl={formData[tab.key]}
+                            onUploadComplete={(url) => setFormData((prev) => ({ ...prev, [tab.key]: url }))}
+                          />
+                        ) : (
+                          <div className="border rounded-lg overflow-hidden">
+                            <div className="flex flex-wrap gap-1 p-2 border-b bg-muted/30">
+                              {[{ cmd: "bold", label: "B", style: "font-bold" },{ cmd: "italic", label: "I", style: "italic" },{ cmd: "underline", label: "U", style: "underline" }].map(({ cmd, label, style }) => (
+                                <button key={cmd} type="button" onMouseDown={(e) => { e.preventDefault(); document.execCommand(cmd, false); }} className={`px-3 py-1 text-sm rounded border border-border hover:bg-muted ${style}`}>{label}</button>
+                              ))}
+                              <button type="button" onMouseDown={(e) => { e.preventDefault(); document.execCommand("formatBlock", false, "h2"); }} className="px-3 py-1 text-sm rounded border border-border hover:bg-muted font-semibold">H2</button>
+                              <button type="button" onMouseDown={(e) => { e.preventDefault(); document.execCommand("formatBlock", false, "h3"); }} className="px-3 py-1 text-sm rounded border border-border hover:bg-muted font-semibold">H3</button>
+                              <button type="button" onMouseDown={(e) => { e.preventDefault(); document.execCommand("removeFormat", false); }} className="px-3 py-1 text-sm rounded border border-border hover:bg-muted text-red-500">Clear</button>
+                            </div>
+                            <div contentEditable suppressContentEditableWarning
+                              onInput={(e) => setFormData((prev) => ({ ...prev, [tab.key]: e.currentTarget.innerHTML }))}
+                              dangerouslySetInnerHTML={{ __html: formData[tab.key] || "" }}
+                              className="min-h-[300px] p-4 outline-none prose prose-sm max-w-none"
+                              style={{ lineHeight: "1.8" }}
+                            />
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
-
                 </div>
               </CardContent>
             </Card>
-
-            <div className="flex justify-end gap-2">
               <Button
                 disabled={isLoading || isDirty()}
                 type="submit"
