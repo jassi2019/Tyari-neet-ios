@@ -1,15 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getUsers, getPlans, grantSubscription, revokeSubscription } from "@/services/users";
+import { getUsers } from "@/services/users";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import Loader from "@/components/custom/loader";
-import useToast from "@/hooks/useToast";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Search, ChevronLeft, ChevronRight, Users, Mail, Calendar, Crown, Gift, Eye } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, Users, Mail, Calendar, Crown } from "lucide-react";
 
 export default function MembersPage() {
   const [users, setUsers] = useState([]);
@@ -19,11 +17,6 @@ export default function MembersPage() {
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const [loading, setLoading] = useState(true);
-  const [plans, setPlans] = useState([]);
-  const [selectedUser, setSelectedUser] = useState(null);
-  const [grantForm, setGrantForm] = useState({ planId: "", endDate: "", notes: "" });
-  const [granting, setGranting] = useState(false);
-  const { showSuccess, showError } = useToast();
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -114,9 +107,7 @@ export default function MembersPage() {
                         <td className="px-4 py-3"><div className="flex items-center gap-1.5 text-sm text-muted-foreground"><Calendar className="h-3.5 w-3.5" />{formatDate(user.createdAt)}</div></td>
                         <td className="px-4 py-3"><Badge variant="outline" className="text-xs">{user.registrationSource || "APP"}</Badge></td>
                         <td className="px-4 py-3"><Badge variant={sub.variant} className="text-xs">{sub.label === "Premium" && <Crown className="h-3 w-3 mr-1" />}{sub.label}</Badge></td>
-                        <td className="px-4 py-3"><div className="flex gap-1"><button onClick={() => { setSelectedUser(user); setGrantForm({ planId: "", endDate: "", notes: "" }); }} className="p-1.5 rounded hover:bg-green-50" title="Grant Subscription"><Gift className="h-3.5 w-3.5 text-green-600" /></button></div></td>
                       </tr>
-                      {selectedUser && <Dialog open={true} onOpenChange={() => setSelectedUser(null)}><DialogContent className="max-w-md"><DialogHeader><DialogTitle>Grant Subscription</DialogTitle></DialogHeader><div className="space-y-4"><div className="p-3 bg-muted/50 rounded-lg"><p className="font-medium">{selectedUser.name || "No name"}</p><p className="text-sm text-muted-foreground">{selectedUser.email}</p></div><div><label className="text-sm font-medium mb-1 block">Plan</label><select className="w-full border rounded-md px-3 py-2 bg-background" value={grantForm.planId} onChange={(e) => setGrantForm({...grantForm, planId: e.target.value})}><option value="">Select Plan</option>{plans.map(p => <option key={p.id} value={p.id}>{p.name} - Rs.{p.amount}</option>)}</select></div><div><label className="text-sm font-medium mb-1 block">Access Until</label><Input type="date" value={grantForm.endDate} onChange={(e) => setGrantForm({...grantForm, endDate: e.target.value})} /></div><div><label className="text-sm font-medium mb-1 block">Notes</label><Input value={grantForm.notes} onChange={(e) => setGrantForm({...grantForm, notes: e.target.value})} placeholder="e.g. Scholarship, Trial..." /></div><div className="flex gap-2"><Button onClick={handleGrant} disabled={granting} className="flex-1">{granting ? "Granting..." : "Grant Subscription"}</Button><Button variant="outline" onClick={() => setSelectedUser(null)}>Cancel</Button></div></div></DialogContent></Dialog>}
   );
                   })}
                 </tbody>
