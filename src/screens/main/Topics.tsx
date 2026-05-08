@@ -34,23 +34,12 @@ type TopicsScreenProps = {
   };
 };
 
-const THUMB_GRADIENTS = [
-  ['#FFB74D', '#92400E'],
-  ['#66BB6A', '#43A047'],
-  ['#42A5F5', '#1976D2'],
-  ['#AB47BC', '#6A1B9A'],
-];
 
 
 
 
 
 
-const pickFromId = (id: string, len: number) => {
-  let hash = 0;
-  for (let i = 0; i < id.length; i++) hash = (hash * 31 + id.charCodeAt(i)) | 0;
-  return Math.abs(hash) % len;
-};
 
 const Topics = ({ navigation, route }: TopicsScreenProps) => {
   const chapterId = route?.params?.chapterId;
@@ -179,9 +168,6 @@ const Topics = ({ navigation, route }: TopicsScreenProps) => {
         ) : (
           <View style={{ gap: 10 }}>
             {topicsList.map((topic, i) => {
-              const gradIdx = pickFromId(topic.id, THUMB_GRADIENTS.length);
-              const emojiIdx = pickFromId(topic.id + '-e', THUMB_EMOJIS.length);
-              const grad = THUMB_GRADIENTS[gradIdx];
               const isPremium = isPremiumServiceType(topic.serviceType);
               const done = isCompleted(topic.id);
 
@@ -198,7 +184,7 @@ const Topics = ({ navigation, route }: TopicsScreenProps) => {
                       {topic.name}
                     </Text>
                     <View style={styles.lessonMeta}>
-                      <Text style={styles.metaText}>⏱ {(emojiIdx + 6)} min</Text>
+                      <Text style={styles.metaText}>⏱ {(i + 1) * 3 + 5} min</Text>
 
                       {/* Access tag: FREE or PAID */}
                       <View
