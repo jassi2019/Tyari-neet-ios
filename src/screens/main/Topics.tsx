@@ -158,10 +158,10 @@ const Topics = ({ navigation, route }: TopicsScreenProps) => {
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.bannerTitle}>
-                {completedCount} of {topicsList.length} chapters done
+                {completedCount} of {topicsList.length} done
               </Text>
               <Text style={styles.bannerSub}>
-                {topicsList.length - completedCount} chapters left to finish chapter
+                {topicsList.length - completedCount} left
               </Text>
             </View>
             <Text style={styles.bannerStat}>{progressPct}%</Text>

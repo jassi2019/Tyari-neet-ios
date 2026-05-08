@@ -5,7 +5,6 @@ import { ChevronLeft, Lock } from 'lucide-react-native';
 import { useGetFeatureContents, TFeatureContentItem } from '@/hooks/api/featurecontent';
 import { useAuth } from '@/contexts/AuthContext';
 import { isPaidSubscriptionActive } from '@/lib/subscription';
-import { Badge } from '@/components/ui/badge';
 
 type Props = { navigation: any; route: { params?: { featureType?: string; featureTitle?: string } } };
 
