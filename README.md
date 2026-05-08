@@ -281,77 +281,174 @@ Tests login → plan fetch → order create → signature verify → subscriptio
 - **Play Store:** https://play.google.com/store/apps/details?id=com.taiyarineetki.app
 - **App Store:** https://apps.apple.com/app/taiyari-neet-ki/id6740091521
 
-## Recent Changes
+## Changelog (Date-wise)
 
-### Feature Content System (NEW - Separate Database)
-- 7 feature types: Explanation, Revision Recall, Hidden Links, Exercise Revival, Master Exemplar, PYQs, Chapter Checkpoint
-- Each has its own data in `feature_contents` table (NOT mixed with Topics)
-- Admin manages from sidebar → Feature Content sections
-- App shows "Coming Soon!" when no content added yet
-- Content appears in app as soon as admin adds it
+### 8 May 2026
 
-### App Navigation Flow
+#### Real Study Time Tracking
+- New `useStudyTime` hook with actual 1-second timer
+- Timer starts when user opens content, stops when they leave
+- Total time + daily time tracked (daily resets at midnight)
+- Persisted in AsyncStorage (survives app restart)
+- Home screen shows REAL study time instead of fake estimate
+- Removed old "topics x 10min" fake calculation
+
+#### App Navigation Flow Fixed
 ```
 Subject (Choose your subject)
-  → Class Popup (Select Your Class)
-    → Lesson Screen (Pick a Lesson)
-      → Topic Screen (Chapter 1 · topic name)
+  → Class Popup (Select Your Class → "Tap to load lessons")
+    → Lesson Screen (Pick a Lesson → "12 lessons", "8 topics")
+      → Topic Screen (Lesson 01 · Chapter Name → "Chapter 1 · topic")
         → Content (PDF / HTML / Coming Soon)
 ```
+- "Pick a Chapter" → "Pick a Lesson"
+- "Lesson 1 · name" → "Chapter 1 · name"
+- "Ch 01" → "Lesson 01" in header
+- Emoji icons replaced with thumbnail images (fallback to emoji)
 
-### Members Management (Admin)
-| Action | Icon | Description |
-|--------|------|-------------|
-| View | Eye (blue) | User details + subscription history |
-| Edit | Pencil (yellow) | Edit name, email, phone, bio |
-| Grant | Gift (green) | Grant subscription (select plan, end date) |
-| Revoke | XCircle (orange) | Revoke active subscription |
-| Delete | Trash (red) | Delete user account |
+#### Feature Content System (Separate Database)
+- New `feature_contents` table — completely independent from Topics
+- 7 feature types: Explanation, Revision Recall, Hidden Links, Exercise Revival, Master Exemplar, PYQs, Chapter Checkpoint
+- Backend: `GET/POST /api/v1/feature-content`, `PUT/DELETE /api/v1/feature-content/:id`
+- Admin portal: New `/feature-content` page with full CRUD + PDF upload
+- Sidebar links updated: Explanation → `/feature-content?type=explanation`
+- App: New `FeatureContentList` screen fetches from new API
+- "Coming Soon!" message when no content available
 
-### PDF Upload System
-- Admin uploads PDFs via admin panel → stored on VPS at `/app/uploads/`
-- Served at `https://api.taiyarineetki.com/uploads/<filename>.pdf`
-- Mobile app renders PDFs inline via Google Docs Viewer
-- Max file size: 50MB
-- Storage: Docker named volume `uploads_data`
+#### Full User Management (Admin)
+- **View** (Eye icon) — User details + subscription history
+- **Edit** (Pencil icon) — Edit name, email, phone, bio
+- **Grant** (Gift icon) — Grant subscription (select plan, end date, notes)
+- **Revoke** (XCircle icon) — Revoke active subscription
+- **Delete** (Trash icon) — Delete user account permanently
+- Backend: `PUT/DELETE /api/v1/users/admin/:userId`
+- Backend: `POST /api/v1/subscriptions/admin/grant`, `PUT /api/v1/subscriptions/admin/revoke/:id`
 
-### Study Time Tracking
-- Real timer tracks actual study time (not estimates)
-- Timer starts when user opens content, stops when they leave
-- Total time + daily time tracked
-- Persisted in AsyncStorage (survives app restart)
-- Daily time resets at midnight
+#### Members Page
+- 703 registered users visible with search + pagination
+- Table: #, Name, Email, Joined, Status (Free/Premium/Expired), Actions
+- Subscription status derived from database (real data)
 
-### Admin Portal Theme
-- Light theme (white background)
-- Daily auto-changing accent color (Mon-Sun: Indigo, Teal, Orange, Rose, Sky Blue, Purple, Green)
+---
 
-### API Endpoints (New)
+### 7 May 2026
 
-#### Feature Content
+#### PDF Upload System
+- Backend: multer installed, `POST /api/v1/uploads` (admin, max 50MB)
+- Backend: `express.static` serves PDFs at `/uploads/<filename>.pdf`
+- Backend: `DELETE /api/v1/uploads/:filename` to remove files
+- Portal: `PDFUpload` component with drag-drop + file picker
+- Portal: PDF upload in topic add/edit forms + feature content forms
+- App: PDF URLs wrapped in Google Docs Viewer for inline rendering
+- Docker: `uploads_data` volume for persistent storage
+
+#### Admin Portal Light Theme
+- Replaced dark theme with light theme (white background)
+- Daily auto-changing accent color:
+  - Monday: Indigo, Tuesday: Teal, Wednesday: Orange
+  - Thursday: Rose, Friday: Sky Blue, Saturday: Purple, Sunday: Green
+- Applied via `useEffect` in layout.js on page load
+
+#### Canva Integration Removed
+- Removed Canva `getDesign` from topic create/update controllers
+- Removed Canva cron job (`renewDesignViewURL` every 3 hours)
+- Topic forms still have Canva import for backward compatibility
+- New content uses direct PDF upload instead
+
+#### CORS Fix
+- Added explicit `methods` and `allowedHeaders` to CORS config
+- Fixed preflight (OPTIONS) request handling
+
+#### Docker Improvements
+- `restart: always` on all 4 services (postgres, backend, portal, caddy)
+- Backend healthcheck: `curl -f http://localhost:8000/` every 30s
+- Dockerfile: `apk add curl`, `mkdir /app/uploads`
+- `uploads_data` Docker volume added
+
+#### VPS Repo Fix
+- VPS was pointing to wrong repo (`Taiyari_neet_kei_New.git`)
+- Fixed: `git remote set-url origin` to correct `Tyari-neet-ios.git`
+
+---
+
+### 4 May 2026
+
+#### Admin Portal Enhancements
+- Feature content shortcuts in sidebar (7 links under "Feature Content")
+- `useSearchParams` wrapped in Suspense for Next.js build compatibility
+- Topics filtered by feature type (only show topics with content for selected feature)
+- Package-lock.json regenerated for clean npm ci
+
+---
+
+## API Endpoints (Complete)
+
+### Authentication
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/v1/feature-content?featureType=explanation` | Get feature content |
+| POST | `/api/v1/auth/register` | Register new user |
+| POST | `/api/v1/auth/register/email/verification` | Send registration OTP |
+| POST | `/api/v1/auth/register/otp/verification` | Verify registration OTP |
+| POST | `/api/v1/auth/login` | Login with email & password |
+| POST | `/api/v1/auth/reset/password` | Reset password |
+| POST | `/api/v1/auth/reset/password/email/verification` | Send reset OTP |
+| POST | `/api/v1/auth/reset/password/otp/verification` | Verify reset OTP |
+
+### Feature Content (NEW — Separate Database)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/feature-content?featureType=explanation` | Get content by feature type |
 | POST | `/api/v1/feature-content` | Create content (admin) |
 | PUT | `/api/v1/feature-content/:id` | Update content (admin) |
 | DELETE | `/api/v1/feature-content/:id` | Delete content (admin) |
 
-#### File Uploads
+### User Management (Admin)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/users?page=1&limit=20&search=` | List users with pagination |
+| PUT | `/api/v1/users/admin/:userId` | Edit user profile |
+| DELETE | `/api/v1/users/admin/:userId` | Delete user |
+
+### Subscription Management (Admin)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/v1/subscriptions/admin/grant` | Grant subscription to user |
+| PUT | `/api/v1/subscriptions/admin/revoke/:id` | Revoke subscription |
+| POST | `/api/v1/subscriptions/create-order` | Create Razorpay order |
+| POST | `/api/v1/subscriptions` | Verify payment + create subscription |
+| POST | `/api/v1/subscriptions/iap/apple` | Apple IAP verification |
+
+### File Uploads
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | POST | `/api/v1/uploads` | Upload PDF (admin, max 50MB) |
-| DELETE | `/api/v1/uploads/:filename` | Delete file (admin) |
+| DELETE | `/api/v1/uploads/:filename` | Delete uploaded file |
 
-#### User Management (Admin)
+### Home Content CMS
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/v1/users?page=1&limit=20&search=` | List users |
-| PUT | `/api/v1/users/admin/:userId` | Edit user |
-| DELETE | `/api/v1/users/admin/:userId` | Delete user |
-| POST | `/api/v1/subscriptions/admin/grant` | Grant subscription |
-| PUT | `/api/v1/subscriptions/admin/revoke/:id` | Revoke subscription |
+| GET | `/api/v1/home-content` | Get active content (app) |
+| GET | `/api/v1/home-content/all` | Get all content (admin) |
+| POST | `/api/v1/home-content` | Create (admin) |
+| PUT | `/api/v1/home-content/:id` | Update (admin) |
+| DELETE | `/api/v1/home-content/:id` | Delete (admin) |
 
-### Docker Volumes
+### Topics & Questions
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/topics` | Get topics (filterable) |
+| GET | `/api/v1/questions?chapterId=&subjectId=&classId=` | Get questions |
+| POST/PUT/DELETE | `/api/v1/topics/:id` | Topic CRUD (admin) |
+| POST/PUT/DELETE | `/api/v1/questions/:id` | Question CRUD (admin) |
+
+### Webhooks
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/v1/webhooks/razorpay` | Razorpay payment webhook |
+
+---
+
+## Docker Volumes
 ```
 postgres_data    # PostgreSQL database
 caddy_data       # SSL certificates
