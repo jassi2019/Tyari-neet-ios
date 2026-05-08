@@ -114,7 +114,6 @@ export const Home = ({ navigation }: HomeScreenProps) => {
       ? profile.data.name.charAt(0).toUpperCase() + profile.data.name.slice(1)
       : 'Future Doctor';
 
-  const goToFreeContent = () => {
     navigation.navigate('MainTabs', { screen: 'SubjectsTab' });
   };
 
@@ -131,7 +130,7 @@ export const Home = ({ navigation }: HomeScreenProps) => {
       setActiveFeatureType(activeFeature.featureType);
     }
     setActiveFeature(null);
-    navigation.navigate('MainTabs', { screen: 'SubjectsTab' });
+    navigation.navigate('FeatureContentList', { featureType: activeFeature?.featureType || 'explanation', featureTitle: activeFeature?.name || 'Feature Content' });
   };
 
   const { completedTopics } = useProgress();

@@ -9,6 +9,7 @@ export type RootStackParamList = {
   Profile: undefined;
   Settings: undefined;
   Subscription: undefined;
+  FeatureContentList: { featureType: string; featureTitle: string };
 };
 
 declare global {
