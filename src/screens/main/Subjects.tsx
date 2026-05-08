@@ -338,16 +338,6 @@ const styles = StyleSheet.create({
     marginTop: 5, fontWeight: '600',
   },
 
-  /* Info bar */
-    shadowOpacity: 0.05,
-    shadowRadius: 12,
-    elevation: 1,
-  },
-    width: 40, height: 40, borderRadius: 12,
-    backgroundColor: '#FFF8E1',
-    alignItems: 'center', justifyContent: 'center',
-  },
-
   errorText: { fontSize: 16, color: '#666' },
 });
 
