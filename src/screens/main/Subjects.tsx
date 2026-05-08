@@ -212,17 +212,6 @@ export const Subjects = ({ navigation, route }: SubjectsScreenProps) => {
             })}
           </View>
 
-          {/* Info Bar */}
-          <TouchableOpacity style={styles.infoBar} activeOpacity={0.85} onPress={() => navigation.navigate('MainTabs', { screen: 'TestsTab' })}>
-            <View style={styles.infoIcon}>
-              <Text style={{ fontSize: 20 }}>💡</Text>
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.infoTitle}>Take Diagnostic Test</Text>
-              <Text style={styles.infoSub}>Find out which subject needs your focus first</Text>
-            </View>
-            <Text style={styles.infoArrow}>›</Text>
-          </TouchableOpacity>
         </View>
       </ScrollView>
 
@@ -350,28 +339,14 @@ const styles = StyleSheet.create({
   },
 
   /* Info bar */
-  infoBar: {
-    backgroundColor: '#fff',
-    borderRadius: 18,
-    padding: 14,
-    marginTop: 18,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.05,
     shadowRadius: 12,
     elevation: 1,
   },
-  infoIcon: {
     width: 40, height: 40, borderRadius: 12,
     backgroundColor: '#FFF8E1',
     alignItems: 'center', justifyContent: 'center',
   },
-  infoTitle: { fontSize: 13, fontWeight: '800', color: '#111', marginBottom: 2 },
-  infoSub: { fontSize: 11, color: '#666', lineHeight: 14 },
-  infoArrow: { color: '#92400E', fontSize: 24, fontWeight: '900' },
 
   errorText: { fontSize: 16, color: '#666' },
 });
