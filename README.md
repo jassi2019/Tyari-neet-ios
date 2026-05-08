@@ -88,7 +88,7 @@ India's best NEET preparation app — free study material, 10,000+ MCQs, chapter
 - **Guest Mode:** iOS only, skip login for free content
 
 ### Admin Portal
-- Dark theme dashboard with analytics
+- Light theme dashboard with daily auto-changing accent color
 - Class, Subject, Chapter, Topic, Question CRUD management
 - **Home Content CMS:** Manage features, tests, hero banner, footer from admin panel — reflects live in app
 - PDF upload for content management (replaces Canva)
@@ -103,7 +103,6 @@ India's best NEET preparation app — free study material, 10,000+ MCQs, chapter
 - Razorpay order creation & signature verification
 - Apple IAP receipt verification
 - Purchase invoice emails (student + admin)
-- Canva OAuth token management with auto-renewal
 - Gzip compression for faster responses
 - Swagger API documentation at `/api-docs`
 
@@ -284,43 +283,73 @@ Tests login → plan fetch → order create → signature verify → subscriptio
 
 ## Recent Changes
 
-### Payment & Webhook Hardening
-- Razorpay webhook now verifies `x-razorpay-signature` (HMAC-SHA256) before processing
-- Raw body captured on `/api/v1/webhooks/*` routes for signature verification
-- 401 errors during payment now sign the user out and prompt fresh login
-- Live + test mode keys must match between backend `.env` and the dashboard webhook
+### Feature Content System (NEW - Separate Database)
+- 7 feature types: Explanation, Revision Recall, Hidden Links, Exercise Revival, Master Exemplar, PYQs, Chapter Checkpoint
+- Each has its own data in `feature_contents` table (NOT mixed with Topics)
+- Admin manages from sidebar → Feature Content sections
+- App shows "Coming Soon!" when no content added yet
+- Content appears in app as soon as admin adds it
 
-### Mobile App UX
-- 3-step Test flow: type → subject → class → chapter (uses real DB UUIDs, not hardcoded strings)
-- Library tab: Bookmarks + Notes (NCERT section removed)
-- Test Result screen: inline answer review with correct/wrong highlighting
-- Hero banner uses `aspectRatio: 16/9` + `contain` so it never crops on small devices
-- Bottom nav Plus button opens Library tab
-- Native Android `mipmap-*` icons regenerated from `assets/icon.png` via `expo prebuild`
+### App Navigation Flow
+```
+Subject (Choose your subject)
+  → Class Popup (Select Your Class)
+    → Lesson Screen (Pick a Lesson)
+      → Topic Screen (Chapter 1 · topic name)
+        → Content (PDF / HTML / Coming Soon)
+```
 
-### File Uploads
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/v1/uploads` | Upload PDF file (admin only, max 50MB) |
-| DELETE | `/api/v1/uploads/:filename` | Delete uploaded file (admin only) |
-
-### Users / Members
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/v1/users?page=1&limit=20&search=` | List all users with pagination (admin only) |
+### Members Management (Admin)
+| Action | Icon | Description |
+|--------|------|-------------|
+| View | Eye (blue) | User details + subscription history |
+| Edit | Pencil (yellow) | Edit name, email, phone, bio |
+| Grant | Gift (green) | Grant subscription (select plan, end date) |
+| Revoke | XCircle (orange) | Revoke active subscription |
+| Delete | Trash (red) | Delete user account |
 
 ### PDF Upload System
 - Admin uploads PDFs via admin panel → stored on VPS at `/app/uploads/`
 - Served at `https://api.taiyarineetki.com/uploads/<filename>.pdf`
 - Mobile app renders PDFs inline via Google Docs Viewer
 - Max file size: 50MB
-- Storage: Docker named volume `uploads_data` (persists across container rebuilds)
+- Storage: Docker named volume `uploads_data`
 
-### Members Management
-- View all registered users from admin panel at `/members`
-- Search by name or email
-- Shows subscription status (Free / Premium / Expired)
-- Pagination with 20 users per page
+### Study Time Tracking
+- Real timer tracks actual study time (not estimates)
+- Timer starts when user opens content, stops when they leave
+- Total time + daily time tracked
+- Persisted in AsyncStorage (survives app restart)
+- Daily time resets at midnight
+
+### Admin Portal Theme
+- Light theme (white background)
+- Daily auto-changing accent color (Mon-Sun: Indigo, Teal, Orange, Rose, Sky Blue, Purple, Green)
+
+### API Endpoints (New)
+
+#### Feature Content
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/feature-content?featureType=explanation` | Get feature content |
+| POST | `/api/v1/feature-content` | Create content (admin) |
+| PUT | `/api/v1/feature-content/:id` | Update content (admin) |
+| DELETE | `/api/v1/feature-content/:id` | Delete content (admin) |
+
+#### File Uploads
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/v1/uploads` | Upload PDF (admin, max 50MB) |
+| DELETE | `/api/v1/uploads/:filename` | Delete file (admin) |
+
+#### User Management (Admin)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/users?page=1&limit=20&search=` | List users |
+| PUT | `/api/v1/users/admin/:userId` | Edit user |
+| DELETE | `/api/v1/users/admin/:userId` | Delete user |
+| POST | `/api/v1/subscriptions/admin/grant` | Grant subscription |
+| PUT | `/api/v1/subscriptions/admin/revoke/:id` | Revoke subscription |
 
 ### Docker Volumes
 ```
