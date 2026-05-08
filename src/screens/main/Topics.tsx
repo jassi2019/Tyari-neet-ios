@@ -17,7 +17,6 @@ import {
   TouchableOpacity,
   TouchableWithoutFeedback,
   View,
-  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -42,22 +41,9 @@ const THUMB_GRADIENTS = [
   ['#AB47BC', '#6A1B9A'],
 ];
 
-const THUMB_EMOJIS = ['📘', '⚡', '🔌', '🌐', '🧲', '🧮', '📐', '🧪', '⚗️', '🌿'];
-const SUBJECT_IMAGES: Record<string, string> = {
-  physics: 'https://img.icons8.com/color/200/physics.png',
-  chemistry: 'https://img.icons8.com/color/200/chemistry.png',
-  biology: 'https://img.icons8.com/color/200/biotech.png',
-  botany: 'https://img.icons8.com/color/200/potted-plant.png',
-  zoology: 'https://img.icons8.com/color/200/animal.png',
-};
-const getSubjectImage = (subject?: string): string => {
-  if (!subject) return 'https://img.icons8.com/color/200/book.png';
-  const key = subject.toLowerCase();
-  for (const [k, v] of Object.entries(SUBJECT_IMAGES)) {
-    if (key.includes(k)) return v;
-  }
-  return 'https://img.icons8.com/color/200/book.png';
-};
+
+
+
 
 
 const pickFromId = (id: string, len: number) => {
@@ -206,17 +192,6 @@ const Topics = ({ navigation, route }: TopicsScreenProps) => {
                   activeOpacity={0.85}
                   onPress={() => handleTopicPress(topic)}
                 >
-                  <View style={[styles.thumb, { backgroundColor: grad[1] }]}>
-                    {<Image source={{ uri: topic.contentThumbnail || getSubjectImage(subjectTitle) }} style={{ width: "100%", height: "100%", borderRadius: 10 }} resizeMode="cover" />}
-                    <View style={styles.playOverlay}>
-                      
-                    </View>
-                    {isPremium && (
-                      <View style={styles.lockBadge}>
-                        <Lock size={10} color="#fff" strokeWidth={3} />
-                      </View>
-                    )}
-                  </View>
                   <View style={{ flex: 1, minWidth: 0 }}>
                     <Text style={styles.lessonTitle} numberOfLines={2}>
                       Topic {i + 1} · {topic.name}
@@ -348,20 +323,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 8,
     elevation: 2,
-  },
-  thumb: {
-    width: 60, height: 60, borderRadius: 12,
-    alignItems: 'center', justifyContent: 'center',
-    position: 'relative',
-  },
-  thumbEmoji: { fontSize: 26 },
-  playOverlay: {
-    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-    backgroundColor: 'transparent',
-    borderRadius: 12,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  playIcon: { color: '#fff', fontSize: 18 },
+  }, fontSize: 18 },
   lessonTitle: { fontSize: 13, fontWeight: '800', color: '#111', marginBottom: 3 },
   lessonMeta: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   metaText: { fontSize: 10.5, color: '#777' },
