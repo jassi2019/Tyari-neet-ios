@@ -43,20 +43,20 @@ const THUMB_GRADIENTS = [
 ];
 
 const THUMB_EMOJIS = ['📘', '⚡', '🔌', '🌐', '🧲', '🧮', '📐', '🧪', '⚗️', '🌿'];
-const SUBJECT_PLACEHOLDERS: Record<string, any> = {
-  physics: require('../../../assets/icon.png'),
-  chemistry: require('../../../assets/icon.png'),
-  biology: require('../../../assets/icon.png'),
-  botany: require('../../../assets/icon.png'),
-  zoology: require('../../../assets/icon.png'),
+const SUBJECT_IMAGES: Record<string, string> = {
+  physics: 'https://img.icons8.com/color/200/physics.png',
+  chemistry: 'https://img.icons8.com/color/200/chemistry.png',
+  biology: 'https://img.icons8.com/color/200/biotech.png',
+  botany: 'https://img.icons8.com/color/200/potted-plant.png',
+  zoology: 'https://img.icons8.com/color/200/animal.png',
 };
-const getSubjectPlaceholder = (subject?: string) => {
-  if (!subject) return require('../../../assets/icon.png');
+const getSubjectImage = (subject?: string): string => {
+  if (!subject) return 'https://img.icons8.com/color/200/book.png';
   const key = subject.toLowerCase();
-  for (const [k, v] of Object.entries(SUBJECT_PLACEHOLDERS)) {
+  for (const [k, v] of Object.entries(SUBJECT_IMAGES)) {
     if (key.includes(k)) return v;
   }
-  return require('../../../assets/icon.png');
+  return 'https://img.icons8.com/color/200/book.png';
 };
 
 
@@ -207,7 +207,7 @@ const Topics = ({ navigation, route }: TopicsScreenProps) => {
                   onPress={() => handleTopicPress(topic)}
                 >
                   <View style={[styles.thumb, { backgroundColor: grad[1] }]}>
-                    {topic.contentThumbnail ? <Image source={{ uri: topic.contentThumbnail }} style={{ width: "100%", height: "100%", borderRadius: 10 }} resizeMode="cover" /> : <Image source={getSubjectPlaceholder(subjectTitle)} style={{ width: "100%", height: "100%", borderRadius: 10 }} resizeMode="cover" />}
+                    {<Image source={{ uri: topic.contentThumbnail || getSubjectImage(subjectTitle) }} style={{ width: "100%", height: "100%", borderRadius: 10 }} resizeMode="cover" />}
                     <View style={styles.playOverlay}>
                       <Text style={styles.playIcon}>▶</Text>
                     </View>
