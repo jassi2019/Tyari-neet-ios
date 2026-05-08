@@ -143,9 +143,9 @@ export const Chapters = ({ navigation, route }: ChaptersScreenProps) => {
 
           <View style={styles.headerPanel}>
             <Text style={styles.headerGreet}>
-              {selectedClass?.name || 'Class'} · {chaptersToRender.length} lessons
+              {selectedClass?.name || 'Class'} · {chaptersToRender.length} chapters
             </Text>
-            <Text style={styles.headerTitle}>Pick a Lesson</Text>
+            <Text style={styles.headerTitle}>Pick a Chapter</Text>
           </View>
         </View>
 

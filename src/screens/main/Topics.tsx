@@ -128,7 +128,7 @@ const Topics = ({ navigation, route }: TopicsScreenProps) => {
     );
   }
 
-  const numLabel = chapterNumber ? `Lesson ${String(chapterNumber).padStart(2, '0')} · ` : '';
+  const numLabel = chapterNumber ? `Ch ${String(chapterNumber).padStart(2, '0')} · ` : '';
 
   return (
     <LinearGradient colors={['#F5A623', '#F9C45A', '#FCDA3E']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.safeArea}>
@@ -203,7 +203,7 @@ const Topics = ({ navigation, route }: TopicsScreenProps) => {
                   </View>
                   <View style={{ flex: 1, minWidth: 0 }}>
                     <Text style={styles.lessonTitle} numberOfLines={2}>
-                      Chapter {i + 1} · {topic.name}
+                      Topic {i + 1} · {topic.name}
                     </Text>
                     <View style={styles.lessonMeta}>
                       <Text style={styles.metaText}>⏱ {(emojiIdx + 6)} min</Text>
