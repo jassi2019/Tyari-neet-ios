@@ -43,6 +43,22 @@ const THUMB_GRADIENTS = [
 ];
 
 const THUMB_EMOJIS = ['📘', '⚡', '🔌', '🌐', '🧲', '🧮', '📐', '🧪', '⚗️', '🌿'];
+const SUBJECT_PLACEHOLDERS: Record<string, any> = {
+  physics: require('../../../assets/icon.png'),
+  chemistry: require('../../../assets/icon.png'),
+  biology: require('../../../assets/icon.png'),
+  botany: require('../../../assets/icon.png'),
+  zoology: require('../../../assets/icon.png'),
+};
+const getSubjectPlaceholder = (subject?: string) => {
+  if (!subject) return require('../../../assets/icon.png');
+  const key = subject.toLowerCase();
+  for (const [k, v] of Object.entries(SUBJECT_PLACEHOLDERS)) {
+    if (key.includes(k)) return v;
+  }
+  return require('../../../assets/icon.png');
+};
+
 
 const pickFromId = (id: string, len: number) => {
   let hash = 0;
@@ -191,7 +207,7 @@ const Topics = ({ navigation, route }: TopicsScreenProps) => {
                   onPress={() => handleTopicPress(topic)}
                 >
                   <View style={[styles.thumb, { backgroundColor: grad[1] }]}>
-                    {topic.contentThumbnail ? <Image source={{ uri: topic.contentThumbnail }} style={{ width: "100%", height: "100%", borderRadius: 10 }} resizeMode="cover" /> : <Text style={styles.thumbEmoji}>{THUMB_EMOJIS[emojiIdx]}</Text>}
+                    {topic.contentThumbnail ? <Image source={{ uri: topic.contentThumbnail }} style={{ width: "100%", height: "100%", borderRadius: 10 }} resizeMode="cover" /> : <Image source={getSubjectPlaceholder(subjectTitle)} style={{ width: "100%", height: "100%", borderRadius: 10 }} resizeMode="cover" />}
                     <View style={styles.playOverlay}>
                       <Text style={styles.playIcon}>▶</Text>
                     </View>
