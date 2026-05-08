@@ -96,7 +96,7 @@ export const TopicContent = ({ navigation, route }: TopicContentProps) => {
     error: topicError,
     refetch,
   } = useGetTopicById(topicId, {
-    enabled: !isGuest && !!topicId && (!isPremiumTopic || hasPremium),
+    enabled: !isGuest && !!topicId && (!isPremiumTopic || hasPremium) && !topic?.contentURL,
     retry: false,
   }, activeFeature || undefined);
 
