@@ -192,9 +192,10 @@ const Topics = ({ navigation, route }: TopicsScreenProps) => {
                   activeOpacity={0.85}
                   onPress={() => handleTopicPress(topic)}
                 >
+                  <View style={styles.topicNum}><Text style={styles.topicNumText}>{String(i + 1).padStart(2, "0")}</Text></View>
                   <View style={{ flex: 1, minWidth: 0 }}>
                     <Text style={styles.lessonTitle} numberOfLines={2}>
-                      Topic {i + 1} · {topic.name}
+                      {topic.name}
                     </Text>
                     <View style={styles.lessonMeta}>
                       <Text style={styles.metaText}>⏱ {(emojiIdx + 6)} min</Text>
@@ -312,6 +313,9 @@ const styles = StyleSheet.create({
   bannerStat: { fontSize: 18, fontWeight: '900', color: '#92400E' },
 
   lessonCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
     backgroundColor: '#fff',
     borderRadius: 16,
     padding: 12,
@@ -324,6 +328,12 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 2,
   }, fontSize: 18 },
+  topicNum: {
+    width: 44, height: 44, borderRadius: 12,
+    backgroundColor: '#92400E',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  topicNumText: { color: '#fff', fontSize: 16, fontWeight: '900' },
   lessonTitle: { fontSize: 13, fontWeight: '800', color: '#111', marginBottom: 3 },
   lessonMeta: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   metaText: { fontSize: 10.5, color: '#777' },
