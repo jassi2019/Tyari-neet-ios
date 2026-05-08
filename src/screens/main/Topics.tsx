@@ -207,7 +207,7 @@ const Topics = ({ navigation, route }: TopicsScreenProps) => {
                   onPress={() => handleTopicPress(topic)}
                 >
                   <View style={[styles.thumb, { backgroundColor: grad[1] }]}>
-                    {<Image source={{ uri: (topic.contentThumbnail && !topic.contentThumbnail.includes('canva.com')) ? topic.contentThumbnail : getSubjectImage(subjectTitle) }} style={{ width: "100%", height: "100%", borderRadius: 10 }} resizeMode="cover" />}
+                    {<Image source={{ uri: topic.contentThumbnail || getSubjectImage(subjectTitle) }} style={{ width: "100%", height: "100%", borderRadius: 10 }} resizeMode="cover" />}
                     <View style={styles.playOverlay}>
                       
                     </View>
