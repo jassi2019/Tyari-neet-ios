@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useFeature } from '@/contexts/FeatureContext';
 import { useGetProfile } from '@/hooks/api/user';
 import { useProgress } from '@/hooks/useProgress';
+import { useStudyTime } from '@/hooks/useStudyTime';
 import { useStreak } from '@/hooks/useStreak';
 import { useGetHomeContent } from '@/hooks/api/homecontent';
 import { useContentProtection } from '@/hooks/useContentProtection';
@@ -134,20 +135,16 @@ export const Home = ({ navigation }: HomeScreenProps) => {
   };
 
   const { completedTopics } = useProgress();
+  const { totalTime, hasData: hasStudyData } = useStudyTime();
   const studyStats = useMemo(() => {
     const covered = completedTopics.length;
-    // Each topic counts as ~10 min of study time (rough estimate)
-    const totalMinutes = covered * 10;
-    const hours = Math.floor(totalMinutes / 60);
-    const mins = totalMinutes % 60;
-    const studyTime = hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
     // Accuracy is a placeholder (no test data yet) — show "—" until tests are added.
     return {
       covered,
-      studyTime,
-      hasData: covered > 0,
+      studyTime: totalTime,
+      hasData: covered > 0 || hasStudyData,
     };
-  }, [completedTopics]);
+  }, [completedTopics, totalTime, hasStudyData]);
 
   return (
     <LinearGradient

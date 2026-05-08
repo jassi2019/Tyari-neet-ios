@@ -4,6 +4,7 @@ import { useFeature } from '@/contexts/FeatureContext';
 import { useGetTopicById } from '@/hooks/api/topics';
 import { useContentProtection } from '@/hooks/useContentProtection';
 import { useProgress } from '@/hooks/useProgress';
+import { useStudyTime } from '@/hooks/useStudyTime';
 import { isPaidSubscriptionActive, isPremiumServiceType } from '@/lib/subscription';
 import { TTopic } from '@/types/Topic';
 import { ChevronLeft } from 'lucide-react-native';
@@ -63,6 +64,7 @@ export const TopicContent = ({ navigation, route }: TopicContentProps) => {
   const isPremiumTopic = isPremiumServiceType(topic?.serviceType);
   const hasPremium = isPaidSubscriptionActive(user?.subscription);
   const { markCompleted } = useProgress();
+  const { startTimer, stopTimer } = useStudyTime();
 
   // Clear the selected feature once user leaves this screen so the next browse
   // (without coming via Home box) starts clean.
@@ -81,6 +83,11 @@ export const TopicContent = ({ navigation, route }: TopicContentProps) => {
 
   // Protect lesson content from screenshots / screen recordings (best-effort).
   // NOTE: Web cannot be reliably protected, so keep this native-only.
+  // Track study time
+  React.useEffect(() => {
+    startTimer();
+    return () => { stopTimer(); };
+  }, [startTimer, stopTimer]);
   useContentProtection({ enabled: Platform.OS !== 'web', key: 'topic-content', appSwitcherBlurIntensity: 0.65 });
 
   const {
