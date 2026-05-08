@@ -35,7 +35,8 @@ router.post(
       return res.status(400).json({ message: "No file uploaded. Please select a PDF file." });
     }
 
-    const url = `${req.protocol}://${req.get("host")}/uploads/${req.file.filename}`;
+    const proto = req.get("x-forwarded-proto") || req.protocol;
+    const url = `${proto}://${req.get("host")}/uploads/${req.file.filename}`;
 
     return res.status(201).json({
       message: "File uploaded successfully",
