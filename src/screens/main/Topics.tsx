@@ -311,10 +311,6 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 2,
   },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
   topicNum: {
     width: 44, height: 44, borderRadius: 12,
     backgroundColor: '#92400E',
