@@ -128,11 +128,10 @@ export const Home = ({ navigation }: HomeScreenProps) => {
   const [activeFeature, setActiveFeature] = useState<(FeatureDetail & { featureType?: TFeatureType }) | null>(null);
 
   const handleFeatureStart = () => {
-    if (activeFeature?.featureType) {
-      setActiveFeatureType(activeFeature.featureType);
-    }
+    const ft = activeFeature?.featureType || 'explanation';
+    const fn = activeFeature?.name || 'Feature Content';
     setActiveFeature(null);
-    navigation.navigate('FeatureContentList', { featureType: activeFeature?.featureType || 'explanation', featureTitle: activeFeature?.name || 'Feature Content' });
+    navigation.navigate('FeatureContentList', { featureType: ft, featureTitle: fn });
   };
 
   const { completedTopics } = useProgress();
