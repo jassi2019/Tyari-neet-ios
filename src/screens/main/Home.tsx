@@ -157,7 +157,7 @@ export const Home = ({ navigation }: HomeScreenProps) => {
       <SafeAreaView style={styles.safeArea} edges={['top']}>
       <ScrollView
         style={{ flex: 1, backgroundColor: 'transparent' }}
-        contentContainerStyle={{ backgroundColor: 'transparent' }}
+        contentContainerStyle={{ backgroundColor: 'transparent', paddingBottom: 100 }}
         showsVerticalScrollIndicator={false}
       >
         {/* Yellow Header */}
