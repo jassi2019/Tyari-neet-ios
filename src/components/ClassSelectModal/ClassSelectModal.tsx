@@ -56,7 +56,7 @@ export const ClassSelectModal = ({
               </View>
 
               <Text style={styles.title}>Select Your Class</Text>
-              <Text style={styles.subtitle}>Pick the class to view its chapters</Text>
+              <Text style={styles.subtitle}>Pick the class to view its lessons</Text>
 
               <View style={styles.options}>
                 {classes.map((cls, idx) => {
@@ -76,7 +76,7 @@ export const ClassSelectModal = ({
                       </View>
                       <View style={{ flex: 1 }}>
                         <Text style={styles.cardTitle}>{cls.name}</Text>
-                        <Text style={styles.cardDesc}>Tap to load chapters</Text>
+                        <Text style={styles.cardDesc}>Tap to load lessons</Text>
                       </View>
                       <View style={[styles.radio, isSelected && styles.radioSelected]}>
                         {isSelected && <Text style={styles.radioCheck}>✓</Text>}

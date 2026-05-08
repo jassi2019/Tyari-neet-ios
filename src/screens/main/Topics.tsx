@@ -128,7 +128,7 @@ const Topics = ({ navigation, route }: TopicsScreenProps) => {
     );
   }
 
-  const numLabel = chapterNumber ? `Ch ${String(chapterNumber).padStart(2, '0')} · ` : '';
+  const numLabel = chapterNumber ? `Lesson ${String(chapterNumber).padStart(2, '0')} · ` : '';
 
   return (
     <LinearGradient colors={['#F5A623', '#F9C45A', '#FCDA3E']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.safeArea}>
