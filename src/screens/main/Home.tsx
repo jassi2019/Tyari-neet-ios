@@ -157,7 +157,7 @@ export const Home = ({ navigation }: HomeScreenProps) => {
       <SafeAreaView style={styles.safeArea} edges={['top']}>
       <ScrollView
         style={{ flex: 1, backgroundColor: 'transparent' }}
-        contentContainerStyle={{ backgroundColor: 'transparent', paddingBottom: 100 }}
+        contentContainerStyle={{ backgroundColor: 'transparent', paddingBottom: 20 }}
         showsVerticalScrollIndicator={false}
       >
         {/* Yellow Header */}
@@ -317,7 +317,6 @@ export const Home = ({ navigation }: HomeScreenProps) => {
           <TouchableOpacity activeOpacity={0.9} onPress={goToFreeContent} style={styles.footerWrap}>
             <Image source={footerImage} style={styles.footerImg} />
           </TouchableOpacity>
-          <View style={{ height: 20, backgroundColor: '#fff' }} />
       </View>
       </ScrollView>
 
