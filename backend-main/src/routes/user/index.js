@@ -7,6 +7,8 @@ const { User } = require("../../models");
 const getByIdV1 = require("../../controllers/user/get.by.id");
 const updateV1 = require("../../controllers/user/update");
 const listV1 = require("../../controllers/user/list");
+const adminUpdateV1 = require("../../controllers/user/admin.update");
+const adminDeleteV1 = require("../../controllers/user/admin.delete");
 
 const authMiddleware = require("../../middlewares/auth");
 const { isOwner, isAdminRole } = require("../../middlewares/auth.z");
@@ -128,4 +130,5 @@ router
   .get(authMiddleware, isOwner(User), getByIdV1)
   .put(authMiddleware, isOwner(User), updateV1);
 
+router.route("/admin/:userId").put(authMiddleware, isAdminRole, adminUpdateV1).delete(authMiddleware, isAdminRole, adminDeleteV1);
 module.exports = router;

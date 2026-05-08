@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getUsers, getPlans, grantSubscription, revokeSubscription } from "@/services/users";
+import { getUsers, getPlans, grantSubscription, revokeSubscription, adminUpdateUser, adminDeleteUser } from "@/services/users";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,7 +9,7 @@ import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import Loader from "@/components/custom/loader";
 import useToast from "@/hooks/useToast";
-import { Search, ChevronLeft, ChevronRight, Users, Crown, Gift, XCircle } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, Users, Crown, Gift, XCircle, Pencil, Trash2, Eye } from "lucide-react";
 
 export default function MembersPage() {
   const [users, setUsers] = useState([]);
@@ -23,6 +23,9 @@ export default function MembersPage() {
   const [selUser, setSelUser] = useState(null);
   const [gForm, setGForm] = useState({ planId: "", endDate: "", notes: "" });
   const [saving, setSaving] = useState(false);
+  const [viewUser, setViewUser] = useState(null);
+  const [editUser, setEditUser] = useState(null);
+  const [editForm, setEditForm] = useState({ name: "", email: "", bio: "", phone: "" });
   const { showSuccess, showError } = useToast();
 
   const fetchUsers = async () => {
@@ -40,15 +43,25 @@ export default function MembersPage() {
     return { label: "Expired", variant: "destructive", active: null };
   };
   const fmtDate = (d) => new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+
   const doGrant = async () => {
     if (!gForm.planId || !gForm.endDate) { showError("Select plan and date"); return; }
     setSaving(true);
-    try { await grantSubscription({ userId: selUser.id, planId: gForm.planId, endDate: gForm.endDate, notes: gForm.notes }); showSuccess("Subscription granted!"); setSelUser(null); setGForm({ planId: "", endDate: "", notes: "" }); fetchUsers(); }
+    try { await grantSubscription({ userId: selUser.id, planId: gForm.planId, endDate: gForm.endDate, notes: gForm.notes }); showSuccess("Subscription granted!"); setSelUser(null); fetchUsers(); }
     catch (e) { showError("Failed to grant"); } finally { setSaving(false); }
   };
   const doRevoke = async (sub, name) => {
     if (!confirm("Revoke subscription for " + name + "?")) return;
     try { await revokeSubscription(sub.id); showSuccess("Revoked"); fetchUsers(); } catch (e) { showError("Failed"); }
+  };
+  const doEdit = async () => {
+    setSaving(true);
+    try { await adminUpdateUser(editUser.id, editForm); showSuccess("User updated!"); setEditUser(null); fetchUsers(); }
+    catch (e) { showError("Failed to update"); } finally { setSaving(false); }
+  };
+  const doDelete = async (u) => {
+    if (!confirm("Delete user " + (u.name || u.email) + "? This cannot be undone.")) return;
+    try { await adminDeleteUser(u.id); showSuccess("User deleted"); fetchUsers(); } catch (e) { showError("Failed to delete"); }
   };
 
   return (
@@ -78,8 +91,11 @@ export default function MembersPage() {
                   <td className="px-4 py-3 text-sm text-muted-foreground">{fmtDate(u.createdAt)}</td>
                   <td className="px-4 py-3"><Badge variant={s.variant} className="text-xs">{s.label === "Premium" && <Crown className="h-3 w-3 mr-1" />}{s.label}</Badge></td>
                   <td className="px-4 py-3"><div className="flex gap-1">
+                    <button onClick={() => setViewUser(u)} className="p-1.5 rounded hover:bg-blue-50" title="View"><Eye className="h-4 w-4 text-blue-500" /></button>
+                    <button onClick={() => { setEditUser(u); setEditForm({ name: u.name || "", email: u.email || "", bio: u.bio || "", phone: u.phone || "" }); }} className="p-1.5 rounded hover:bg-yellow-50" title="Edit"><Pencil className="h-4 w-4 text-yellow-600" /></button>
                     <button onClick={() => { setSelUser(u); setGForm({ planId: "", endDate: "", notes: "" }); }} className="p-1.5 rounded hover:bg-green-50" title="Grant Subscription"><Gift className="h-4 w-4 text-green-600" /></button>
-                    {s.active && <button onClick={() => doRevoke(s.active, u.name || u.email)} className="p-1.5 rounded hover:bg-red-50" title="Revoke"><XCircle className="h-4 w-4 text-red-500" /></button>}
+                    {s.active && <button onClick={() => doRevoke(s.active, u.name || u.email)} className="p-1.5 rounded hover:bg-orange-50" title="Revoke"><XCircle className="h-4 w-4 text-orange-500" /></button>}
+                    <button onClick={() => doDelete(u)} className="p-1.5 rounded hover:bg-red-50" title="Delete"><Trash2 className="h-4 w-4 text-red-500" /></button>
                   </div></td>
                 </tr>
               );
@@ -88,6 +104,54 @@ export default function MembersPage() {
           {totalPages > 1 && <div className="flex items-center justify-between mt-4"><p className="text-sm text-muted-foreground">Page {page} of {totalPages}</p><div className="flex gap-2"><Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(page - 1)}><ChevronLeft className="h-4 w-4 mr-1" />Prev</Button><Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage(page + 1)}>Next<ChevronRight className="h-4 w-4 ml-1" /></Button></div></div>}
         </>
       )}
+
+      {/* View User Dialog */}
+      {viewUser && (
+        <Dialog open={true} onOpenChange={() => setViewUser(null)}>
+          <DialogContent className="max-w-md">
+            <DialogHeader><DialogTitle>User Details</DialogTitle></DialogHeader>
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div><span className="text-muted-foreground">Name:</span><p className="font-medium">{viewUser.name || "\u2014"}</p></div>
+                <div><span className="text-muted-foreground">Email:</span><p className="font-medium">{viewUser.email}</p></div>
+                <div><span className="text-muted-foreground">Phone:</span><p className="font-medium">{viewUser.phone || "\u2014"}</p></div>
+                <div><span className="text-muted-foreground">Bio:</span><p className="font-medium">{viewUser.bio || "\u2014"}</p></div>
+                <div><span className="text-muted-foreground">Joined:</span><p className="font-medium">{fmtDate(viewUser.createdAt)}</p></div>
+                <div><span className="text-muted-foreground">Source:</span><p className="font-medium">{viewUser.registrationSource || "APP"}</p></div>
+              </div>
+              <div>
+                <p className="text-sm font-semibold mb-2">Subscriptions</p>
+                {!viewUser.Subscriptions?.length ? <p className="text-sm text-muted-foreground">No subscriptions</p> :
+                  viewUser.Subscriptions.map(sub => (
+                    <div key={sub.id} className={"p-2 border rounded mb-2 " + (sub.paymentStatus === "SUCCESS" && new Date(sub.endDate) > new Date() ? "border-green-200 bg-green-50" : "")}>
+                      <div className="flex justify-between text-sm"><span>{sub.Plan?.name || "Unknown"}</span><Badge variant={sub.paymentStatus === "SUCCESS" && new Date(sub.endDate) > new Date() ? "default" : "secondary"} className="text-xs">{sub.paymentStatus === "SUCCESS" && new Date(sub.endDate) > new Date() ? "Active" : sub.paymentStatus}</Badge></div>
+                      <p className="text-xs text-muted-foreground">{fmtDate(sub.startDate)} - {fmtDate(sub.endDate)} | Rs.{sub.amount}</p>
+                    </div>
+                  ))
+                }
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Edit User Dialog */}
+      {editUser && (
+        <Dialog open={true} onOpenChange={() => setEditUser(null)}>
+          <DialogContent className="max-w-md">
+            <DialogHeader><DialogTitle>Edit User</DialogTitle></DialogHeader>
+            <div className="space-y-4">
+              <div><label className="text-sm font-medium mb-1 block">Name</label><Input value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} /></div>
+              <div><label className="text-sm font-medium mb-1 block">Email</label><Input value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} /></div>
+              <div><label className="text-sm font-medium mb-1 block">Phone</label><Input value={editForm.phone} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })} /></div>
+              <div><label className="text-sm font-medium mb-1 block">Bio</label><Input value={editForm.bio} onChange={(e) => setEditForm({ ...editForm, bio: e.target.value })} /></div>
+              <div className="flex gap-2"><Button onClick={doEdit} disabled={saving} className="flex-1">{saving ? "Saving..." : "Save Changes"}</Button><Button variant="outline" onClick={() => setEditUser(null)}>Cancel</Button></div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Grant Subscription Dialog */}
       {selUser && (
         <Dialog open={true} onOpenChange={() => setSelUser(null)}>
           <DialogContent className="max-w-md">
@@ -104,18 +168,9 @@ export default function MembersPage() {
                   {plans.map(p => <option key={p.id} value={p.id}>{p.name} - Rs.{p.amount}</option>)}
                 </select>
               </div>
-              <div>
-                <label className="text-sm font-medium mb-1 block">Access Until</label>
-                <Input type="date" value={gForm.endDate} onChange={(e) => setGForm({ ...gForm, endDate: e.target.value })} />
-              </div>
-              <div>
-                <label className="text-sm font-medium mb-1 block">Notes (optional)</label>
-                <Input value={gForm.notes} onChange={(e) => setGForm({ ...gForm, notes: e.target.value })} placeholder="e.g. Scholarship, Free trial" />
-              </div>
-              <div className="flex gap-2">
-                <Button onClick={doGrant} disabled={saving} className="flex-1">{saving ? "Granting..." : "Grant Subscription"}</Button>
-                <Button variant="outline" onClick={() => setSelUser(null)}>Cancel</Button>
-              </div>
+              <div><label className="text-sm font-medium mb-1 block">Access Until</label><Input type="date" value={gForm.endDate} onChange={(e) => setGForm({ ...gForm, endDate: e.target.value })} /></div>
+              <div><label className="text-sm font-medium mb-1 block">Notes (optional)</label><Input value={gForm.notes} onChange={(e) => setGForm({ ...gForm, notes: e.target.value })} placeholder="e.g. Scholarship, Free trial" /></div>
+              <div className="flex gap-2"><Button onClick={doGrant} disabled={saving} className="flex-1">{saving ? "Granting..." : "Grant Subscription"}</Button><Button variant="outline" onClick={() => setSelUser(null)}>Cancel</Button></div>
             </div>
           </DialogContent>
         </Dialog>
