@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChevronLeft, Lock } from 'lucide-react-native';
 import { useGetFeatureContents, TFeatureContentItem } from '@/hooks/api/featurecontent';
 import { useAuth } from '@/contexts/AuthContext';
+import { useFeature } from '@/contexts/FeatureContext';
 import { isPaidSubscriptionActive } from '@/lib/subscription';
 
 type Props = { navigation: any; route: { params?: { featureType?: string; featureTitle?: string } } };
@@ -12,6 +13,7 @@ export const FeatureContentList = ({ navigation, route }: Props) => {
   const featureType = route?.params?.featureType || 'explanation';
   const featureTitle = route?.params?.featureTitle || 'Feature Content';
   const { user } = useAuth();
+  const { setActiveFeature } = useFeature();
   const hasPremium = isPaidSubscriptionActive(user?.subscription);
   const { data, isLoading } = useGetFeatureContents(featureType);
   const items: TFeatureContentItem[] = (data as any)?.data || [];
@@ -22,7 +24,10 @@ export const FeatureContentList = ({ navigation, route }: Props) => {
       return;
     }
     if (item.contentURL) {
-      navigation.navigate('TopicContent', { topic: { id: item.id, name: item.title, description: item.description, contentURL: item.contentURL, serviceType: item.serviceType, Chapter: item.Chapter, Subject: item.Subject } });
+      setActiveFeature(null);
+      navigation.navigate('TopicContent', { topic: { id: item.id, name: item.title, description: item.description, contentURL: item.contentURL, serviceType: 'FREE', Chapter: item.Chapter, Subject: item.Subject } });
+    } else {
+      // No content yet
     }
   };
 
