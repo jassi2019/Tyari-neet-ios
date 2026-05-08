@@ -286,7 +286,7 @@ export const TopicContent = ({ navigation, route }: TopicContentProps) => {
         <TopicHeader title={effectiveTopic?.name || 'Topic'} onBack={() => navigation.goBack()} />
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
           <Text style={{ fontSize: 16, color: '#EF4444', textAlign: 'center' }}>
-            Content URL is missing for this topic.
+            Coming Soon! This content is being prepared.
           </Text>
         </View>
       </SafeAreaView>
