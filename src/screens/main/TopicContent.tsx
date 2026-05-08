@@ -128,7 +128,7 @@ export const TopicContent = ({ navigation, route }: TopicContentProps) => {
   const normalizedURL = isInsecureRemoteUrl ? rawURL.replace(/^http:\/\//i, 'https://') : rawURL;
 
   // PDF URLs: wrap in Google Docs Viewer for inline rendering in WebView
-  const isPdfUrl = /.pdf(?|$)/i.test(normalizedURL);
+  const isPdfUrl = /\.pdf(\?|$)/i.test(normalizedURL);
   const finalURL = isPdfUrl
     ? `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(normalizedURL)}`
     : normalizedURL;
