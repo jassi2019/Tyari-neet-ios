@@ -37,13 +37,13 @@ const navigation = [
 ];
 
 const featureNavigation = [
-  { name: "Explanation", href: "/topics?feature=explanation", icon: Lightbulb },
-  { name: "Revision Recall", href: "/topics?feature=revision_recall", icon: Brain },
-  { name: "Hidden Links", href: "/topics?feature=hidden_links", icon: Link2 },
-  { name: "Exercise Revival", href: "/topics?feature=exercise_revival", icon: ClipboardList },
-  { name: "Master Exemplar", href: "/topics?feature=master_exemplar", icon: Trophy },
-  { name: "PYQs", href: "/topics?feature=pyq", icon: FileText },
-  { name: "Chapter Checkpoint", href: "/topics?feature=chapter_checkpoint", icon: Shield },
+  { name: "Explanation", href: "/feature-content?type=explanation", icon: Lightbulb },
+  { name: "Revision Recall", href: "/feature-content?type=revision_recall", icon: Brain },
+  { name: "Hidden Links", href: "/feature-content?type=hidden_links", icon: Link2 },
+  { name: "Exercise Revival", href: "/feature-content?type=exercise_revival", icon: ClipboardList },
+  { name: "Master Exemplar", href: "/feature-content?type=master_exemplar", icon: Trophy },
+  { name: "PYQs", href: "/feature-content?type=pyq", icon: FileText },
+  { name: "Chapter Checkpoint", href: "/feature-content?type=chapter_checkpoint", icon: Shield },
 ];
 
 export default function Sidebar() {

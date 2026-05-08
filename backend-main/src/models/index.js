@@ -13,6 +13,7 @@ const CanvaOauth = require("./canvaoauth");
 const Plan = require("./plan");
 const Question = require("./question");
 const HomeContent = require("./homecontent");
+const FeatureContent = require("./featurecontent");
 
 const models = {
   Deletion,
@@ -30,6 +31,7 @@ const models = {
   Plan,
   Question,
   HomeContent,
+  FeatureContent,
 };
 
 Object.keys(models).forEach((modelName) => {
