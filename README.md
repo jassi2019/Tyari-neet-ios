@@ -283,172 +283,132 @@ Tests login → plan fetch → order create → signature verify → subscriptio
 
 ## Changelog (Date-wise)
 
+### 9 May 2026
+
+#### Feature Content Live in App
+- Explanation content now shows in app from admin panel
+- FeatureContentList screen properly connected to new API
+- TopicContent skips unnecessary API call when contentURL already present
+- Fixed activeFeature context leak causing 502 errors
+- Upload URLs now use HTTPS (fixed x-forwarded-proto from Caddy)
+- Existing http URLs migrated to https in database
+
+#### Topics Screen Cleanup
+- Removed thumbnail image section (emoji/icons removed)
+- Added number badges (01, 02, 03) like Chapter screen
+- Removed unused THUMB_EMOJIS, THUMB_GRADIENTS, pickFromId code
+- Fixed duplicate shadow styles breaking StyleSheet
+- "Topic 1 · name" format for each item
+
+#### Home Screen
+- Removed extra spacing below footer image
+- Study Progress cards fully visible
+
+---
+
 ### 8 May 2026
 
 #### Real Study Time Tracking
-- New `useStudyTime` hook with actual 1-second timer
+- New useStudyTime hook with actual 1-second timer
 - Timer starts when user opens content, stops when they leave
 - Total time + daily time tracked (daily resets at midnight)
 - Persisted in AsyncStorage (survives app restart)
 - Home screen shows REAL study time instead of fake estimate
-- Removed old "topics x 10min" fake calculation
 
-#### App Navigation Flow Fixed
+#### App Navigation Flow
 ```
 Subject (Choose your subject)
-  → Class Popup (Select Your Class → "Tap to load lessons")
-    → Lesson Screen (Pick a Lesson → "12 lessons", "8 topics")
-      → Topic Screen (Lesson 01 · Chapter Name → "Chapter 1 · topic")
+  → Class Popup (Select Your Class)
+    → Chapter Screen (Pick a Chapter)
+      → Topic Screen (Ch 01 · Chapter Name → Topic 1 · name)
         → Content (PDF / HTML / Coming Soon)
 ```
-- "Pick a Chapter" → "Pick a Lesson"
-- "Lesson 1 · name" → "Chapter 1 · name"
-- "Ch 01" → "Lesson 01" in header
-- Emoji icons replaced with thumbnail images (fallback to emoji)
 
 #### Feature Content System (Separate Database)
 - New `feature_contents` table — completely independent from Topics
 - 7 feature types: Explanation, Revision Recall, Hidden Links, Exercise Revival, Master Exemplar, PYQs, Chapter Checkpoint
-- Backend: `GET/POST /api/v1/feature-content`, `PUT/DELETE /api/v1/feature-content/:id`
-- Admin portal: New `/feature-content` page with full CRUD + PDF upload
-- Sidebar links updated: Explanation → `/feature-content?type=explanation`
-- App: New `FeatureContentList` screen fetches from new API
-- "Coming Soon!" message when no content available
+- Backend CRUD: `/api/v1/feature-content`
+- Admin portal: New `/feature-content` page with PDF upload
+- App: New FeatureContentList screen with Coming Soon message
+- Sidebar links: `/feature-content?type=xxx`
 
 #### Full User Management (Admin)
-- **View** (Eye icon) — User details + subscription history
-- **Edit** (Pencil icon) — Edit name, email, phone, bio
-- **Grant** (Gift icon) — Grant subscription (select plan, end date, notes)
-- **Revoke** (XCircle icon) — Revoke active subscription
-- **Delete** (Trash icon) — Delete user account permanently
-- Backend: `PUT/DELETE /api/v1/users/admin/:userId`
-- Backend: `POST /api/v1/subscriptions/admin/grant`, `PUT /api/v1/subscriptions/admin/revoke/:id`
+- View (Eye) — User details + subscription history
+- Edit (Pencil) — Edit name, email, phone, bio
+- Grant (Gift) — Grant subscription (plan, end date, notes)
+- Revoke (XCircle) — Revoke active subscription
+- Delete (Trash) — Delete user account
 
 #### Members Page
-- 703 registered users visible with search + pagination
-- Table: #, Name, Email, Joined, Status (Free/Premium/Expired), Actions
-- Subscription status derived from database (real data)
+- 703+ registered users with search + pagination
+- Table: #, Name, Email, Joined, Status, Actions
 
 ---
 
 ### 7 May 2026
 
 #### PDF Upload System
-- Backend: multer installed, `POST /api/v1/uploads` (admin, max 50MB)
-- Backend: `express.static` serves PDFs at `/uploads/<filename>.pdf`
-- Backend: `DELETE /api/v1/uploads/:filename` to remove files
-- Portal: `PDFUpload` component with drag-drop + file picker
-- Portal: PDF upload in topic add/edit forms + feature content forms
-- App: PDF URLs wrapped in Google Docs Viewer for inline rendering
+- Backend: multer, `POST /api/v1/uploads` (admin, max 50MB)
+- `express.static` serves PDFs at `/uploads/<filename>.pdf`
+- Portal: PDFUpload component with drag-drop
+- App: PDF URLs wrapped in Google Docs Viewer
 - Docker: `uploads_data` volume for persistent storage
 
 #### Admin Portal Light Theme
-- Replaced dark theme with light theme (white background)
-- Daily auto-changing accent color:
-  - Monday: Indigo, Tuesday: Teal, Wednesday: Orange
-  - Thursday: Rose, Friday: Sky Blue, Saturday: Purple, Sunday: Green
-- Applied via `useEffect` in layout.js on page load
+- White background, daily auto-changing accent color
+- Mon: Indigo, Tue: Teal, Wed: Orange, Thu: Rose, Fri: Sky Blue, Sat: Purple, Sun: Green
 
 #### Canva Integration Removed
-- Removed Canva `getDesign` from topic create/update controllers
-- Removed Canva cron job (`renewDesignViewURL` every 3 hours)
-- Topic forms still have Canva import for backward compatibility
-- New content uses direct PDF upload instead
-
-#### CORS Fix
-- Added explicit `methods` and `allowedHeaders` to CORS config
-- Fixed preflight (OPTIONS) request handling
+- Removed from topic controllers and cron job
+- New content uses direct PDF upload
 
 #### Docker Improvements
-- `restart: always` on all 4 services (postgres, backend, portal, caddy)
-- Backend healthcheck: `curl -f http://localhost:8000/` every 30s
-- Dockerfile: `apk add curl`, `mkdir /app/uploads`
-- `uploads_data` Docker volume added
-
-#### VPS Repo Fix
-- VPS was pointing to wrong repo (`Taiyari_neet_kei_New.git`)
-- Fixed: `git remote set-url origin` to correct `Tyari-neet-ios.git`
+- `restart: always` on all services
+- Backend healthcheck with curl
+- CORS: explicit methods and allowedHeaders
+- `uploads_data` Docker volume
 
 ---
 
 ### 4 May 2026
 
 #### Admin Portal Enhancements
-- Feature content shortcuts in sidebar (7 links under "Feature Content")
-- `useSearchParams` wrapped in Suspense for Next.js build compatibility
-- Topics filtered by feature type (only show topics with content for selected feature)
-- Package-lock.json regenerated for clean npm ci
+- Feature content shortcuts in sidebar (7 links)
+- Topics filtered by feature type
+- Package-lock.json regenerated
 
 ---
 
-## API Endpoints (Complete)
+## API Endpoints
 
-### Authentication
+### Feature Content
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/api/v1/auth/register` | Register new user |
-| POST | `/api/v1/auth/register/email/verification` | Send registration OTP |
-| POST | `/api/v1/auth/register/otp/verification` | Verify registration OTP |
-| POST | `/api/v1/auth/login` | Login with email & password |
-| POST | `/api/v1/auth/reset/password` | Reset password |
-| POST | `/api/v1/auth/reset/password/email/verification` | Send reset OTP |
-| POST | `/api/v1/auth/reset/password/otp/verification` | Verify reset OTP |
+| GET | `/api/v1/feature-content?featureType=explanation` | Get content |
+| POST | `/api/v1/feature-content` | Create (admin) |
+| PUT | `/api/v1/feature-content/:id` | Update (admin) |
+| DELETE | `/api/v1/feature-content/:id` | Delete (admin) |
 
-### Feature Content (NEW — Separate Database)
+### User Management
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/v1/feature-content?featureType=explanation` | Get content by feature type |
-| POST | `/api/v1/feature-content` | Create content (admin) |
-| PUT | `/api/v1/feature-content/:id` | Update content (admin) |
-| DELETE | `/api/v1/feature-content/:id` | Delete content (admin) |
-
-### User Management (Admin)
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/v1/users?page=1&limit=20&search=` | List users with pagination |
-| PUT | `/api/v1/users/admin/:userId` | Edit user profile |
+| GET | `/api/v1/users?page=1&limit=20&search=` | List users |
+| PUT | `/api/v1/users/admin/:userId` | Edit user |
 | DELETE | `/api/v1/users/admin/:userId` | Delete user |
 
-### Subscription Management (Admin)
+### Subscription Management
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/api/v1/subscriptions/admin/grant` | Grant subscription to user |
+| POST | `/api/v1/subscriptions/admin/grant` | Grant subscription |
 | PUT | `/api/v1/subscriptions/admin/revoke/:id` | Revoke subscription |
-| POST | `/api/v1/subscriptions/create-order` | Create Razorpay order |
-| POST | `/api/v1/subscriptions` | Verify payment + create subscription |
-| POST | `/api/v1/subscriptions/iap/apple` | Apple IAP verification |
 
 ### File Uploads
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/api/v1/uploads` | Upload PDF (admin, max 50MB) |
-| DELETE | `/api/v1/uploads/:filename` | Delete uploaded file |
+| POST | `/api/v1/uploads` | Upload PDF (admin, 50MB) |
+| DELETE | `/api/v1/uploads/:filename` | Delete file |
 
-### Home Content CMS
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/v1/home-content` | Get active content (app) |
-| GET | `/api/v1/home-content/all` | Get all content (admin) |
-| POST | `/api/v1/home-content` | Create (admin) |
-| PUT | `/api/v1/home-content/:id` | Update (admin) |
-| DELETE | `/api/v1/home-content/:id` | Delete (admin) |
-
-### Topics & Questions
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/v1/topics` | Get topics (filterable) |
-| GET | `/api/v1/questions?chapterId=&subjectId=&classId=` | Get questions |
-| POST/PUT/DELETE | `/api/v1/topics/:id` | Topic CRUD (admin) |
-| POST/PUT/DELETE | `/api/v1/questions/:id` | Question CRUD (admin) |
-
-### Webhooks
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/v1/webhooks/razorpay` | Razorpay payment webhook |
-
----
-
-## Docker Volumes
+### Docker Volumes
 ```
 postgres_data    # PostgreSQL database
 caddy_data       # SSL certificates
