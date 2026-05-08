@@ -115,6 +115,7 @@ export const Home = ({ navigation }: HomeScreenProps) => {
       ? profile.data.name.charAt(0).toUpperCase() + profile.data.name.slice(1)
       : 'Future Doctor';
 
+  const goToFreeContent = () => {
     navigation.navigate('MainTabs', { screen: 'SubjectsTab' });
   };
 
