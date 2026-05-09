@@ -144,7 +144,7 @@ const Topics = ({ navigation, route }: TopicsScreenProps) => {
         showsVerticalScrollIndicator={false}
       >
         {/* Progress Banner */}
-        {topicsList.length > 0 && (
+        {displayTopics.length > 0 && (
           <View style={styles.banner}>
             <View style={styles.bannerIcon}>
               <Text style={{ fontSize: 20 }}>📖</Text>

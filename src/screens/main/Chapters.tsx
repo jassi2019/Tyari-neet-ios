@@ -145,7 +145,7 @@ export const Chapters = ({ navigation, route }: ChaptersScreenProps) => {
 
           <View style={styles.headerPanel}>
             <Text style={styles.headerGreet}>
-              {selectedClass?.name || 'Class'} · {chaptersToRender.length} {showFreeOnly ? 'free chapters' : 'chapters'}
+              {selectedClass?.name || 'Class'} · {chaptersToRender.length} chapters
             </Text>
             <Text style={styles.headerTitle}>Pick a Chapter</Text>
           </View>
@@ -201,7 +201,7 @@ export const Chapters = ({ navigation, route }: ChaptersScreenProps) => {
                       </Text>
                       <View style={styles.chMeta}>
                         <Text style={styles.chMetaText}>
-                          📖 {lessons > 0 ? `${lessons} ${showFreeOnly ? 'free topics' : 'topics'}` : 'Tap to view topics'}
+                          📖 {showFreeOnly ? 'Tap to view free topics' : lessons > 0 ? `${lessons} topics` : 'Tap to view topics'}
                         </Text>
                         {total > 0 && (
                           <Text style={styles.chMetaText}>· {done}/{total} done</Text>
