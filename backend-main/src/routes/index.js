@@ -19,6 +19,7 @@ const deletionRoutes = require("./deletion");
 const questionRoutes = require("./question");
 const homeContentRoutes = require("./homecontent");
 const featureContentRoutes = require("./featurecontent");
+const notificationRoutes = require("./notification");
 const uploadRoutes = require("./upload");
 
 router.use("/auth", authRoutes);
@@ -39,6 +40,7 @@ router.use("/deletions", deletionRoutes);
 router.use("/questions", questionRoutes);
 router.use("/home-content", homeContentRoutes);
 router.use("/feature-content", featureContentRoutes);
+router.use("/notifications", notificationRoutes);
 router.use("/uploads", uploadRoutes);
 
 module.exports = router;

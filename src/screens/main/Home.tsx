@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useFeature } from '@/contexts/FeatureContext';
 import { useGetProfile } from '@/hooks/api/user';
 import { useProgress } from '@/hooks/useProgress';
+import { useGetNotifications } from '@/hooks/api/notifications';
 import { useStudyTime } from '@/hooks/useStudyTime';
 import { useStreak } from '@/hooks/useStreak';
 import { useGetHomeContent } from '@/hooks/api/homecontent';
@@ -135,6 +136,8 @@ export const Home = ({ navigation }: HomeScreenProps) => {
   };
 
   const { completedTopics } = useProgress();
+  const { data: notifData } = useGetNotifications();
+  const unreadCount = (notifData as any)?.data?.unreadCount || 0;
   const { totalTime, hasData: hasStudyData } = useStudyTime();
   const studyStats = useMemo(() => {
     const covered = completedTopics.length;
@@ -169,7 +172,7 @@ export const Home = ({ navigation }: HomeScreenProps) => {
               activeOpacity={0.85}
             >
               <Bell size={20} color="#000" />
-              <View style={styles.bellDot} />
+              {unreadCount > 0 && <View style={styles.bellDot}><Text style={{color:"#fff",fontSize:8,fontWeight:"900"}}>{unreadCount}</Text></View>}
             </TouchableOpacity>
           </View>
 

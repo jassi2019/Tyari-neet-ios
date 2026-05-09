@@ -1,116 +1,64 @@
 import { Bell, X } from 'lucide-react-native';
 import React from 'react';
-import {
-  Modal,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  TouchableWithoutFeedback,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
+import { useGetNotifications, useMarkNotificationRead, TNotification } from '@/hooks/api/notifications';
 
-type Props = {
-  visible: boolean;
-  onClose: () => void;
+type Props = { visible: boolean; onClose: () => void; };
+
+const timeAgo = (d: string) => {
+  const diff = Date.now() - new Date(d).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'Just now';
+  if (mins < 60) return mins + 'm ago';
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return hrs + 'h ago';
+  const days = Math.floor(hrs / 24);
+  if (days < 7) return days + 'd ago';
+  return new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
 };
-
-type Notification = {
-  id: string;
-  icon: string;
-  title: string;
-  message: string;
-  time: string;
-  unread?: boolean;
-};
-
-const SAMPLE_NOTIFICATIONS: Notification[] = [
-  {
-    id: '1',
-    icon: '🔥',
-    title: 'Keep your streak alive!',
-    message: 'You have studied today. Great work — keep going tomorrow!',
-    time: 'Just now',
-    unread: true,
-  },
-  {
-    id: '2',
-    icon: '📚',
-    title: 'New chapter unlocked',
-    message: 'Biology — Cell Structure and Functions is now available.',
-    time: '2 hours ago',
-    unread: true,
-  },
-  {
-    id: '3',
-    icon: '🎯',
-    title: 'Daily Practice Test ready',
-    message: 'Your Daily Practice Test for today is ready. Take 15 minutes!',
-    time: '5 hours ago',
-  },
-  {
-    id: '4',
-    icon: '💡',
-    title: 'Tip of the day',
-    message: 'Solve at least 5 PYQs every day to boost retention.',
-    time: 'Yesterday',
-  },
-  {
-    id: '5',
-    icon: '🏆',
-    title: 'Weekly Test results',
-    message: 'You scored 82% in the last weekly test. Top 15%!',
-    time: '3 days ago',
-  },
-];
 
 export const NotificationsModal = ({ visible, onClose }: Props) => {
+  const { data, isLoading } = useGetNotifications();
+  const { mutate: markRead } = useMarkNotificationRead();
+  const notifications: TNotification[] = (data as any)?.data?.notifications || [];
+  const unreadCount: number = (data as any)?.data?.unreadCount || 0;
+
+  const handlePress = (n: TNotification) => {
+    if (!n.isRead) markRead(n.id);
+  };
+
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+    <Modal visible={visible} transparent animationType='slide' onRequestClose={onClose}>
       <TouchableWithoutFeedback onPress={onClose}>
-        <View style={styles.backdrop}>
+        <View style={s.backdrop}>
           <TouchableWithoutFeedback onPress={(e) => e.stopPropagation()}>
-            <View style={styles.sheet}>
-              {/* Header */}
-              <View style={styles.header}>
-                <View style={styles.headerLeft}>
-                  <Bell size={20} color="#111" />
-                  <Text style={styles.title}>Notifications</Text>
+            <View style={s.sheet}>
+              <View style={s.header}>
+                <View style={s.headerLeft}>
+                  <Bell size={20} color='#111' />
+                  <Text style={s.title}>Notifications</Text>
+                  {unreadCount > 0 && <View style={s.badge}><Text style={s.badgeText}>{unreadCount}</Text></View>}
                 </View>
-                <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
-                  <X size={20} color="#666" />
-                </TouchableOpacity>
+                <TouchableOpacity onPress={onClose} style={s.closeBtn}><X size={20} color='#666' /></TouchableOpacity>
               </View>
-
-              <ScrollView
-                style={styles.list}
-                contentContainerStyle={{ paddingBottom: 24 }}
-                showsVerticalScrollIndicator={false}
-              >
-                {SAMPLE_NOTIFICATIONS.map((n) => (
-                  <TouchableOpacity
-                    key={n.id}
-                    style={[styles.item, n.unread && styles.itemUnread]}
-                    activeOpacity={0.8}
-                  >
-                    <View style={styles.iconWrap}>
-                      <Text style={{ fontSize: 22 }}>{n.icon}</Text>
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <View style={styles.itemTopRow}>
-                        <Text style={styles.itemTitle}>{n.title}</Text>
-                        {n.unread && <View style={styles.dot} />}
+              {isLoading ? (
+                <View style={{ padding: 40, alignItems: 'center' }}><ActivityIndicator size='large' color='#F5A623' /></View>
+              ) : notifications.length === 0 ? (
+                <View style={{ padding: 40, alignItems: 'center' }}><Text style={{ fontSize: 40, marginBottom: 8 }}>{'\ud83d\udd14'}</Text><Text style={{ color: '#999', fontSize: 14 }}>No notifications yet</Text></View>
+              ) : (
+                <ScrollView style={s.list} contentContainerStyle={{ paddingBottom: 24 }} showsVerticalScrollIndicator={false}>
+                  {notifications.map((n) => (
+                    <TouchableOpacity key={n.id} style={[s.item, !n.isRead && s.itemUnread]} activeOpacity={0.8} onPress={() => handlePress(n)}>
+                      <View style={s.iconWrap}><Text style={{ fontSize: 22 }}>{n.icon === 'bell' ? '\ud83d\udd14' : n.icon}</Text></View>
+                      <View style={{ flex: 1 }}>
+                        <View style={s.itemTopRow}><Text style={s.itemTitle}>{n.title}</Text>{!n.isRead && <View style={s.dot} />}</View>
+                        <Text style={s.itemMsg}>{n.message}</Text>
+                        <Text style={s.itemTime}>{timeAgo(n.createdAt)}</Text>
                       </View>
-                      <Text style={styles.itemMsg}>{n.message}</Text>
-                      <Text style={styles.itemTime}>{n.time}</Text>
-                    </View>
-                  </TouchableOpacity>
-                ))}
-
-                <View style={styles.empty}>
-                  <Text style={styles.emptyText}>You're all caught up 🎉</Text>
-                </View>
-              </ScrollView>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              )}
             </View>
           </TouchableWithoutFeedback>
         </View>
@@ -119,68 +67,24 @@ export const NotificationsModal = ({ visible, onClose }: Props) => {
   );
 };
 
-const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-end',
-  },
-  sheet: {
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    maxHeight: '85%',
-    paddingTop: 16,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingBottom: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
+const s = StyleSheet.create({
+  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  sheet: { backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: '85%', paddingTop: 16 },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingBottom: 14, borderBottomWidth: 1, borderBottomColor: '#f0f0f0' },
   headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   title: { fontSize: 18, fontWeight: '800', color: '#111' },
-  closeBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#f3f3f3',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  badge: { backgroundColor: '#EF4444', borderRadius: 10, paddingHorizontal: 6, paddingVertical: 1, marginLeft: 4 },
+  badgeText: { color: '#fff', fontSize: 11, fontWeight: '800' },
+  closeBtn: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#f3f3f3', alignItems: 'center', justifyContent: 'center' },
   list: { paddingHorizontal: 16, paddingTop: 10 },
-  item: {
-    flexDirection: 'row',
-    gap: 12,
-    padding: 12,
-    borderRadius: 12,
-    marginBottom: 8,
-    backgroundColor: '#fafafa',
-  },
+  item: { flexDirection: 'row', gap: 12, padding: 12, borderRadius: 12, marginBottom: 8, backgroundColor: '#fafafa' },
   itemUnread: { backgroundColor: '#FFF8E1' },
-  iconWrap: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  itemTopRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 2,
-  },
+  iconWrap: { width: 42, height: 42, borderRadius: 21, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' },
+  itemTopRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 },
   itemTitle: { fontSize: 14, fontWeight: '700', color: '#111', flex: 1 },
-  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#92400E' },
+  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#EF4444' },
   itemMsg: { fontSize: 12, color: '#555', lineHeight: 16, marginBottom: 4 },
   itemTime: { fontSize: 10, color: '#999', fontWeight: '600' },
-  empty: { alignItems: 'center', paddingVertical: 16 },
-  emptyText: { fontSize: 12, color: '#999' },
 });
 
 export default NotificationsModal;

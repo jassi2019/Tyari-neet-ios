@@ -13,6 +13,8 @@ const CanvaOauth = require("./canvaoauth");
 const Plan = require("./plan");
 const Question = require("./question");
 const HomeContent = require("./homecontent");
+const Notification = require("./notification");
+const NotificationRead = require("./notificationread");
 const FeatureContent = require("./featurecontent");
 
 const models = {
@@ -32,6 +34,8 @@ const models = {
   Question,
   HomeContent,
   FeatureContent,
+  Notification,
+  NotificationRead,
 };
 
 Object.keys(models).forEach((modelName) => {

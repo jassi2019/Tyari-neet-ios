@@ -22,6 +22,7 @@ import {
   FileText,
   Shield,
   Users,
+  Bell,
 } from "lucide-react";
 import { useSidebar } from "./sidebar-provider";
 
@@ -34,6 +35,7 @@ const navigation = [
   { name: "Questions", href: "/questions", icon: HelpCircle },
   { name: "Home Content", href: "/home-content", icon: LayoutDashboard },
   { name: "Members", href: "/members", icon: Users },
+  { name: "Notifications", href: "/notifications", icon: Bell },
 ];
 
 const featureNavigation = [

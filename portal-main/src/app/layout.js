@@ -10,7 +10,7 @@ import { usePathname } from "next/navigation";
 
 export default function RootLayout({ children }) {
   const pathname = usePathname();
-  const isAdmin = pathname.startsWith("/admin") || pathname.startsWith("/auth") || pathname.includes("/chapters") || pathname.includes("/classes") || pathname.includes("/subjects") || pathname.includes("/topics") || pathname.includes("/questions") || pathname.includes("/home-content") || pathname.includes("/members") || pathname.includes("/feature-content");
+  const isAdmin = pathname.startsWith("/admin") || pathname.startsWith("/auth") || pathname.includes("/chapters") || pathname.includes("/classes") || pathname.includes("/subjects") || pathname.includes("/topics") || pathname.includes("/questions") || pathname.includes("/home-content") || pathname.includes("/members") || pathname.includes("/feature-content") || pathname.includes("/notifications");
 
   const dayThemes = ["theme-sunday", "theme-monday", "theme-tuesday", "theme-wednesday", "theme-thursday", "theme-friday", "theme-saturday"];
   useEffect(() => {
