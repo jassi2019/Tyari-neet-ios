@@ -350,7 +350,7 @@ const styles = StyleSheet.create({
 
   empty: { alignItems: 'center', paddingVertical: 40 },
   emptyText: { fontSize: 16, fontWeight: '700', color: '#666', marginBottom: 4 },
-  emptySub: { fontSize: 12, color: '#999' },
+  emptySub: { fontSize: 12, color: '#999', textAlign: 'center' },
 
   errorText: { fontSize: 16, color: '#EF4444', marginBottom: 12, textAlign: 'center' },
   loadingText: { marginTop: 12, fontSize: 14, color: '#6B7280' },
