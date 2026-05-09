@@ -47,6 +47,7 @@ const Topics = ({ navigation, route }: TopicsScreenProps) => {
   const chapterTitle = route?.params?.chapterTitle || 'Topics';
   const subjectTitle = route?.params?.subjectTitle;
   const chapterNumber = route?.params?.chapterNumber;
+  const showFreeOnly = route?.params?.showFreeOnly;
   const featureName = route?.params?.featureName;
 
   const { isGuest, user } = useAuth();
@@ -72,6 +73,7 @@ const Topics = ({ navigation, route }: TopicsScreenProps) => {
   const topicsList: TTopic[] = isGuest
     ? getGuestTopicsByChapterAndSubject(chapterId, subjectId)
     : data?.data || [];
+  const displayTopics = showFreeOnly ? topicsList.filter(t => t.serviceType === "FREE") : topicsList;
 
   const { isCompleted, getCompletedCount, setChapterTopics } = useProgress();
 
@@ -149,10 +151,10 @@ const Topics = ({ navigation, route }: TopicsScreenProps) => {
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.bannerTitle}>
-                {completedCount} of {topicsList.length} done
+                {completedCount} of {displayTopics.length} done
               </Text>
               <Text style={styles.bannerSub}>
-                {topicsList.length - completedCount} left
+                {displayTopics.length - completedCount} left
               </Text>
             </View>
             <Text style={styles.bannerStat}>{progressPct}%</Text>
@@ -167,7 +169,7 @@ const Topics = ({ navigation, route }: TopicsScreenProps) => {
           </View>
         ) : (
           <View style={{ gap: 10 }}>
-            {topicsList.map((topic, i) => {
+            {displayTopics.map((topic, i) => {
               const isPremium = isPremiumServiceType(topic.serviceType);
               const done = isCompleted(topic.id);
 

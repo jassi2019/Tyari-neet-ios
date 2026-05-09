@@ -21,7 +21,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 type SubjectsScreenProps = {
   navigation: any;
-  route?: { params?: { featureName?: string } };
+  route?: { params?: { featureName?: string; showFreeOnly?: boolean } };
 };
 
 type SubjectMeta = {
@@ -110,6 +110,7 @@ export const Subjects = ({ navigation, route }: SubjectsScreenProps) => {
       subjectTitle: subject.name,
       classId,
       featureName,
+      showFreeOnly: route?.params?.showFreeOnly,
     });
   };
 

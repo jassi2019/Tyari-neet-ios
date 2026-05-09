@@ -105,6 +105,7 @@ export const Chapters = ({ navigation, route }: ChaptersScreenProps) => {
       chapterTitle: chapter.name,
       chapterNumber: chapter.number,
       featureName,
+      showFreeOnly: route?.params?.showFreeOnly,
     });
   };
 

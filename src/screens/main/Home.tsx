@@ -117,7 +117,7 @@ export const Home = ({ navigation }: HomeScreenProps) => {
       : 'Future Doctor';
 
   const goToFreeContent = () => {
-    navigation.navigate('MainTabs', { screen: 'SubjectsTab' });
+    navigation.navigate('MainTabs', { screen: 'SubjectsTab', params: { showFreeOnly: true } });
   };
 
   useContentProtection({ key: 'home-screen' });
