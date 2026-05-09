@@ -200,7 +200,20 @@ export const Home = ({ navigation }: HomeScreenProps) => {
             activeOpacity={0.9}
             onPress={goToFreeContent}
           >
-            <Image source={heroBanner} style={styles.heroBannerImg} />
+            <View style={styles.heroBanner}>
+              <View style={styles.heroLeft}>
+                <View style={styles.heroBadge}><Text style={styles.heroBadgeText}>{"🌟"} FREE CONTENT</Text></View>
+                <Text style={styles.heroTitle}>Explore everything.{"
+"}Learn better.{"
+"}Score higher.</Text>
+                <View style={styles.heroBtn}><Text style={styles.heroBtnText}>Tap to explore {"→"}</Text></View>
+              </View>
+              <View style={styles.heroRight}>
+                <Text style={{ fontSize: 64 }}>{"👩‍⚕️"}</Text>
+                <Text style={styles.heroRightText}>Dream Big,{"
+"}Doctor!</Text>
+              </View>
+            </View>
           </TouchableOpacity>
         </View>
 
@@ -422,7 +435,22 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     overflow: 'hidden',
   },
-  heroBannerImg: {
+  heroBanner: {
+    flexDirection: 'row',
+    backgroundColor: '#F5A623',
+    borderRadius: 14,
+    padding: 18,
+    alignItems: 'center',
+  },
+  heroLeft: { flex: 1 },
+  heroBadge: { backgroundColor: 'rgba(255,255,255,0.25)', borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4, alignSelf: 'flex-start', marginBottom: 10 },
+  heroBadgeText: { color: '#fff', fontSize: 11, fontWeight: '800' },
+  heroTitle: { fontSize: 22, fontWeight: '900', color: '#fff', lineHeight: 28 },
+  heroBtn: { backgroundColor: 'rgba(255,255,255,0.3)', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6, alignSelf: 'flex-start', marginTop: 12 },
+  heroBtnText: { color: '#fff', fontSize: 12, fontWeight: '700' },
+  heroRight: { alignItems: 'center', marginLeft: 10 },
+  heroRightText: { color: '#fff', fontSize: 11, fontWeight: '700', textAlign: 'center', marginTop: 4 },
+  heroBannerImg_unused: {
     width: width - 28,
     height: ((width - 28) * 709) / 1600,
     borderRadius: 14,
