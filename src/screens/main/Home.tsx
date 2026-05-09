@@ -200,15 +200,12 @@ export const Home = ({ navigation }: HomeScreenProps) => {
             activeOpacity={0.9}
             onPress={goToFreeContent}
           >
-            <View style={styles.heroBanner}>
-              <View style={styles.heroLeft}>
-                <View style={styles.heroBadge}><Text style={styles.heroBadgeText}>{"🌟"} FREE CONTENT</Text></View>
-                <Text style={styles.heroTitle}>{"Explore everything.\nLearn better.\nScore higher."}</Text>
-                <View style={styles.heroBtn}><Text style={styles.heroBtnText}>Tap to explore {"→"}</Text></View>
-              </View>
-              <View style={styles.heroRight}>
-                <Text style={{ fontSize: 64 }}>{"👩‍⚕️"}</Text>
-                <Text style={styles.heroRightText}>{"Dream Big,\nDoctor!"}</Text>
+            <Image source={heroBanner} style={styles.heroBannerImg} />
+            <View style={styles.heroOverlay}>
+              <View style={styles.heroBadge}><Text style={styles.heroBadgeText}>🎁 FREE CONTENT</Text></View>
+              <Text style={styles.heroTitle}>{"Explore everything.\nLearn better.\nScore higher."}</Text>
+              <View style={styles.heroBtn}>
+                <Text style={styles.heroBtnText}>Tap to explore →</Text>
               </View>
             </View>
           </TouchableOpacity>
@@ -432,22 +429,19 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     overflow: 'hidden',
   },
-  heroBanner: {
-    flexDirection: 'row',
-    backgroundColor: '#F5A623',
+  heroOverlay: {
+    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.35)',
     borderRadius: 14,
     padding: 18,
-    alignItems: 'center',
+    justifyContent: 'flex-end',
   },
-  heroLeft: { flex: 1 },
-  heroBadge: { backgroundColor: 'rgba(255,255,255,0.25)', borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4, alignSelf: 'flex-start', marginBottom: 10 },
+  heroBadge: { backgroundColor: 'rgba(255,255,255,0.25)', borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4, alignSelf: 'flex-start', marginBottom: 8 },
   heroBadgeText: { color: '#fff', fontSize: 11, fontWeight: '800' },
-  heroTitle: { fontSize: 22, fontWeight: '900', color: '#fff', lineHeight: 28 },
-  heroBtn: { backgroundColor: 'rgba(255,255,255,0.3)', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6, alignSelf: 'flex-start', marginTop: 12 },
-  heroBtnText: { color: '#fff', fontSize: 12, fontWeight: '700' },
-  heroRight: { alignItems: 'center', marginLeft: 10 },
-  heroRightText: { color: '#fff', fontSize: 11, fontWeight: '700', textAlign: 'center', marginTop: 4 },
-  heroBannerImg_unused: {
+  heroTitle: { fontSize: 24, fontWeight: '900', color: '#fff', lineHeight: 30, textShadowColor: 'rgba(0,0,0,0.3)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 },
+  heroBtn: { backgroundColor: '#F5A623', borderRadius: 8, paddingHorizontal: 14, paddingVertical: 8, alignSelf: 'flex-start', marginTop: 10 },
+  heroBtnText: { color: '#fff', fontSize: 13, fontWeight: '800' },
+  heroBannerImg: {
     width: width - 28,
     height: ((width - 28) * 709) / 1600,
     borderRadius: 14,
