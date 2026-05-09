@@ -203,15 +203,12 @@ export const Home = ({ navigation }: HomeScreenProps) => {
             <View style={styles.heroBanner}>
               <View style={styles.heroLeft}>
                 <View style={styles.heroBadge}><Text style={styles.heroBadgeText}>{"🌟"} FREE CONTENT</Text></View>
-                <Text style={styles.heroTitle}>Explore everything.{"
-"}Learn better.{"
-"}Score higher.</Text>
+                <Text style={styles.heroTitle}>{"Explore everything.\nLearn better.\nScore higher."}</Text>
                 <View style={styles.heroBtn}><Text style={styles.heroBtnText}>Tap to explore {"→"}</Text></View>
               </View>
               <View style={styles.heroRight}>
                 <Text style={{ fontSize: 64 }}>{"👩‍⚕️"}</Text>
-                <Text style={styles.heroRightText}>Dream Big,{"
-"}Doctor!</Text>
+                <Text style={styles.heroRightText}>{"Dream Big,\nDoctor!"}</Text>
               </View>
             </View>
           </TouchableOpacity>
