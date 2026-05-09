@@ -164,7 +164,7 @@ const Topics = ({ navigation, route }: TopicsScreenProps) => {
         {/* Lessons */}
         {displayTopics.length === 0 && showFreeOnly ? (
           <View style={styles.empty}>
-            <Text style={{ fontSize: 36, marginBottom: 8 }}>{"D83dDd12"}</Text>
+            <Text style={{ fontSize: 36, marginBottom: 8 }}>{"🔒"}</Text>
             <Text style={styles.emptyText}>Premium Content Only</Text>
             <Text style={styles.emptySub}>This chapter has only premium topics.{" "}Upgrade your subscription to access.</Text>
             <TouchableOpacity onPress={() => navigation.navigate("Plans")} style={{ backgroundColor: "#F4B95F", borderRadius: 10, paddingHorizontal: 20, paddingVertical: 10, marginTop: 12 }}>
