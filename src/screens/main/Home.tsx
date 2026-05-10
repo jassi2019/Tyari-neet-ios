@@ -420,7 +420,7 @@ const styles = StyleSheet.create({
   heroBannerImg: {
     width: '100%',
     height: undefined,
-    aspectRatio: 16 / 10,
+    aspectRatio: 16 / 14,
     borderRadius: 14,
   },
   cardBody: {
