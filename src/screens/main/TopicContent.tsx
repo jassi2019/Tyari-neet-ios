@@ -129,9 +129,7 @@ export const TopicContent = ({ navigation, route }: TopicContentProps) => {
 
   // PDF URLs: wrap in Google Docs Viewer for inline rendering in WebView
   const isPdfUrl = /\.pdf(\?|$)/i.test(normalizedURL);
-  const finalURL = isPdfUrl
-    ? `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(normalizedURL)}`
-    : normalizedURL;
+  const finalURL = normalizedURL;
 
   // Keep hook execution order stable across all render branches.
   React.useEffect(() => {
@@ -296,6 +294,34 @@ export const TopicContent = ({ navigation, route }: TopicContentProps) => {
             Coming Soon! This content is being prepared.
           </Text>
         </View>
+      </SafeAreaView>
+    );
+  }
+
+
+  // For PDFs: create protected HTML that embeds PDF with no download/print
+  if (isPdfUrl && finalURL) {
+    const pdfHtml = `<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width, initial-scale=1.0"><style>
+      * { margin: 0; padding: 0; -webkit-user-select: none; user-select: none; }
+      body { background: #f5f5f5; }
+      iframe { width: 100%; height: 100vh; border: none; }
+      @media print { body { display: none; } }
+    </style><script>
+      document.addEventListener('contextmenu', e => e.preventDefault());
+      document.addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && (e.key === 'p' || e.key === 's')) e.preventDefault(); });
+    </script></head><body>
+      <iframe src="https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(finalURL)}" style="width:100%;height:100vh;border:none;" sandbox="allow-scripts allow-same-origin"></iframe>
+    </body></html>`;
+
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }} edges={['top']}>
+        <TopicHeader title={effectiveTopic?.name || 'Topic'} onBack={() => navigation.goBack()} />
+        <PlatformWebView
+          source={{ html: pdfHtml }}
+          style={{ flex: 1 }}
+          protectedContent={true}
+          debugLabel="PDFContent"
+        />
       </SafeAreaView>
     );
   }
