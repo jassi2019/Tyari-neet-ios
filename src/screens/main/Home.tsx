@@ -26,7 +26,6 @@ import {
 
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-const heroBanner = require('../../../assets/hero-banner.jpg');
 const avatarLogo = require('../../../assets/icon.png');
 const footerImage = require('../../../assets/footer.png');
 
@@ -200,13 +199,12 @@ export const Home = ({ navigation }: HomeScreenProps) => {
             activeOpacity={0.9}
             onPress={goToFreeContent}
           >
-            <Image source={heroBanner} style={styles.heroBannerImg} />
-            <View style={styles.heroOverlay}>
+            <View style={styles.heroBg}>
               <View style={styles.heroBadge}><Text style={styles.heroBadgeText}>JOIN FREE</Text></View>
               <Text style={styles.heroTitle}>{"Your Dream,\nOur Mission"}</Text>
-              <Text style={styles.heroSub}>{"Let's Crack NEET Together"}</Text>
+              <Text style={styles.heroSub}>{"Let's Crack NEET Together \ud83d\ude80"}</Text>
               <View style={styles.heroBtn}>
-                <Text style={styles.heroBtnText}>Explore Now →</Text>
+                <Text style={styles.heroBtnText}>Explore Now \u2192</Text>
               </View>
             </View>
           </TouchableOpacity>
@@ -430,26 +428,19 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     overflow: 'hidden',
   },
-  heroOverlay: {
-    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.35)',
+  heroBg: {
+    backgroundColor: '#92400E',
     borderRadius: 14,
-    padding: 18,
-    justifyContent: 'flex-end',
+    padding: 20,
+    minHeight: 160,
+    justifyContent: 'center',
   },
-  heroBadge: { backgroundColor: '#F5A623', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 6, alignSelf: 'flex-start', marginBottom: 8 },
+  heroBadge: { backgroundColor: '#F5A623', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 6, alignSelf: 'flex-start', marginBottom: 10 },
   heroBadgeText: { color: '#fff', fontSize: 13, fontWeight: '800' },
-  heroSub: { fontSize: 15, fontWeight: '700', color: 'rgba(255,255,255,0.9)', marginTop: 4 },
-  heroTitle: { fontSize: 26, fontWeight: '900', color: '#fff', lineHeight: 30, textShadowColor: 'rgba(0,0,0,0.3)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 },
-  heroBtn: { backgroundColor: '#F5A623', borderRadius: 8, paddingHorizontal: 14, paddingVertical: 8, alignSelf: 'flex-start', marginTop: 10 },
-  heroBtnText: { color: '#fff', fontSize: 13, fontWeight: '800' },
-  heroBannerImg: {
-    width: width - 28,
-    height: ((width - 28) * 709) / 1600,
-    borderRadius: 14,
-    resizeMode: 'stretch',
-    backgroundColor: '#FCD34D',
-  },
+  heroSub: { fontSize: 15, fontWeight: '700', color: 'rgba(255,255,255,0.85)', marginTop: 4 },
+  heroTitle: { fontSize: 26, fontWeight: '900', color: '#fff', lineHeight: 32 },
+  heroBtn: { backgroundColor: '#F5A623', borderRadius: 10, paddingHorizontal: 16, paddingVertical: 10, alignSelf: 'flex-start', marginTop: 12 },
+  heroBtnText: { color: '#fff', fontSize: 14, fontWeight: '800' },
   cardBody: {
     backgroundColor: '#fff',
     borderTopLeftRadius: 24,
