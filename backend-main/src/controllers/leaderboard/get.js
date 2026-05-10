@@ -18,14 +18,22 @@ const getV1 = async (req, res, next) => {
 
     const scores = await TestScore.findAll({
       where,
-      attributes: ["userId", [db.fn("SUM", db.col("score")), "totalScore"], [db.fn("SUM", db.col("xp")), "totalXP"], [db.fn("COUNT", db.col("TestScore.id")), "testsPlayed"], [db.fn("AVG", db.col("percentage")), "avgPercentage"]],
+      attributes: [
+        "userId",
+        [db.fn("SUM", db.col("TestScore.score")), "totalScore"],
+        [db.fn("SUM", db.col("TestScore.xp")), "totalXP"],
+        [db.fn("COUNT", db.col("TestScore.id")), "testsPlayed"],
+        [db.fn("AVG", db.col("TestScore.percentage")), "avgPercentage"],
+      ],
       include: [{ model: User, attributes: ["id", "name", "email", "profilePicture"] }],
-      group: ["userId", "User.id"],
-      order: [[db.fn("SUM", db.col("score")), "DESC"]],
+      group: ["TestScore.userId", "User.id"],
+      order: [[db.fn("SUM", db.col("TestScore.score")), "DESC"]],
       limit: parseInt(limit) || 20,
+      raw: true,
+      nest: true,
     });
 
-    const leaderboard = scores.map((s, i) => ({ rank: i + 1, ...s.toJSON() }));
+    const leaderboard = scores.map((s, i) => ({ rank: i + 1, ...s }));
     return res.status(200).json({ message: "Leaderboard", data: leaderboard });
   } catch (error) { next(error); }
 };
