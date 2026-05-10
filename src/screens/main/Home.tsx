@@ -195,27 +195,7 @@ export const Home = ({ navigation }: HomeScreenProps) => {
 
           {/* Hero Banner */}
           <TouchableOpacity style={styles.hero} activeOpacity={0.9} onPress={goToFreeContent}>
-            <View style={styles.heroBg}>
-              <View style={styles.heroContent}>
-                <View style={styles.heroTextArea}>
-                  <View style={styles.heroBadge}><Text style={styles.heroBadgeText}>JOIN FREE</Text></View>
-                  <Text style={styles.heroTitle}>Your Dream,</Text>
-                  <Text style={styles.heroTitle}>Our Mission</Text>
-                  <Text style={styles.heroSub}>Let’s Crack NEET Together</Text>
-                </View>
-                <View style={styles.heroEmojiArea}>
-                  <View style={styles.heroIconCircle}><Text style={styles.heroIconText}>🎓</Text></View>
-                  <Text style={styles.heroEmojiSub}>NEET
-2026</Text>
-                </View>
-              </View>
-              <View style={styles.heroFeatures}>
-                <View style={styles.heroFeature}><Text style={styles.heroFeatureIcon}>📚</Text><Text style={styles.heroFeatureText}>Free Notes</Text></View>
-                <View style={styles.heroFeature}><Text style={styles.heroFeatureIcon}>🎯</Text><Text style={styles.heroFeatureText}>10K+ MCQs</Text></View>
-                <View style={styles.heroFeature}><Text style={styles.heroFeatureIcon}>📈</Text><Text style={styles.heroFeatureText}>Track Progress</Text></View>
-              </View>
-              <View style={styles.heroBtn}><Text style={styles.heroBtnText}>Explore Free Content →</Text></View>
-            </View>
+            <Image source={require('../../../assets/hero-banner.jpg')} style={styles.heroBannerImg} resizeMode="cover" />
           </TouchableOpacity>
         </View>
 
@@ -437,32 +417,12 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     overflow: 'hidden',
   },
-  heroBg: {
-    borderRadius: 16,
-    overflow: 'hidden',
-    backgroundColor: '#1a1a2e',
-    padding: 20,
+  heroBannerImg: {
+    width: '100%',
+    height: undefined,
+    aspectRatio: 16 / 10,
+    borderRadius: 14,
   },
-  heroContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  heroTextArea: { flex: 1 },
-  heroBadge: { backgroundColor: '#F5A623', borderRadius: 6, paddingHorizontal: 10, paddingVertical: 4, alignSelf: 'flex-start', marginBottom: 12 },
-  heroBadgeText: { color: '#fff', fontSize: 11, fontWeight: '800', letterSpacing: 1 },
-  heroTitle: { fontSize: 22, fontWeight: '900', color: '#fff', lineHeight: 28 },
-  heroSub: { fontSize: 13, fontWeight: '600', color: 'rgba(255,255,255,0.7)', marginTop: 6 },
-  heroEmojiArea: { alignItems: 'center', marginLeft: 12 },
-  heroIconCircle: { width: 60, height: 60, borderRadius: 30, backgroundColor: 'rgba(245,166,35,0.2)', alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#F5A623' },
-  heroIconText: { fontSize: 28 },
-  heroEmojiSub: { fontSize: 10, fontWeight: '800', color: '#F5A623', marginTop: 4 },
-  heroFeatures: { flexDirection: 'row', gap: 12, marginTop: 16 },
-  heroFeature: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 5 },
-  heroFeatureIcon: { fontSize: 14 },
-  heroFeatureText: { fontSize: 10, fontWeight: '700', color: 'rgba(255,255,255,0.8)' },
-  heroBtn: { backgroundColor: '#F5A623', borderRadius: 10, paddingVertical: 12, alignItems: 'center', marginTop: 14 },
-  heroBtnText: { color: '#fff', fontSize: 14, fontWeight: '800' },
   cardBody: {
     backgroundColor: '#fff',
     borderTopLeftRadius: 24,
