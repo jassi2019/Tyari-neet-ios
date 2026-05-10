@@ -204,8 +204,9 @@ export const Home = ({ navigation }: HomeScreenProps) => {
                   <Text style={styles.heroSub}>Let’s Crack NEET Together</Text>
                 </View>
                 <View style={styles.heroEmojiArea}>
-                  <Text style={styles.heroEmoji}>👩‍⚕️</Text>
-                  <Text style={styles.heroEmojiSub}>NEET 2026</Text>
+                  <View style={styles.heroIconCircle}><Text style={styles.heroIconText}>🎓</Text></View>
+                  <Text style={styles.heroEmojiSub}>NEET
+2026</Text>
                 </View>
               </View>
               <View style={styles.heroFeatures}>
@@ -453,7 +454,8 @@ const styles = StyleSheet.create({
   heroTitle: { fontSize: 22, fontWeight: '900', color: '#fff', lineHeight: 28 },
   heroSub: { fontSize: 13, fontWeight: '600', color: 'rgba(255,255,255,0.7)', marginTop: 6 },
   heroEmojiArea: { alignItems: 'center', marginLeft: 12 },
-  heroEmoji: { fontSize: 48 },
+  heroIconCircle: { width: 60, height: 60, borderRadius: 30, backgroundColor: 'rgba(245,166,35,0.2)', alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#F5A623' },
+  heroIconText: { fontSize: 28 },
   heroEmojiSub: { fontSize: 10, fontWeight: '800', color: '#F5A623', marginTop: 4 },
   heroFeatures: { flexDirection: 'row', gap: 12, marginTop: 16 },
   heroFeature: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 5 },
