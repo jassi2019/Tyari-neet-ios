@@ -194,18 +194,26 @@ export const Home = ({ navigation }: HomeScreenProps) => {
           </View>
 
           {/* Hero Banner */}
-          <TouchableOpacity
-            style={styles.hero}
-            activeOpacity={0.9}
-            onPress={goToFreeContent}
-          >
+          <TouchableOpacity style={styles.hero} activeOpacity={0.9} onPress={goToFreeContent}>
             <View style={styles.heroBg}>
-              <View style={styles.heroBadge}><Text style={styles.heroBadgeText}>JOIN FREE</Text></View>
-              <Text style={styles.heroTitle}>{"Your Dream,\nOur Mission"}</Text>
-              <Text style={styles.heroSub}>{"Let's Crack NEET Together \ud83d\ude80"}</Text>
-              <View style={styles.heroBtn}>
-                <Text style={styles.heroBtnText}>Explore Now \u2192</Text>
+              <View style={styles.heroContent}>
+                <View style={styles.heroTextArea}>
+                  <View style={styles.heroBadge}><Text style={styles.heroBadgeText}>JOIN FREE</Text></View>
+                  <Text style={styles.heroTitle}>Your Dream,</Text>
+                  <Text style={styles.heroTitle}>Our Mission</Text>
+                  <Text style={styles.heroSub}>Let’s Crack NEET Together</Text>
+                </View>
+                <View style={styles.heroEmojiArea}>
+                  <Text style={styles.heroEmoji}>👩‍⚕️</Text>
+                  <Text style={styles.heroEmojiSub}>NEET 2026</Text>
+                </View>
               </View>
+              <View style={styles.heroFeatures}>
+                <View style={styles.heroFeature}><Text style={styles.heroFeatureIcon}>📚</Text><Text style={styles.heroFeatureText}>Free Notes</Text></View>
+                <View style={styles.heroFeature}><Text style={styles.heroFeatureIcon}>🎯</Text><Text style={styles.heroFeatureText}>10K+ MCQs</Text></View>
+                <View style={styles.heroFeature}><Text style={styles.heroFeatureIcon}>📈</Text><Text style={styles.heroFeatureText}>Track Progress</Text></View>
+              </View>
+              <View style={styles.heroBtn}><Text style={styles.heroBtnText}>Explore Free Content →</Text></View>
             </View>
           </TouchableOpacity>
         </View>
@@ -429,17 +437,29 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   heroBg: {
-    backgroundColor: '#92400E',
-    borderRadius: 14,
+    borderRadius: 16,
+    overflow: 'hidden',
+    backgroundColor: '#1a1a2e',
     padding: 20,
-    minHeight: 160,
-    justifyContent: 'center',
   },
-  heroBadge: { backgroundColor: '#F5A623', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 6, alignSelf: 'flex-start', marginBottom: 10 },
-  heroBadgeText: { color: '#fff', fontSize: 13, fontWeight: '800' },
-  heroSub: { fontSize: 15, fontWeight: '700', color: 'rgba(255,255,255,0.85)', marginTop: 4 },
-  heroTitle: { fontSize: 26, fontWeight: '900', color: '#fff', lineHeight: 32 },
-  heroBtn: { backgroundColor: '#F5A623', borderRadius: 10, paddingHorizontal: 16, paddingVertical: 10, alignSelf: 'flex-start', marginTop: 12 },
+  heroContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  heroTextArea: { flex: 1 },
+  heroBadge: { backgroundColor: '#F5A623', borderRadius: 6, paddingHorizontal: 10, paddingVertical: 4, alignSelf: 'flex-start', marginBottom: 12 },
+  heroBadgeText: { color: '#fff', fontSize: 11, fontWeight: '800', letterSpacing: 1 },
+  heroTitle: { fontSize: 22, fontWeight: '900', color: '#fff', lineHeight: 28 },
+  heroSub: { fontSize: 13, fontWeight: '600', color: 'rgba(255,255,255,0.7)', marginTop: 6 },
+  heroEmojiArea: { alignItems: 'center', marginLeft: 12 },
+  heroEmoji: { fontSize: 48 },
+  heroEmojiSub: { fontSize: 10, fontWeight: '800', color: '#F5A623', marginTop: 4 },
+  heroFeatures: { flexDirection: 'row', gap: 12, marginTop: 16 },
+  heroFeature: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 5 },
+  heroFeatureIcon: { fontSize: 14 },
+  heroFeatureText: { fontSize: 10, fontWeight: '700', color: 'rgba(255,255,255,0.8)' },
+  heroBtn: { backgroundColor: '#F5A623', borderRadius: 10, paddingVertical: 12, alignItems: 'center', marginTop: 14 },
   heroBtnText: { color: '#fff', fontSize: 14, fontWeight: '800' },
   cardBody: {
     backgroundColor: '#fff',
