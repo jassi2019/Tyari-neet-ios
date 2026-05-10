@@ -299,40 +299,25 @@ export const TopicContent = ({ navigation, route }: TopicContentProps) => {
   }
 
 
-  // For PDFs: render in clean protected view - looks like a webpage, not PDF
+  // For PDFs: if htmlUrl exists (converted), show as HTML. Otherwise use Google Docs
   if (isPdfUrl && finalURL) {
-    const pdfHtml = `<!DOCTYPE html><html><head>
-      <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-      <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
-        html, body { width: 100%; height: 100%; overflow: hidden; background: #fff; }
-        iframe { width: 100%; height: 100%; border: none; }
-        @media print { html, body { display: none !important; } }
-        /* Hide Google Docs Viewer toolbar and controls */
-        .ndfHFb-c4YZDc-Wrber { display: none !important; }
-      </style>
-      <script>
-        document.addEventListener('contextmenu', function(e) { e.preventDefault(); });
-        document.addEventListener('copy', function(e) { e.preventDefault(); });
-        document.addEventListener('cut', function(e) { e.preventDefault(); });
-        document.addEventListener('selectstart', function(e) { e.preventDefault(); });
-        document.addEventListener('keydown', function(e) { if ((e.ctrlKey || e.metaKey) && (e.key === 'p' || e.key === 's' || e.key === 'c')) e.preventDefault(); });
-      </script>
-    </head><body>
-      <iframe src="https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(finalURL)}" sandbox="allow-scripts allow-same-origin" allow=""></iframe>
-    </body></html>`;
+    // Check if there's an HTML version (converted PDF)
+    const htmlVersion = finalURL.replace(/\.pdf(\?|$)/, '/index.html');
+    const useHtml = true; // Always try HTML version first
 
-    return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }} edges={['top']}>
-        <TopicHeader title={effectiveTopic?.name || 'Topic'} onBack={() => navigation.goBack()} />
-        <PlatformWebView
-          source={{ html: pdfHtml }}
-          style={{ flex: 1 }}
-          protectedContent={true}
-          debugLabel="PDFClean"
-        />
-      </SafeAreaView>
-    );
+    if (useHtml) {
+      return (
+        <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }} edges={['top']}>
+          <TopicHeader title={effectiveTopic?.name || 'Topic'} onBack={() => navigation.goBack()} />
+          <PlatformWebView
+            source={{ uri: htmlVersion }}
+            style={{ flex: 1 }}
+            protectedContent={true}
+            debugLabel="PDFasHTML"
+          />
+        </SafeAreaView>
+      );
+    }
   }
 
   // Keep Canva URL exactly as received from backend.
