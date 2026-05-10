@@ -202,10 +202,11 @@ export const Home = ({ navigation }: HomeScreenProps) => {
           >
             <Image source={heroBanner} style={styles.heroBannerImg} />
             <View style={styles.heroOverlay}>
-              <View style={styles.heroBadge}><Text style={styles.heroBadgeText}>🎁 FREE CONTENT</Text></View>
-              <Text style={styles.heroTitle}>{"Explore everything.\nLearn better.\nScore higher."}</Text>
+              <View style={styles.heroBadge}><Text style={styles.heroBadgeText}>JOIN FREE</Text></View>
+              <Text style={styles.heroTitle}>{"Your Dream,\nOur Mission"}</Text>
+              <Text style={styles.heroSub}>{"Let's Crack NEET Together"}</Text>
               <View style={styles.heroBtn}>
-                <Text style={styles.heroBtnText}>Tap to explore →</Text>
+                <Text style={styles.heroBtnText}>Explore Now →</Text>
               </View>
             </View>
           </TouchableOpacity>
@@ -436,9 +437,10 @@ const styles = StyleSheet.create({
     padding: 18,
     justifyContent: 'flex-end',
   },
-  heroBadge: { backgroundColor: 'rgba(255,255,255,0.25)', borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4, alignSelf: 'flex-start', marginBottom: 8 },
-  heroBadgeText: { color: '#fff', fontSize: 11, fontWeight: '800' },
-  heroTitle: { fontSize: 24, fontWeight: '900', color: '#fff', lineHeight: 30, textShadowColor: 'rgba(0,0,0,0.3)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 },
+  heroBadge: { backgroundColor: '#F5A623', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 6, alignSelf: 'flex-start', marginBottom: 8 },
+  heroBadgeText: { color: '#fff', fontSize: 13, fontWeight: '800' },
+  heroSub: { fontSize: 15, fontWeight: '700', color: 'rgba(255,255,255,0.9)', marginTop: 4 },
+  heroTitle: { fontSize: 26, fontWeight: '900', color: '#fff', lineHeight: 30, textShadowColor: 'rgba(0,0,0,0.3)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 },
   heroBtn: { backgroundColor: '#F5A623', borderRadius: 8, paddingHorizontal: 14, paddingVertical: 8, alignSelf: 'flex-start', marginTop: 10 },
   heroBtnText: { color: '#fff', fontSize: 13, fontWeight: '800' },
   heroBannerImg: {
