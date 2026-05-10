@@ -195,7 +195,7 @@ export const Home = ({ navigation }: HomeScreenProps) => {
 
           {/* Hero Banner */}
           <TouchableOpacity style={styles.hero} activeOpacity={0.9} onPress={goToFreeContent}>
-            <Image source={require('../../../assets/top banner (1).png')} style={styles.heroBannerImg} resizeMode="cover" />
+            <Image source={require('../../../assets/top banner (1).png')} style={styles.heroBannerImg} resizeMode="contain" />
           </TouchableOpacity>
         </View>
 
@@ -420,7 +420,7 @@ const styles = StyleSheet.create({
   heroBannerImg: {
     width: '100%',
     height: undefined,
-    aspectRatio: 16 / 14,
+    aspectRatio: 1,
     borderRadius: 14,
   },
   cardBody: {
