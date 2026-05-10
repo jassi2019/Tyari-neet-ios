@@ -195,7 +195,7 @@ export const Home = ({ navigation }: HomeScreenProps) => {
 
           {/* Hero Banner */}
           <TouchableOpacity style={styles.hero} activeOpacity={0.9} onPress={goToFreeContent}>
-            <Image source={require('../../../assets/hero-banner.jpg')} style={styles.heroBannerImg} resizeMode="cover" />
+            <Image source={require('../../../assets/top banner (1).png')} style={styles.heroBannerImg} resizeMode="cover" />
           </TouchableOpacity>
         </View>
 
