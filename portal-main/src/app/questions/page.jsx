@@ -51,6 +51,8 @@ const emptyForm = {
   optionC: "",
   optionD: "",
   correctOption: "",
+  correctAnswer: "",
+  matchPairs: "",
   explanation: "",
   difficulty: "MEDIUM",
   marks: "4",
@@ -143,11 +145,14 @@ export default function QuestionsPage() {
     setEditingQuestion(q);
     setFormData({
       text: q.text,
+      questionType: q.questionType || "MCQ",
       optionA: q.optionA,
       optionB: q.optionB,
       optionC: q.optionC,
       optionD: q.optionD,
       correctOption: q.correctOption,
+      correctAnswer: q.correctAnswer || "",
+      matchPairs: q.matchPairs || "",
       explanation: q.explanation || "",
       difficulty: q.difficulty,
       marks: q.marks,
@@ -312,6 +317,8 @@ export default function QuestionsPage() {
 
                   {/* Question text */}
                   <div className="space-y-2">
+                    <label className="text-sm font-medium">Question Type</label>
+                    <select className="w-full border rounded-md px-3 py-2 bg-background text-foreground mb-4" value={formData.questionType} onChange={(e) => setFormData({ ...formData, questionType: e.target.value })}>{QUESTION_TYPES.map(t => <option key={t} value={t}>{t === "MCQ" ? "MCQ (Multiple Choice)" : t === "FILL_BLANK" ? "Fill in the Blanks" : "Match the Following"}</option>)}</select>
                     <label className="text-sm font-medium">Question Text</label>
                     <Textarea
                       value={formData.text}
@@ -347,7 +354,9 @@ export default function QuestionsPage() {
 
                   {/* Correct option */}
                   <div className="space-y-2">
-                    <label className="text-sm font-medium">Correct Answer</label>
+                    {formData.questionType === "FILL_BLANK" && <div className="col-span-2 mb-4"><label className="text-sm font-medium">Correct Answer (Fill in Blank)</label><Input value={formData.correctAnswer} onChange={(e) => setFormData({ ...formData, correctAnswer: e.target.value })} placeholder="Type the correct answer" /></div>}
+                    {formData.questionType === "MATCH" && <div className="col-span-2 mb-4"><label className="text-sm font-medium">Match Pairs (JSON format)</label><Textarea value={formData.matchPairs} onChange={(e) => setFormData({ ...formData, matchPairs: e.target.value })} placeholder='[{"left":"Cell","right":"Basic unit"},{"left":"DNA","right":"Genetic material"}]' rows={3} /></div>}
+                    <label className="text-sm font-medium">Correct Answer (MCQ)</label>
                     <Select
                       value={formData.correctOption}
                       onValueChange={(v) =>
@@ -449,11 +458,11 @@ export default function QuestionsPage() {
                       type="submit"
                       disabled={
                         !formData.text ||
-                        !formData.optionA ||
+                        (formData.questionType === "MCQ" && !formData.optionA) ||
                         !formData.optionB ||
                         !formData.optionC ||
                         !formData.optionD ||
-                        !formData.correctOption ||
+                        (formData.questionType === "MCQ" && !formData.correctOption) ||
                         !formData.subjectId ||
                         !formData.classId ||
                         !formData.chapterId ||

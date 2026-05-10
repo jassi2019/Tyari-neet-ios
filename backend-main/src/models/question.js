@@ -15,19 +15,19 @@ const Question = db.define(
     },
     optionA: {
       type: DataTypes.TEXT,
-      allowNull: false,
+      allowNull: true,
     },
     optionB: {
       type: DataTypes.TEXT,
-      allowNull: false,
+      allowNull: true,
     },
     optionC: {
       type: DataTypes.TEXT,
-      allowNull: false,
+      allowNull: true,
     },
     optionD: {
       type: DataTypes.TEXT,
-      allowNull: false,
+      allowNull: true,
     },
     correctOption: {
       type: DataTypes.ENUM("A", "B", "C", "D"),

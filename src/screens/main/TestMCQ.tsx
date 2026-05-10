@@ -84,6 +84,7 @@ export const TestMCQ = ({ navigation, route }: TestMCQProps) => {
   const classId     = route?.params?.classId     || '';
   const chapterId   = route?.params?.chapterId   || '';
   const chapterName = route?.params?.chapterName || '';
+  const questionType = route?.params?.questionType || 'MCQ';
   const chapterNum  = route?.params?.chapterNum  || '';
   const totalTime   = route?.params?.totalTime   || 30 * 60;
 

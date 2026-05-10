@@ -49,6 +49,12 @@ const TEST_TYPES = [
   },
 ];
 
+const QUESTION_FORMATS = [
+  { id: 'MCQ', emoji: '❓', title: 'MCQ', desc: 'Multiple Choice Questions', colors: ['#FFF3E0', '#FFE0B2'] as [string, string], accent: '#E65100' },
+  { id: 'FILL_BLANK', emoji: '✍️', title: 'Fill in the Blanks', desc: 'Type the correct answer', colors: ['#E8F5E9', '#C8E6C9'] as [string, string], accent: '#2E7D32' },
+  { id: 'MATCH', emoji: '🔗', title: 'Match the Following', desc: 'Match left with right', colors: ['#E3F2FD', '#BBDEFB'] as [string, string], accent: '#1565C0' },
+];
+
 const SUBJECTS = [
   { id: 'botany',    emoji: '🌿', label: 'SUBJECT 01', name: 'Botany',    chapters: 38, colors: ['#66BB6A', '#43A047'] as [string, string] },
   { id: 'chemistry', emoji: '⚗️', label: 'SUBJECT 02', name: 'Chemistry', chapters: 30, colors: ['#42A5F5', '#1976D2'] as [string, string] },
@@ -62,7 +68,7 @@ const CLASSES = [
 ];
 // Note: real UUIDs fetched from backend in handleContinue via classesData
 
-type Step = 'type' | 'subject' | 'class';
+type Step = 'type' | 'format' | 'subject' | 'class';
 
 const SUBJECT_EMOJI: Record<string, string> = {
   botany: '🌿', chemistry: '⚗️', physics: '⚛️', zoology: '🦋', biology: '🧬',
@@ -74,6 +80,7 @@ export const Tests = ({ navigation }: TestsScreenProps) => {
   const { data: subjectsData } = useGetAllSubjects({ enabled: !isGuest });
   const [step, setStep] = useState<Step>('type');
   const [selectedType, setSelectedType] = useState<typeof TEST_TYPES[0] | null>(null);
+  const [selectedFormat, setSelectedFormat] = useState<string>('MCQ');
   const [selectedSubject, setSelectedSubject] = useState<any | null>(null);
   const [selectedClassId, setSelectedClassId] = useState<string>('');
   const [showClassModal, setShowClassModal] = useState(false);
@@ -86,7 +93,7 @@ export const Tests = ({ navigation }: TestsScreenProps) => {
   };
   const classOptions = getClassOptions();
 
-  const stepNum = step === 'type' ? 1 : step === 'subject' ? 2 : 3;
+  const stepNum = step === 'type' ? 1 : step === 'format' ? 2 : step === 'subject' ? 3 : 4;
 
   const handleTypePress = (type: typeof TEST_TYPES[0]) => {
     setSelectedType(type);
@@ -111,6 +118,7 @@ export const Tests = ({ navigation }: TestsScreenProps) => {
       className: (cls as any)?.name || 'Class',
       testType: selectedType.id,
       testTypeTitle: selectedType.title,
+      questionType: selectedFormat,
     });
   };
 
@@ -203,7 +211,21 @@ export const Tests = ({ navigation }: TestsScreenProps) => {
             )}
 
             {/* Step 2 — Subject */}
-            {step === 'subject' && (
+            {step === 'format' && (
+            <View style={{ gap: 12 }}>
+              {QUESTION_FORMATS.map((fmt) => (
+                <TouchableOpacity key={fmt.id} style={[styles.typeCard, { backgroundColor: fmt.colors[0], borderColor: fmt.colors[1] }]} activeOpacity={0.85} onPress={() => handleFormatPress(fmt.id)}>
+                  <Text style={styles.typeEmoji}>{fmt.emoji}</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.typeTitle, { color: fmt.accent }]}>{fmt.title}</Text>
+                    <Text style={styles.typeDesc}>{fmt.desc}</Text>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+
+          {step === 'subject' && (
               <View style={styles.subjectsGrid}>
                 {(subjectsData?.data || SUBJECTS.map(s => ({ id: s.id, name: s.name, chapterCount: s.chapters }))).map((subject: any, idx: number) => {
                   const key = subject.name?.toLowerCase();
