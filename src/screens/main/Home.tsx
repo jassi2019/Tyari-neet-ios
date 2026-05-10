@@ -131,7 +131,11 @@ export const Home = ({ navigation }: HomeScreenProps) => {
     const ft = activeFeature?.featureType || 'explanation';
     const fn = activeFeature?.name || 'Feature Content';
     setActiveFeature(null);
-    navigation.navigate('FeatureContentList', { featureType: ft, featureTitle: fn });
+    if (ft === 'chapter_checkpoint') {
+      navigation.navigate('MainTabs', { screen: 'TestsTab' });
+    } else {
+      navigation.navigate('FeatureContentList', { featureType: ft, featureTitle: fn });
+    }
   };
 
   const { completedTopics } = useProgress();
