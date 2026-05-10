@@ -178,7 +178,7 @@ export const Home = ({ navigation }: HomeScreenProps) => {
           {/* Greeting Strip */}
           <View style={styles.greetStrip}>
             <View style={styles.greetLeft}>
-              <Image source={avatarLogo} style={styles.greetAvatar} resizeMode="contain" />
+              <Image source={avatarLogo} style={styles.greetAvatar} resizeMode="stretch" />
               <View>
                 <Text style={styles.greetHi}>Namaste! 👋</Text>
                 <Text style={styles.greetName}>{displayName}</Text>
@@ -410,17 +410,14 @@ const styles = StyleSheet.create({
   },
   streakText: { color: '#fff', fontSize: 11, fontWeight: '800' },
   hero: {
-    paddingHorizontal: 0,
-    paddingBottom: 0,
     marginHorizontal: 14,
-    marginBottom: 0,
     borderRadius: 14,
     overflow: 'hidden',
   },
   heroBannerImg: {
     width: '100%',
     height: undefined,
-    aspectRatio: 1,
+    aspectRatio: 16 / 12,
     borderRadius: 14,
   },
   cardBody: {
