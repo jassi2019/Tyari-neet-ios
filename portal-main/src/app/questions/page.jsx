@@ -43,6 +43,7 @@ import { getChapters } from "@/services/chapter";
 
 const DIFFICULTY_OPTIONS = ["EASY", "MEDIUM", "HARD"];
 const CORRECT_OPTIONS = ["A", "B", "C", "D"];
+const QUESTION_TYPES = ["MCQ", "FILL_BLANK", "MATCH"];
 
 const emptyForm = {
   text: "",
