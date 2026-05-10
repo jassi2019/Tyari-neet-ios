@@ -299,18 +299,27 @@ export const TopicContent = ({ navigation, route }: TopicContentProps) => {
   }
 
 
-  // For PDFs: create protected HTML that embeds PDF with no download/print
+  // For PDFs: render in clean protected view - looks like a webpage, not PDF
   if (isPdfUrl && finalURL) {
-    const pdfHtml = `<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width, initial-scale=1.0"><style>
-      * { margin: 0; padding: 0; -webkit-user-select: none; user-select: none; }
-      body { background: #f5f5f5; }
-      iframe { width: 100%; height: 100vh; border: none; }
-      @media print { body { display: none; } }
-    </style><script>
-      document.addEventListener('contextmenu', e => e.preventDefault());
-      document.addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && (e.key === 'p' || e.key === 's')) e.preventDefault(); });
-    </script></head><body>
-      <iframe src="https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(finalURL)}" style="width:100%;height:100vh;border:none;" sandbox="allow-scripts allow-same-origin"></iframe>
+    const pdfHtml = `<!DOCTYPE html><html><head>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+      <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+        html, body { width: 100%; height: 100%; overflow: hidden; background: #fff; }
+        iframe { width: 100%; height: 100%; border: none; }
+        @media print { html, body { display: none !important; } }
+        /* Hide Google Docs Viewer toolbar and controls */
+        .ndfHFb-c4YZDc-Wrber { display: none !important; }
+      </style>
+      <script>
+        document.addEventListener('contextmenu', function(e) { e.preventDefault(); });
+        document.addEventListener('copy', function(e) { e.preventDefault(); });
+        document.addEventListener('cut', function(e) { e.preventDefault(); });
+        document.addEventListener('selectstart', function(e) { e.preventDefault(); });
+        document.addEventListener('keydown', function(e) { if ((e.ctrlKey || e.metaKey) && (e.key === 'p' || e.key === 's' || e.key === 'c')) e.preventDefault(); });
+      </script>
+    </head><body>
+      <iframe src="https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(finalURL)}" sandbox="allow-scripts allow-same-origin" allow=""></iframe>
     </body></html>`;
 
     return (
@@ -320,7 +329,7 @@ export const TopicContent = ({ navigation, route }: TopicContentProps) => {
           source={{ html: pdfHtml }}
           style={{ flex: 1 }}
           protectedContent={true}
-          debugLabel="PDFContent"
+          debugLabel="PDFClean"
         />
       </SafeAreaView>
     );
