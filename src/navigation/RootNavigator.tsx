@@ -35,6 +35,7 @@ import TestResult from '../screens/main/TestResult';
 import Tests from '../screens/main/Tests';
 import TopicContent from '../screens/main/TopicContent';
 import FeatureContentList from "../screens/main/FeatureContentList";
+import Leaderboard from "../screens/main/Leaderboard";
 import Topics from '../screens/main/Topics';
 import NotFoundScreen from '../screens/NotFoundScreen';
 
@@ -122,6 +123,7 @@ function MainStack() {
       <Stack.Screen name="Topics" component={Topics} />
       <Stack.Screen name="TopicContent" component={TopicContent} />
       <Stack.Screen name="FeatureContentList" component={FeatureContentList} />
+      <Stack.Screen name="Leaderboard" component={Leaderboard} />
       <Stack.Screen name="Plans" component={Plans} />
       <Stack.Screen name="Payment" component={Payment} />
       <Stack.Screen name="SubscriptionMessage" component={SubscriptionMessage} />

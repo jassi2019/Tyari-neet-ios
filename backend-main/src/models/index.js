@@ -15,6 +15,7 @@ const Question = require("./question");
 const HomeContent = require("./homecontent");
 const Notification = require("./notification");
 const NotificationRead = require("./notificationread");
+const TestScore = require("./testscore");
 const FeatureContent = require("./featurecontent");
 
 const models = {
@@ -36,6 +37,7 @@ const models = {
   FeatureContent,
   Notification,
   NotificationRead,
+  TestScore,
 };
 
 Object.keys(models).forEach((modelName) => {

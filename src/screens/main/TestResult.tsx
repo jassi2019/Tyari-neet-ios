@@ -1,4 +1,5 @@
 import { LinearGradient } from 'expo-linear-gradient';
+import { useSubmitScore } from "@/hooks/api/leaderboard";
 import { ChevronLeft } from 'lucide-react-native';
 import React, { useRef, useState } from 'react';
 import {
@@ -54,6 +55,24 @@ export const TestResult = ({ navigation, route }: TestResultProps) => {
 
   const score = Math.round((correct / Math.max(totalQuestions, 1)) * 100);
   const xpEarned = correct * 4;
+  const { mutate: submitScore } = useSubmitScore();
+
+  React.useEffect(() => {
+    submitScore({
+      subjectId: route?.params?.subjectId,
+      chapterId: route?.params?.chapterId,
+      classId: route?.params?.classId,
+      testType: route?.params?.testType || "daily",
+      questionType: route?.params?.questionType || "MCQ",
+      totalQuestions,
+      correctAnswers: correct,
+      wrongAnswers: wrong,
+      skipped,
+      score,
+      percentage: score,
+      xp: xpEarned,
+    });
+  }, []);
 
   const getTitle = () => {
     if (score >= 80) return 'Excellent Work!';
@@ -284,6 +303,9 @@ export const TestResult = ({ navigation, route }: TestResultProps) => {
         </TouchableOpacity>
         <TouchableOpacity style={styles.btnSolid} onPress={handleRetry} activeOpacity={0.8}>
           <Text style={styles.btnSolidText}>Retry →</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.btnOutline, { borderColor: "#F5A623" }]} onPress={() => navigation.navigate("Leaderboard")} activeOpacity={0.8}>
+          <Text style={[styles.btnOutlineText, { color: "#F5A623" }]}>🏆 Leaderboard</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
