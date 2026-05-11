@@ -7,12 +7,13 @@ import { useGetProfile } from '@/hooks/api/user';
 import { useProgress } from '@/hooks/useProgress';
 import { useGetNotifications } from '@/hooks/api/notifications';
 import { useStudyTime } from '@/hooks/useStudyTime';
+import { useGetLeaderboard, TLeaderboardEntry } from '@/hooks/api/leaderboard';
 import { useStreak } from '@/hooks/useStreak';
 import { useGetHomeContent } from '@/hooks/api/homecontent';
 import { useContentProtection } from '@/hooks/useContentProtection';
 import type { TFeatureType } from '@/hooks/api/topics';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Bell } from 'lucide-react-native';
+import { Bell, Trophy } from 'lucide-react-native';
 import React, { useMemo, useState } from 'react';
 import {
   Dimensions,
@@ -75,6 +76,8 @@ export const Home = ({ navigation }: HomeScreenProps) => {
   const { isGuest } = useAuth();
   const { data: profile } = useGetProfile({ enabled: !isGuest });
   const { data: homeContent, isSuccess: homeContentLoaded } = useGetHomeContent();
+  const { data: lbData, isLoading: lbLoading } = useGetLeaderboard('weekly');
+  const leaderboardEntries: TLeaderboardEntry[] = (lbData as any)?.data?.slice(0, 5) || [];
 
   const FEATURES = useMemo(() => {
     // Trust API once it has responded — empty array means admin hid them all.
@@ -248,6 +251,47 @@ export const Home = ({ navigation }: HomeScreenProps) => {
                 </TouchableOpacity>
               ))}
             </View>
+          </View>
+
+
+          {/* Ranking Board */}
+          <View style={styles.section}>
+            <View style={styles.secRow}>
+              <View style={styles.secTitleWrap}>
+                <Trophy size={16} color="#F5A623" />
+                <Text style={styles.secTitle}>Ranking Board</Text>
+              </View>
+              <TouchableOpacity onPress={() => navigation.navigate('Leaderboard')}>
+                <Text style={styles.viewAll}>View All →</Text>
+              </TouchableOpacity>
+            </View>
+            {lbLoading ? (
+              <View style={styles.lbLoadWrap}><Text style={styles.lbLoadText}>Loading...</Text></View>
+            ) : leaderboardEntries.length === 0 ? (
+              <TouchableOpacity style={styles.lbEmpty} activeOpacity={0.8} onPress={() => navigation.navigate('MainTabs', { screen: 'TestsTab' })}>
+                <Text style={{ fontSize: 32 }}>{"🏆"}</Text>
+                <Text style={styles.lbEmptyTitle}>No rankings yet</Text>
+                <Text style={styles.lbEmptyDesc}>Take a test to appear here!</Text>
+              </TouchableOpacity>
+            ) : (
+              <View style={styles.lbList}>
+                {leaderboardEntries.map((entry, i) => (
+                  <TouchableOpacity key={entry.userId} style={styles.lbRow} activeOpacity={0.8} onPress={() => navigation.navigate('Leaderboard')}>
+                    <View style={[styles.lbRank, i === 0 && styles.lbRank1, i === 1 && styles.lbRank2, i === 2 && styles.lbRank3]}>
+                      <Text style={styles.lbRankText}>{i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : String(i + 1)}</Text>
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.lbName} numberOfLines={1}>{entry.User?.name || 'Student'}</Text>
+                      <Text style={styles.lbMeta}>{Math.round(entry.avgPercentage || 0)}% avg · {entry.testsPlayed} tests</Text>
+                    </View>
+                    <View style={styles.lbXpWrap}>
+                      <Text style={styles.lbXp}>{Math.round(entry.totalXP || 0)}</Text>
+                      <Text style={styles.lbXpLabel}>XP</Text>
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
           </View>
 
           {/* Study Progress */}
@@ -525,6 +569,26 @@ const styles = StyleSheet.create({
   pSubOk: { color: '#2E7D32', fontWeight: '700' },
   pBar: { height: 4, borderRadius: 4, backgroundColor: '#eee', overflow: 'hidden' },
   pFill: { height: '100%', borderRadius: 4 },
+
+
+  /* Leaderboard Mini */
+  lbLoadWrap: { padding: 20, alignItems: 'center' },
+  lbLoadText: { fontSize: 12, color: '#999' },
+  lbEmpty: { backgroundColor: '#FFF8E8', borderRadius: 12, padding: 24, alignItems: 'center', borderWidth: 1, borderColor: '#F5A623', borderStyle: 'dashed' },
+  lbEmptyTitle: { fontSize: 14, fontWeight: '800', color: '#92400E', marginTop: 8 },
+  lbEmptyDesc: { fontSize: 11, color: '#999', marginTop: 2 },
+  lbList: { backgroundColor: '#FFF8E8', borderRadius: 12, overflow: 'hidden', borderWidth: 1, borderColor: '#efefef' },
+  lbRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, paddingHorizontal: 12, borderBottomWidth: 1, borderBottomColor: '#f0e5b0' },
+  lbRank: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#f0f0f0', alignItems: 'center', justifyContent: 'center', marginRight: 10 },
+  lbRank1: { backgroundColor: '#FFD700' },
+  lbRank2: { backgroundColor: '#E0E0E0' },
+  lbRank3: { backgroundColor: '#FFCC80' },
+  lbRankText: { fontSize: 14, fontWeight: '800' },
+  lbName: { fontSize: 13, fontWeight: '700', color: '#111' },
+  lbMeta: { fontSize: 10, color: '#888', marginTop: 1 },
+  lbXpWrap: { alignItems: 'center', marginLeft: 8 },
+  lbXp: { fontSize: 16, fontWeight: '900', color: '#92400E' },
+  lbXpLabel: { fontSize: 8, fontWeight: '700', color: '#999' },
 
   /* Quick Actions */
   quickRow: { gap: 10, paddingBottom: 6 },
