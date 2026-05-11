@@ -9,6 +9,7 @@ export default function PDFUpload({ onUploadComplete, currentUrl, label = "Uploa
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   const [dragOver, setDragOver] = useState(false);
+  const [pageCount, setPageCount] = useState(null);
   const fileInputRef = useRef(null);
 
   const handleFile = async (file) => {
@@ -26,11 +27,15 @@ export default function PDFUpload({ onUploadComplete, currentUrl, label = "Uploa
 
     setError("");
     setUploading(true);
+    setPageCount(null);
 
     try {
       const result = await uploadPDF(file);
       if (result?.data?.url) {
         onUploadComplete(result.data.url);
+        if (result.data.pages) {
+          setPageCount(result.data.pages);
+        }
       }
     } catch (err) {
       setError(err?.response?.data?.message || "Upload failed. Please try again.");
@@ -59,10 +64,15 @@ export default function PDFUpload({ onUploadComplete, currentUrl, label = "Uploa
         <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
           <FileText className="h-4 w-4 text-green-600 flex-shrink-0" />
           <span className="text-sm text-green-700 truncate flex-1">{currentUrl}</span>
+          {pageCount && (
+            <span className="text-xs font-semibold bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full flex-shrink-0">
+              {pageCount} {pageCount === 1 ? "page" : "pages"}
+            </span>
+          )}
           <a href={currentUrl} target="_blank" rel="noopener noreferrer">
             <ExternalLink className="h-4 w-4 text-green-600 hover:text-green-800" />
           </a>
-          <button onClick={() => onUploadComplete("")} className="text-red-400 hover:text-red-600">
+          <button onClick={() => { onUploadComplete(""); setPageCount(null); }} className="text-red-400 hover:text-red-600">
             <X className="h-4 w-4" />
           </button>
         </div>
