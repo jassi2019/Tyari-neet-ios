@@ -12,9 +12,9 @@ export const Leaderboard = ({ navigation }: any) => {
   const entries: TLeaderboardEntry[] = (data as any)?.data || [];
 
   const getMedal = (rank: number) => {
-    if (rank === 1) return { emoji: '\ud83e\udd47', color: '#FFD700' };
-    if (rank === 2) return { emoji: '\ud83e\udd48', color: '#C0C0C0' };
-    if (rank === 3) return { emoji: '\ud83e\udd49', color: '#CD7F32' };
+    if (rank === 1) return { emoji: '🥇', color: '#FFD700' };
+    if (rank === 2) return { emoji: '🥈', color: '#C0C0C0' };
+    if (rank === 3) return { emoji: '🥉', color: '#CD7F32' };
     return null;
   };
 
@@ -38,7 +38,7 @@ export const Leaderboard = ({ navigation }: any) => {
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><ActivityIndicator size='large' color='#F5A623' /></View>
       ) : entries.length === 0 ? (
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
-          <Text style={{ fontSize: 48, marginBottom: 8 }}>\ud83c\udfc6</Text>
+          <Text style={{ fontSize: 48, marginBottom: 8 }}>🏆</Text>
           <Text style={{ fontSize: 18, fontWeight: '700', color: '#92400E' }}>No scores yet</Text>
           <Text style={{ fontSize: 13, color: '#6B7280', textAlign: 'center', marginTop: 4 }}>Take a test to appear on the leaderboard!</Text>
         </View>
@@ -56,7 +56,7 @@ export const Leaderboard = ({ navigation }: any) => {
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={s.name}>{item.User?.name || 'Student'}</Text>
-                  <Text style={s.stats}>{Math.round(item.avgPercentage || 0)}% avg  \u00b7  {item.testsPlayed} tests</Text>
+                  <Text style={s.stats}>{Math.round(item.avgPercentage || 0)}% avg  ·  {item.testsPlayed} tests</Text>
                 </View>
                 <View style={s.scoreArea}>
                   <Text style={s.score}>{Math.round(item.totalXP || 0)}</Text>

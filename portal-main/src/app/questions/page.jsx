@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -45,8 +46,15 @@ const DIFFICULTY_OPTIONS = ["EASY", "MEDIUM", "HARD"];
 const CORRECT_OPTIONS = ["A", "B", "C", "D"];
 const QUESTION_TYPES = ["MCQ", "FILL_BLANK", "MATCH"];
 
+const FEATURE_TYPE_OPTIONS = [
+  { value: "", label: "None (Regular Test)" },
+  { value: "revision_recall", label: "Revision Recall Station" },
+];
+
 const emptyForm = {
   text: "",
+  questionType: "MCQ",
+  featureType: "",
   optionA: "",
   optionB: "",
   optionC: "",
@@ -64,6 +72,8 @@ const emptyForm = {
 };
 
 export default function QuestionsPage() {
+  const searchParams = useSearchParams();
+  const featureParam = searchParams.get("feature") || "";
   const [isLoading, setIsLoading] = useState(false);
   const { showError, showSuccess } = useToast();
 
@@ -76,6 +86,8 @@ export default function QuestionsPage() {
   const [filterSubjectId, setFilterSubjectId] = useState("");
   const [filterClassId, setFilterClassId] = useState("");
   const [filterChapterId, setFilterChapterId] = useState("");
+  const [filterFeatureType, setFilterFeatureType] = useState(featureParam);
+  const [filterQuestionType, setFilterQuestionType] = useState("");
 
   // Dialog state
   const [isOpen, setIsOpen] = useState(false);
@@ -112,6 +124,8 @@ export default function QuestionsPage() {
       if (filterSubjectId) params.subjectId = filterSubjectId;
       if (filterClassId) params.classId = filterClassId;
       if (filterChapterId) params.chapterId = filterChapterId;
+      if (filterFeatureType) params.featureType = filterFeatureType;
+      if (filterQuestionType) params.questionType = filterQuestionType;
       const { data } = await getQuestions(params);
       setQuestions(data);
     } catch (error) {
@@ -127,7 +141,7 @@ export default function QuestionsPage() {
 
   useEffect(() => {
     loadQuestions();
-  }, [filterSubjectId, filterClassId, filterChapterId]);
+  }, [filterSubjectId, filterClassId, filterChapterId, filterFeatureType, filterQuestionType]);
 
   const getName = (list, id) => list.find((x) => x.id === id)?.name || "—";
 
@@ -138,6 +152,8 @@ export default function QuestionsPage() {
       subjectId: filterSubjectId,
       classId: filterClassId,
       chapterId: filterChapterId,
+      featureType: filterFeatureType,
+      questionType: filterQuestionType || "MCQ",
     });
     setIsOpen(true);
   };
@@ -147,6 +163,7 @@ export default function QuestionsPage() {
     setFormData({
       text: q.text,
       questionType: q.questionType || "MCQ",
+      featureType: q.featureType || "",
       optionA: q.optionA,
       optionB: q.optionB,
       optionC: q.optionC,
@@ -230,7 +247,7 @@ export default function QuestionsPage() {
                 Questions
               </h1>
               <p className="text-muted-foreground mt-1">
-                Manage MCQ questions for NEET preparation
+                Manage questions for NEET preparation (MCQ, Fill in Blanks, Match)
               </p>
             </div>
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -333,50 +350,52 @@ export default function QuestionsPage() {
                     />
                   </div>
 
-                  {/* Options */}
-                  {["A", "B", "C", "D"].map((letter) => (
-                    <div key={letter} className="space-y-2">
-                      <label className="text-sm font-medium">
-                        Option {letter}
-                      </label>
-                      <Input
-                        value={formData[`option${letter}`]}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            [`option${letter}`]: e.target.value,
-                          })
-                        }
-                        placeholder={`Enter option ${letter}`}
-                        required
-                      />
-                    </div>
-                  ))}
-
-                  {/* Correct option */}
+                  {/* Feature Type */}
                   <div className="space-y-2">
-                    {formData.questionType === "FILL_BLANK" && <div className="col-span-2 mb-4"><label className="text-sm font-medium">Correct Answer (Fill in Blank)</label><Input value={formData.correctAnswer} onChange={(e) => setFormData({ ...formData, correctAnswer: e.target.value })} placeholder="Type the correct answer" /></div>}
-                    {formData.questionType === "MATCH" && <div className="col-span-2 mb-4"><label className="text-sm font-medium">Match Pairs (JSON format)</label><Textarea value={formData.matchPairs} onChange={(e) => setFormData({ ...formData, matchPairs: e.target.value })} placeholder='[{"left":"Cell","right":"Basic unit"},{"left":"DNA","right":"Genetic material"}]' rows={3} /></div>}
-                    <label className="text-sm font-medium">Correct Answer (MCQ)</label>
-                    <Select
-                      value={formData.correctOption}
-                      onValueChange={(v) =>
-                        setFormData({ ...formData, correctOption: v })
-                      }
-                      required
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select correct option" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {CORRECT_OPTIONS.map((opt) => (
-                          <SelectItem key={opt} value={opt}>
-                            Option {opt}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <label className="text-sm font-medium">Feature Section</label>
+                    <select className="w-full border rounded-md px-3 py-2 bg-background text-foreground" value={formData.featureType} onChange={(e) => setFormData({ ...formData, featureType: e.target.value })}>
+                      {FEATURE_TYPE_OPTIONS.map(ft => <option key={ft.value} value={ft.value}>{ft.label}</option>)}
+                    </select>
                   </div>
+
+                  {/* MCQ Options */}
+                  {formData.questionType === "MCQ" && (
+                    <>
+                      {["A", "B", "C", "D"].map((letter) => (
+                        <div key={letter} className="space-y-2">
+                          <label className="text-sm font-medium">Option {letter}</label>
+                          <Input value={formData[`option${letter}`]} onChange={(e) => setFormData({ ...formData, [`option${letter}`]: e.target.value })} placeholder={`Enter option ${letter}`} required />
+                        </div>
+                      ))}
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Correct Answer</label>
+                        <Select value={formData.correctOption} onValueChange={(v) => setFormData({ ...formData, correctOption: v })} required>
+                          <SelectTrigger><SelectValue placeholder="Select correct option" /></SelectTrigger>
+                          <SelectContent>
+                            {CORRECT_OPTIONS.map((opt) => (<SelectItem key={opt} value={opt}>Option {opt}</SelectItem>))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </>
+                  )}
+
+                  {/* Fill in the Blank */}
+                  {formData.questionType === "FILL_BLANK" && (
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Correct Answer</label>
+                      <Input value={formData.correctAnswer} onChange={(e) => setFormData({ ...formData, correctAnswer: e.target.value })} placeholder="Type the correct answer" required />
+                      <p className="text-xs text-muted-foreground">Student will type this answer. Case-insensitive matching.</p>
+                    </div>
+                  )}
+
+                  {/* Match the Following */}
+                  {formData.questionType === "MATCH" && (
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Match Pairs</label>
+                      <Textarea value={formData.matchPairs} onChange={(e) => setFormData({ ...formData, matchPairs: e.target.value })} placeholder={'[{"left":"Cell","right":"Basic unit of life"},{"left":"DNA","right":"Genetic material"},{"left":"Mitochondria","right":"Powerhouse of cell"}]'} rows={4} required />
+                      <p className="text-xs text-muted-foreground">JSON array of objects with "left" and "right" keys. Student will match left items to right items.</p>
+                    </div>
+                  )}
 
                   {/* Difficulty */}
                   <div className="space-y-2">
@@ -459,11 +478,9 @@ export default function QuestionsPage() {
                       type="submit"
                       disabled={
                         !formData.text ||
-                        (formData.questionType === "MCQ" && !formData.optionA) ||
-                        !formData.optionB ||
-                        !formData.optionC ||
-                        !formData.optionD ||
-                        (formData.questionType === "MCQ" && !formData.correctOption) ||
+                        (formData.questionType === "MCQ" && (!formData.optionA || !formData.optionB || !formData.optionC || !formData.optionD || !formData.correctOption)) ||
+                        (formData.questionType === "FILL_BLANK" && !formData.correctAnswer) ||
+                        (formData.questionType === "MATCH" && !formData.matchPairs) ||
                         !formData.subjectId ||
                         !formData.classId ||
                         !formData.chapterId ||
@@ -544,7 +561,25 @@ export default function QuestionsPage() {
               </SelectContent>
             </Select>
 
-            {(filterSubjectId || filterClassId || filterChapterId) && (
+            <Select value={filterQuestionType} onValueChange={(v) => setFilterQuestionType(v === "__all__" ? "" : v)}>
+              <SelectTrigger className="w-40"><SelectValue placeholder="All Types" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">All Types</SelectItem>
+                <SelectItem value="MCQ">MCQ</SelectItem>
+                <SelectItem value="FILL_BLANK">Fill in Blank</SelectItem>
+                <SelectItem value="MATCH">Match Following</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={filterFeatureType} onValueChange={(v) => setFilterFeatureType(v === "__all__" ? "" : v)}>
+              <SelectTrigger className="w-48"><SelectValue placeholder="All Sections" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">All Sections</SelectItem>
+                <SelectItem value="revision_recall">Revision Recall</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {(filterSubjectId || filterClassId || filterChapterId || filterFeatureType || filterQuestionType) && (
               <Button
                 variant="ghost"
                 size="sm"
@@ -552,6 +587,8 @@ export default function QuestionsPage() {
                   setFilterSubjectId("");
                   setFilterClassId("");
                   setFilterChapterId("");
+                  setFilterFeatureType("");
+                  setFilterQuestionType("");
                 }}
               >
                 Clear filters
@@ -594,11 +631,9 @@ export default function QuestionsPage() {
                         {q.text}
                       </CardTitle>
                       <div className="flex flex-wrap items-center gap-2 mt-2">
-                        <span
-                          className={`text-xs px-2 py-0.5 rounded-full font-medium ${difficultyColor[q.difficulty]}`}
-                        >
-                          {q.difficulty}
-                        </span>
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${difficultyColor[q.difficulty]}`}>{q.difficulty}</span>
+                        <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-blue-100 text-blue-700">{q.questionType || "MCQ"}</span>
+                        {q.featureType && <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-purple-100 text-purple-700">{q.featureType === "revision_recall" ? "Revision Recall" : q.featureType}</span>}
                         <span className="flex items-center gap-1 text-xs text-muted-foreground">
                           <BookType className="w-3 h-3" />
                           {getName(subjects, q.subjectId)}
@@ -635,24 +670,36 @@ export default function QuestionsPage() {
                   </div>
                 </CardHeader>
                 <CardContent className="pt-0 pl-9">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 mb-2">
-                    {["A", "B", "C", "D"].map((letter) => (
-                      <div
-                        key={letter}
-                        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm ${
-                          q.correctOption === letter
-                            ? "bg-green-50 border border-green-200 text-green-800 font-medium"
-                            : "bg-muted/40 text-muted-foreground"
-                        }`}
-                      >
-                        <span className="font-bold w-4">{letter}.</span>
-                        {q[`option${letter}`]}
-                        {q.correctOption === letter && (
-                          <span className="ml-auto text-green-600">✓</span>
-                        )}
+                  {(!q.questionType || q.questionType === "MCQ") && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 mb-2">
+                      {["A", "B", "C", "D"].map((letter) => (
+                        <div key={letter} className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm ${q.correctOption === letter ? "bg-green-50 border border-green-200 text-green-800 font-medium" : "bg-muted/40 text-muted-foreground"}`}>
+                          <span className="font-bold w-4">{letter}.</span>
+                          {q[`option${letter}`]}
+                          {q.correctOption === letter && <span className="ml-auto text-green-600">✓</span>}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {q.questionType === "FILL_BLANK" && (
+                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm bg-green-50 border border-green-200 text-green-800 font-medium mb-2">
+                      <span className="font-bold">✓ Answer:</span> {q.correctAnswer}
+                    </div>
+                  )}
+                  {q.questionType === "MATCH" && (
+                    <div className="mb-2">
+                      <p className="text-xs font-medium text-muted-foreground mb-1">Match Pairs:</p>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        {(() => { try { return JSON.parse(q.matchPairs || "[]"); } catch { return []; } })().map((pair, pi) => (
+                          <div key={pi} className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm bg-blue-50 border border-blue-200">
+                            <span className="font-medium text-blue-800">{pair.left}</span>
+                            <span className="text-muted-foreground">↔</span>
+                            <span className="font-medium text-blue-800">{pair.right}</span>
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  )}
                   {q.explanation && (
                     <p className="text-xs text-muted-foreground italic border-l-2 border-muted pl-3 mt-2">
                       {q.explanation}

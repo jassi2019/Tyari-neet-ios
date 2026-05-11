@@ -13,6 +13,16 @@ const Question = db.define(
       type: DataTypes.TEXT,
       allowNull: false,
     },
+    questionType: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      defaultValue: "MCQ",
+    },
+    featureType: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      defaultValue: null,
+    },
     optionA: {
       type: DataTypes.TEXT,
       allowNull: true,
@@ -31,7 +41,15 @@ const Question = db.define(
     },
     correctOption: {
       type: DataTypes.ENUM("A", "B", "C", "D"),
-      allowNull: false,
+      allowNull: true,
+    },
+    correctAnswer: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    matchPairs: {
+      type: DataTypes.TEXT,
+      allowNull: true,
     },
     explanation: {
       type: DataTypes.TEXT,

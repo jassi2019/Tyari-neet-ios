@@ -2,12 +2,14 @@ const { Question, Chapter, Subject, Class } = require("../../models");
 
 const getV1 = async (req, res, next) => {
   try {
-    const { chapterId, subjectId, classId } = req.query;
+    const { chapterId, subjectId, classId, questionType, featureType } = req.query;
 
     const query = {};
     if (chapterId) query.chapterId = chapterId;
     if (subjectId) query.subjectId = subjectId;
     if (classId) query.classId = classId;
+    if (questionType) query.questionType = questionType;
+    if (featureType) query.featureType = featureType;
 
     const docs = await Question.findAll({
       where: query,

@@ -12,7 +12,9 @@ type ProgressData = {
 
 const initialData: ProgressData = { completedTopics: [], chapterTotals: {} };
 
-let cache: ProgressData | null = null;
+export let cache: ProgressData | null = null;
+
+export const clearProgressCache = () => { cache = null; };
 const listeners = new Set<(data: ProgressData) => void>();
 
 const loadFromStorage = async (): Promise<ProgressData> => {

@@ -1,6 +1,7 @@
 import api from '@/lib/api';
 import tokenManager from '@/lib/tokenManager';
 import { TUser } from '@/types/User';
+import { clearProgressCache } from '@/hooks/useProgress';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { AppState } from 'react-native';
@@ -200,6 +201,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     await tokenManager.clearToken();
     await AsyncStorage.removeItem(USER_KEY);
     await AsyncStorage.removeItem(GUEST_KEY);
+    await AsyncStorage.removeItem('taiyari_progress_v1');
+    await AsyncStorage.removeItem('taiyari_study_time_v1');
+    await AsyncStorage.removeItem('taiyari_streak_data_v1');
+    clearProgressCache();
     setUser(null);
     setIsGuest(false);
     setHasSession(false);

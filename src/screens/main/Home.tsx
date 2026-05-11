@@ -136,6 +136,8 @@ export const Home = ({ navigation }: HomeScreenProps) => {
     setActiveFeature(null);
     if (ft === 'chapter_checkpoint') {
       navigation.navigate('MainTabs', { screen: 'TestsTab' });
+    } else if (ft === 'revision_recall') {
+      navigation.navigate('RevisionRecall');
     } else {
       navigation.navigate('FeatureContentList', { featureType: ft, featureTitle: fn });
     }

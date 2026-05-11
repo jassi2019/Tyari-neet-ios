@@ -2,7 +2,7 @@ const { Question } = require("../../models");
 
 const createV1 = async (req, res, next) => {
   try {
-    const { text, questionType, optionA, optionB, optionC, optionD, correctOption, correctAnswer, matchPairs, explanation, difficulty, marks, sequence, chapterId, subjectId, classId } = req.body;
+    const { text, questionType, featureType, optionA, optionB, optionC, optionD, correctOption, correctAnswer, matchPairs, explanation, difficulty, marks, sequence, chapterId, subjectId, classId } = req.body;
 
     if (!text || !chapterId || !subjectId || !classId) {
       return res.status(400).json({ message: "text, chapterId, subjectId, classId required" });
@@ -11,6 +11,7 @@ const createV1 = async (req, res, next) => {
     const doc = await Question.create({
       text,
       questionType: questionType || "MCQ",
+      featureType: featureType || null,
       optionA: optionA || null,
       optionB: optionB || null,
       optionC: optionC || null,

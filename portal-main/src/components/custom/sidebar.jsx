@@ -40,7 +40,7 @@ const navigation = [
 
 const featureNavigation = [
   { name: "Explanation", href: "/feature-content?type=explanation", icon: Lightbulb },
-  { name: "Revision Recall", href: "/feature-content?type=revision_recall", icon: Brain },
+  { name: "Revision Recall", href: "/questions?feature=revision_recall", icon: Brain },
   { name: "Hidden Links", href: "/feature-content?type=hidden_links", icon: Link2 },
   { name: "Exercise Revival", href: "/feature-content?type=exercise_revival", icon: ClipboardList },
   { name: "Master Exemplar", href: "/feature-content?type=master_exemplar", icon: Trophy },
