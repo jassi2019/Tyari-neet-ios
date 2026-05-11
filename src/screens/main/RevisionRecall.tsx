@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -11,7 +11,7 @@ import {
   Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ChevronLeft, Check, X, ArrowRight } from 'lucide-react-native';
+import { ChevronLeft, Check, X, ArrowRight, Clock } from 'lucide-react-native';
 import api from '@/lib/api';
 import { useQuery } from '@tanstack/react-query';
 
@@ -62,6 +62,55 @@ export const RevisionRecall = ({ navigation, route }: any) => {
   const [currentIdx, setCurrentIdx] = useState(0);
   const [answers, setAnswers] = useState<Record<string, any>>({});
   const [showExplanation, setShowExplanation] = useState(false);
+
+  // Timer - 30 seconds per question
+  const SECONDS_PER_Q = 30;
+  const [timeLeft, setTimeLeft] = useState(0);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const startTimer = useCallback(() => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    setTimeLeft(SECONDS_PER_Q);
+    timerRef.current = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev <= 1) {
+          if (timerRef.current) clearInterval(timerRef.current);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  }, []);
+
+  const stopTimer = useCallback(() => {
+    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+  }, []);
+
+  // Start timer when quiz starts or question changes
+  useEffect(() => {
+    if (step === 'quiz' && questions.length > 0 && !showExplanation) {
+      startTimer();
+    }
+    return () => stopTimer();
+  }, [step, currentIdx, questions.length]);
+
+  // Stop timer when explanation is shown
+  useEffect(() => {
+    if (showExplanation) stopTimer();
+  }, [showExplanation]);
+
+  // Auto-skip when time runs out
+  useEffect(() => {
+    if (step === 'quiz' && timeLeft === 0 && !showExplanation && questions.length > 0) {
+      setShowExplanation(true);
+    }
+  }, [timeLeft, step, showExplanation, questions.length]);
+
+  const formatTimer = (secs: number) => {
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return `${m}:${s < 10 ? '0' : ''}${s}`;
+  };
 
   const { data: subData, isLoading: subLoading } = useSubjects();
   const subjects = (subData as any)?.data || [];
@@ -233,7 +282,7 @@ export const RevisionRecall = ({ navigation, route }: any) => {
               <Text style={s.resultBoxLabel}>Total</Text>
             </View>
           </View>
-          <TouchableOpacity style={s.retryBtn} onPress={() => { setCurrentIdx(0); setAnswers({}); setShowExplanation(false); setStep('quiz'); }}>
+          <TouchableOpacity style={s.retryBtn} onPress={() => { setCurrentIdx(0); setAnswers({}); setShowExplanation(false); setStep('quiz'); startTimer(); }}>
             <Text style={s.retryText}>Try Again</Text>
           </TouchableOpacity>
           <TouchableOpacity style={s.backToBtn} onPress={() => setStep('chapter')}>
@@ -301,6 +350,10 @@ export const RevisionRecall = ({ navigation, route }: any) => {
         <TouchableOpacity onPress={goBack} style={s.backBtn}><ChevronLeft size={22} color="#111" /></TouchableOpacity>
         <Text style={s.headerTitle}>Q {currentIdx + 1} / {questions.length}</Text>
         <View style={s.typeBadge}><Text style={s.typeText}>{qType === 'MCQ' ? 'MCQ' : qType === 'FILL_BLANK' ? 'Fill Blank' : 'Match'}</Text></View>
+        <View style={[s.timerBadge, timeLeft <= 10 && timeLeft > 0 && s.timerDanger]}>
+          <Clock size={13} color={timeLeft <= 10 && timeLeft > 0 ? '#EF4444' : '#92400E'} />
+          <Text style={[s.timerText, timeLeft <= 10 && timeLeft > 0 && s.timerTextDanger]}>{formatTimer(timeLeft)}</Text>
+        </View>
       </View>
 
       {/* Progress bar */}
@@ -440,6 +493,10 @@ const s = StyleSheet.create({
   headerTitle: { fontSize: 16, fontWeight: '800', color: '#111', flex: 1 },
   typeBadge: { backgroundColor: 'rgba(146,64,14,0.2)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
   typeText: { fontSize: 11, fontWeight: '700', color: '#451A03' },
+  timerBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(146,64,14,0.15)', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 12, marginLeft: 6 },
+  timerDanger: { backgroundColor: 'rgba(239,68,68,0.15)' },
+  timerText: { fontSize: 14, fontWeight: '900', color: '#92400E' },
+  timerTextDanger: { color: '#EF4444' },
   progressBar: { height: 4, backgroundColor: '#e0d4b0' },
   progressFill: { height: '100%', backgroundColor: '#92400E', borderRadius: 2 },
   stepTitle: { fontSize: 18, fontWeight: '800', color: '#111', padding: 16, paddingBottom: 8 },
