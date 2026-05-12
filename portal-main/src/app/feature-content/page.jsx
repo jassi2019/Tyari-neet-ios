@@ -44,21 +44,25 @@ function FeatureContentInner() {
     if (featureType === "hidden_links") router.replace("/hidden-links");
   }, [featureType, router]);
 
-  if (isRedirect) return <Loader />;
-
   const load = async () => {
+    if (isRedirect) return;
     setLoading(true);
     try { const r = await getFeatureContents(featureType); setItems(r?.data || []); } catch (e) { console.error(e); }
     finally { setLoading(false); }
   };
+
   const loadMeta = async () => {
+    if (isRedirect) return;
     try {
       const [s, c, ch] = await Promise.all([getSubjects(), getClasses(), getChapters()]);
       setSubjects(s?.data || []); setClasses(c?.data || []); setChapters(ch?.data || []);
     } catch (e) {}
   };
+
   useEffect(() => { load(); }, [featureType]);
   useEffect(() => { loadMeta(); }, []);
+
+  if (isRedirect) return <Loader />;
 
   const openAdd = () => { setEditItem(null); setForm({ ...EMPTY, featureType }); setIsOpen(true); };
   const openEdit = (item) => { setEditItem(item); setForm({ title: item.title, description: item.description || "", contentURL: item.contentURL || "", featureType: item.featureType, serviceType: item.serviceType, sequence: item.sequence, isActive: item.isActive, chapterId: item.chapterId, subjectId: item.subjectId, classId: item.classId }); setIsOpen(true); };
