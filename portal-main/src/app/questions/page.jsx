@@ -333,11 +333,34 @@ export default function QuestionsPage() {
                     </Select>
                   </div>
 
+                  {/* Question Type + Feature Section */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Question Type *</label>
+                      <div className="flex gap-2">
+                        {QUESTION_TYPES.map(t => (
+                          <button
+                            key={t}
+                            type="button"
+                            onClick={() => setFormData({ ...formData, questionType: t })}
+                            className={`flex-1 py-2.5 px-3 rounded-lg text-xs font-bold border-2 transition-all ${formData.questionType === t ? "border-primary bg-primary text-primary-foreground shadow-sm" : "border-muted bg-muted/30 text-muted-foreground hover:border-primary/40"}`}
+                          >
+                            {t === "MCQ" ? "MCQ" : t === "FILL_BLANK" ? "Fill Blank" : "Match"}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Feature Section</label>
+                      <select className="w-full border rounded-md px-3 py-2 bg-background text-foreground text-sm" value={formData.featureType} onChange={(e) => setFormData({ ...formData, featureType: e.target.value })}>
+                        {FEATURE_TYPE_OPTIONS.map(ft => <option key={ft.value} value={ft.value}>{ft.label}</option>)}
+                      </select>
+                    </div>
+                  </div>
+
                   {/* Question text */}
                   <div className="space-y-2">
-                    <label className="text-sm font-medium">Question Type</label>
-                    <select className="w-full border rounded-md px-3 py-2 bg-background text-foreground mb-4" value={formData.questionType} onChange={(e) => setFormData({ ...formData, questionType: e.target.value })}>{QUESTION_TYPES.map(t => <option key={t} value={t}>{t === "MCQ" ? "MCQ (Multiple Choice)" : t === "FILL_BLANK" ? "Fill in the Blanks" : "Match the Following"}</option>)}</select>
-                    <label className="text-sm font-medium">Question Text</label>
+                    <label className="text-sm font-medium">Question Text *</label>
                     <Textarea
                       value={formData.text}
                       onChange={(e) =>
@@ -348,14 +371,6 @@ export default function QuestionsPage() {
                       rows={3}
                       required
                     />
-                  </div>
-
-                  {/* Feature Type */}
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Feature Section</label>
-                    <select className="w-full border rounded-md px-3 py-2 bg-background text-foreground" value={formData.featureType} onChange={(e) => setFormData({ ...formData, featureType: e.target.value })}>
-                      {FEATURE_TYPE_OPTIONS.map(ft => <option key={ft.value} value={ft.value}>{ft.label}</option>)}
-                    </select>
                   </div>
 
                   {/* MCQ Options */}

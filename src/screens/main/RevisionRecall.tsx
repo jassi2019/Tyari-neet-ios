@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChevronLeft, Check, X, ArrowRight, Clock } from 'lucide-react-native';
 import api from '@/lib/api';
+import { useGetAllSubjects } from '@/hooks/api/subjects';
 import { useQuery } from '@tanstack/react-query';
 
 const { width } = Dimensions.get('window');
@@ -36,24 +37,16 @@ type Question = {
   Subject?: { id: string; name: string };
 };
 
-const useRevisionQuestions = (chapterId?: string, subjectId?: string, classId?: string) => {
+const useRevisionQuestions = (chapterId?: string, subjectId?: string) => {
   return useQuery({
-    queryKey: ['revision-recall-questions', chapterId, subjectId, classId],
+    queryKey: ['revision-recall-questions', chapterId, subjectId],
     queryFn: () =>
       api.get('/api/v1/questions', {
-        params: { featureType: 'revision_recall', chapterId, subjectId, classId },
+        params: { featureType: 'revision_recall', chapterId, subjectId },
       }),
-    enabled: !!(chapterId || subjectId || classId),
+    enabled: !!(chapterId || subjectId),
   });
 };
-
-// Subject selection step
-const useSubjects = () => useQuery({ queryKey: ['subjects'], queryFn: () => api.get('/api/v1/subjects') });
-const useChapters = (subjectId: string) => useQuery({
-  queryKey: ['chapters', subjectId],
-  queryFn: () => api.get('/api/v1/chapters', { params: { subjectId } }),
-  enabled: !!subjectId,
-});
 
 export const RevisionRecall = ({ navigation, route }: any) => {
   const [step, setStep] = useState<'subject' | 'chapter' | 'quiz' | 'result'>('subject');
@@ -61,6 +54,7 @@ export const RevisionRecall = ({ navigation, route }: any) => {
   const [selectedChapter, setSelectedChapter] = useState<any>(null);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [answers, setAnswers] = useState<Record<string, any>>({});
+  const [correctIds, setCorrectIds] = useState<Set<string>>(new Set());
   const [showExplanation, setShowExplanation] = useState(false);
 
   // Timer - 30 seconds per question
@@ -86,6 +80,27 @@ export const RevisionRecall = ({ navigation, route }: any) => {
     if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
   }, []);
 
+  const formatTimer = (secs: number) => {
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return `${m}:${s < 10 ? '0' : ''}${s}`;
+  };
+
+  const { data: subData, isLoading: subLoading } = useGetAllSubjects();
+  const subjects = (subData as any)?.data || [];
+
+  const { data: chapData, isLoading: chapLoading } = useQuery({
+    queryKey: ['revision-chapters', selectedSubject?.id],
+    queryFn: () => api.get('/api/v1/chapters', { params: { subjectId: selectedSubject?.id } }),
+    enabled: !!selectedSubject?.id,
+  });
+  const chapters = (chapData as any)?.data || [];
+
+  const { data: qData, isLoading: qLoading } = useRevisionQuestions(
+    selectedChapter?.id, selectedSubject?.id
+  );
+  const questions: Question[] = (qData as any)?.data || [];
+
   // Start timer when quiz starts or question changes
   useEffect(() => {
     if (step === 'quiz' && questions.length > 0 && !showExplanation) {
@@ -106,46 +121,13 @@ export const RevisionRecall = ({ navigation, route }: any) => {
     }
   }, [timeLeft, step, showExplanation, questions.length]);
 
-  const formatTimer = (secs: number) => {
-    const m = Math.floor(secs / 60);
-    const s = secs % 60;
-    return `${m}:${s < 10 ? '0' : ''}${s}`;
-  };
-
-  const { data: subData, isLoading: subLoading } = useSubjects();
-  const subjects = (subData as any)?.data || [];
-
-  const { data: chapData, isLoading: chapLoading } = useChapters(selectedSubject?.id);
-  const chapters = (chapData as any)?.data || [];
-
-  const { data: qData, isLoading: qLoading } = useRevisionQuestions(
-    selectedChapter?.id, selectedSubject?.id
-  );
-  const questions: Question[] = (qData as any)?.data || [];
-
   const currentQ = questions[currentIdx];
   const currentAnswer = currentQ ? answers[currentQ.id] : undefined;
   const isAnswered = currentAnswer !== undefined;
 
   const score = useMemo(() => {
-    let correct = 0;
-    let total = questions.length;
-    questions.forEach(q => {
-      const ans = answers[q.id];
-      if (ans === undefined) return;
-      if (q.questionType === 'MCQ' && ans === q.correctOption) correct++;
-      if (q.questionType === 'FILL_BLANK' && ans?.toLowerCase().trim() === q.correctAnswer?.toLowerCase().trim()) correct++;
-      if (q.questionType === 'MATCH') {
-        try {
-          const pairs: MatchPair[] = JSON.parse(q.matchPairs || '[]');
-          const userPairs = ans || {};
-          const allCorrect = pairs.every((p, i) => userPairs[i] === p.right);
-          if (allCorrect) correct++;
-        } catch {}
-      }
-    });
-    return { correct, total };
-  }, [answers, questions]);
+    return { correct: correctIds.size, total: questions.length };
+  }, [correctIds, questions.length]);
 
   const handleSelectSubject = (sub: any) => {
     setSelectedSubject(sub);
@@ -156,6 +138,7 @@ export const RevisionRecall = ({ navigation, route }: any) => {
     setSelectedChapter(ch);
     setCurrentIdx(0);
     setAnswers({});
+    setCorrectIds(new Set());
     setShowExplanation(false);
     setStep('quiz');
   };
@@ -163,6 +146,9 @@ export const RevisionRecall = ({ navigation, route }: any) => {
   const handleMCQAnswer = (option: string) => {
     if (isAnswered) return;
     setAnswers(prev => ({ ...prev, [currentQ.id]: option }));
+    if (option.trim() === currentQ.correctOption?.trim()) {
+      setCorrectIds(prev => new Set(prev).add(currentQ.id));
+    }
     setShowExplanation(true);
   };
 
@@ -171,6 +157,10 @@ export const RevisionRecall = ({ navigation, route }: any) => {
   };
 
   const submitFill = () => {
+    const ans = answers[currentQ.id];
+    if (ans?.toLowerCase().trim() === currentQ.correctAnswer?.toLowerCase().trim()) {
+      setCorrectIds(prev => new Set(prev).add(currentQ.id));
+    }
     setShowExplanation(true);
   };
 
@@ -180,6 +170,14 @@ export const RevisionRecall = ({ navigation, route }: any) => {
   };
 
   const submitMatch = () => {
+    try {
+      const pairs: MatchPair[] = JSON.parse(currentQ.matchPairs || '[]');
+      const userPairs = answers[currentQ.id] || {};
+      const allCorrect = pairs.every((p, i) => userPairs[i] === p.right);
+      if (allCorrect) {
+        setCorrectIds(prev => new Set(prev).add(currentQ.id));
+      }
+    } catch {}
     setShowExplanation(true);
   };
 
@@ -194,8 +192,8 @@ export const RevisionRecall = ({ navigation, route }: any) => {
 
   const goBack = () => {
     if (step === 'chapter') setStep('subject');
-    else if (step === 'quiz') { setStep('chapter'); setCurrentIdx(0); setAnswers({}); }
-    else if (step === 'result') { setStep('chapter'); setCurrentIdx(0); setAnswers({}); }
+    else if (step === 'quiz') { setStep('chapter'); setCurrentIdx(0); setAnswers({}); setCorrectIds(new Set()); }
+    else if (step === 'result') { setStep('chapter'); setCurrentIdx(0); setAnswers({}); setCorrectIds(new Set()); }
     else navigation.goBack();
   };
 
@@ -217,7 +215,7 @@ export const RevisionRecall = ({ navigation, route }: any) => {
             contentContainerStyle={{ padding: 16, gap: 10 }}
             renderItem={({ item }: any) => (
               <TouchableOpacity style={s.selectCard} onPress={() => handleSelectSubject(item)}>
-                <Text style={s.selectEmoji}>{"\ud83d\udcda"}</Text>
+                <Text style={s.selectEmoji}>📚</Text>
                 <Text style={s.selectName}>{item.name}</Text>
                 <ArrowRight size={18} color="#92400E" />
               </TouchableOpacity>
@@ -265,7 +263,7 @@ export const RevisionRecall = ({ navigation, route }: any) => {
           <Text style={s.headerTitle}>Results</Text>
         </View>
         <View style={s.resultWrap}>
-          <Text style={{ fontSize: 60 }}>{pct >= 80 ? '\ud83c\udf1f' : pct >= 50 ? '\ud83d\udc4d' : '\ud83d\udcaa'}</Text>
+          <Text style={{ fontSize: 60 }}>{pct >= 80 ? '🌟' : pct >= 50 ? '👍' : '💪'}</Text>
           <Text style={s.resultPct}>{pct}%</Text>
           <Text style={s.resultLabel}>Score</Text>
           <View style={s.resultRow}>
@@ -282,7 +280,7 @@ export const RevisionRecall = ({ navigation, route }: any) => {
               <Text style={s.resultBoxLabel}>Total</Text>
             </View>
           </View>
-          <TouchableOpacity style={s.retryBtn} onPress={() => { setCurrentIdx(0); setAnswers({}); setShowExplanation(false); setStep('quiz'); startTimer(); }}>
+          <TouchableOpacity style={s.retryBtn} onPress={() => { setCurrentIdx(0); setAnswers({}); setCorrectIds(new Set()); setShowExplanation(false); setStep('quiz'); startTimer(); }}>
             <Text style={s.retryText}>Try Again</Text>
           </TouchableOpacity>
           <TouchableOpacity style={s.backToBtn} onPress={() => setStep('chapter')}>
@@ -314,7 +312,7 @@ export const RevisionRecall = ({ navigation, route }: any) => {
           <Text style={s.headerTitle}>Revision Recall</Text>
         </View>
         <View style={s.emptyWrap}>
-          <Text style={{ fontSize: 48 }}>{"\ud83d\udcdd"}</Text>
+          <Text style={{ fontSize: 48 }}>📝</Text>
           <Text style={s.emptyTitle}>No questions yet</Text>
           <Text style={s.emptyDesc}>Questions will appear here once added by admin</Text>
         </View>
@@ -332,7 +330,7 @@ export const RevisionRecall = ({ navigation, route }: any) => {
     } catch {}
   }
 
-  const isCorrectMCQ = qType === 'MCQ' && currentAnswer === currentQ?.correctOption;
+  const isCorrectMCQ = qType === 'MCQ' && currentAnswer?.trim() === currentQ?.correctOption?.trim();
   const isCorrectFill = qType === 'FILL_BLANK' && currentAnswer?.toLowerCase().trim() === currentQ?.correctAnswer?.toLowerCase().trim();
   const isCorrectMatch = (() => {
     if (qType !== 'MATCH') return false;
@@ -378,8 +376,8 @@ export const RevisionRecall = ({ navigation, route }: any) => {
             {['A', 'B', 'C', 'D'].map(letter => {
               const optText = (currentQ as any)[`option${letter}`];
               if (!optText) return null;
-              const selected = currentAnswer === letter;
-              const correct = currentQ.correctOption === letter;
+              const selected = currentAnswer?.trim() === letter;
+              const correct = currentQ.correctOption?.trim() === letter;
               let bg = '#fff';
               let border = '#e0e0e0';
               if (showExplanation && correct) { bg = '#E8F5E9'; border = '#4CAF50'; }
@@ -387,8 +385,8 @@ export const RevisionRecall = ({ navigation, route }: any) => {
               else if (selected) { bg = '#FFF8E1'; border = '#F5A623'; }
               return (
                 <TouchableOpacity key={letter} style={[s.optionCard, { backgroundColor: bg, borderColor: border }]} onPress={() => handleMCQAnswer(letter)} disabled={isAnswered}>
-                  <View style={[s.optLetter, showExplanation && correct ? { backgroundColor: '#4CAF50' } : showExplanation && selected ? { backgroundColor: '#EF5350' } : {}]}>
-                    <Text style={[s.optLetterText, (showExplanation && (correct || selected)) ? { color: '#fff' } : {}]}>{letter}</Text>
+                  <View style={[s.optLetter, showExplanation && correct ? { backgroundColor: '#4CAF50' } : showExplanation && selected && !correct ? { backgroundColor: '#EF5350' } : {}]}>
+                    <Text style={[s.optLetterText, (showExplanation && (correct || (selected && !correct))) ? { color: '#fff' } : {}]}>{letter}</Text>
                   </View>
                   <Text style={s.optText}>{optText}</Text>
                   {showExplanation && correct && <Check size={18} color="#4CAF50" />}
@@ -396,6 +394,11 @@ export const RevisionRecall = ({ navigation, route }: any) => {
                 </TouchableOpacity>
               );
             })}
+            {showExplanation && (
+              <View style={[s.fillFeedback, isCorrectMCQ ? s.feedbackCorrect : s.feedbackWrong]}>
+                <Text style={s.feedbackText}>{isCorrectMCQ ? 'Correct!' : `Wrong! Correct Answer: ${currentQ.correctOption}`}</Text>
+              </View>
+            )}
           </View>
         )}
 
@@ -467,10 +470,10 @@ export const RevisionRecall = ({ navigation, route }: any) => {
         )}
 
         {/* Explanation */}
-        {showExplanation && currentQ.explanation && (
+        {showExplanation && (
           <View style={s.explanationBox}>
             <Text style={s.explanationTitle}>Explanation</Text>
-            <Text style={s.explanationText}>{currentQ.explanation}</Text>
+            <Text style={s.explanationText}>{currentQ.explanation || 'No explanation provided for this question.'}</Text>
           </View>
         )}
 

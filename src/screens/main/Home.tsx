@@ -138,6 +138,8 @@ export const Home = ({ navigation }: HomeScreenProps) => {
       navigation.navigate('MainTabs', { screen: 'TestsTab' });
     } else if (ft === 'revision_recall') {
       navigation.navigate('RevisionRecall');
+    } else if (ft === 'hidden_links') {
+      navigation.navigate('HiddenLinks');
     } else {
       navigation.navigate('FeatureContentList', { featureType: ft, featureTitle: fn });
     }

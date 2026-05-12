@@ -15,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import Loader from "@/components/custom/loader";
 import PDFUpload from "@/components/custom/pdf-upload";
 import useToast from "@/hooks/useToast";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { Plus, Pencil, Trash, Eye, EyeOff } from "lucide-react";
 
 const LABELS = { explanation: "Explanation", revision_recall: "Revision Recall", hidden_links: "Hidden Links", exercise_revival: "Exercise Revival", master_exemplar: "Master Exemplar", pyq: "PYQs", chapter_checkpoint: "Chapter Checkpoint" };
@@ -23,7 +23,9 @@ const EMPTY = { title: "", description: "", contentURL: "", featureType: "", ser
 
 function FeatureContentInner() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const featureType = searchParams.get("type") || "explanation";
+  const isRedirect = featureType === "revision_recall" || featureType === "hidden_links";
   const label = LABELS[featureType] || featureType;
   const [items, setItems] = useState([]);
   const [subjects, setSubjects] = useState([]);
@@ -35,6 +37,14 @@ function FeatureContentInner() {
   const [form, setForm] = useState({ ...EMPTY });
   const [saving, setSaving] = useState(false);
   const { showSuccess, showError } = useToast();
+
+  // Redirect dedicated feature types to their own pages
+  useEffect(() => {
+    if (featureType === "revision_recall") router.replace("/revision-recall");
+    if (featureType === "hidden_links") router.replace("/hidden-links");
+  }, [featureType, router]);
+
+  if (isRedirect) return <Loader />;
 
   const load = async () => {
     setLoading(true);

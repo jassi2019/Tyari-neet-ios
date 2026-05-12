@@ -1,7 +1,7 @@
 import axiosInstance from "./axios";
 
-export const getChapters = async () => {
-  const response = await axiosInstance.get("/api/v1/chapters");
+export const getChapters = async (params = {}) => {
+  const response = await axiosInstance.get("/api/v1/chapters", { params });
   return response.data;
 };
 
