@@ -227,12 +227,19 @@ export default function AddTopicPage() {
                         />
                       </div>
 
+                      <PDFUpload
+                        label="Upload Content PDF"
+                        currentUrl={formData.contentURL}
+                        onUploadComplete={(url) =>
+                          setFormData({ ...formData, contentURL: url })
+                        }
+                      />
                       <div className="space-y-2">
                         <label
                           htmlFor="contentURL"
                           className="text-sm font-medium"
                         >
-                          Content URL
+                          Or paste Content URL
                         </label>
                         <Input
                           id="contentURL"
@@ -243,8 +250,7 @@ export default function AddTopicPage() {
                               contentURL: e.target.value,
                             })
                           }
-                          placeholder="Enter content URL"
-                          required
+                          placeholder="https://..."
                           className="shadow-sm"
                         />
                       </div>
