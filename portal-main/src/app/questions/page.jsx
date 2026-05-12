@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -71,7 +71,7 @@ const emptyForm = {
   chapterId: "",
 };
 
-export default function QuestionsPage() {
+function QuestionsInner() {
   const searchParams = useSearchParams();
   const featureParam = searchParams.get("feature") || "";
   const [isLoading, setIsLoading] = useState(false);
@@ -728,4 +728,8 @@ export default function QuestionsPage() {
       </div>
     </div>
   );
+}
+
+export default function QuestionsPage() {
+  return <Suspense fallback={<Loader />}><QuestionsInner /></Suspense>;
 }
