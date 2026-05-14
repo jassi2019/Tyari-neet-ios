@@ -45,7 +45,7 @@ const featureNavigation = [
   { name: "Exercise Revival", href: "/feature-content?type=exercise_revival", icon: ClipboardList },
   { name: "Master Exemplar", href: "/feature-content?type=master_exemplar", icon: Trophy },
   { name: "PYQs", href: "/feature-content?type=pyq", icon: FileText },
-  { name: "Chapter Checkpoint", href: "/questions", icon: Shield },
+  { name: "Chapter Checkpoint", href: "/feature-content?type=chapter_checkpoint", icon: Shield },
 ];
 
 export default function Sidebar() {

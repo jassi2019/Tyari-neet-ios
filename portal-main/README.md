@@ -1,36 +1,68 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Taiyari NEET Ki — Admin Portal
 
-## Getting Started
+Admin panel for managing the Taiyari NEET Ki mobile app content.
 
-First, run the development server:
+## Tech Stack
+
+- **Framework:** Next.js 15 (App Router)
+- **Styling:** Tailwind CSS + shadcn/ui
+- **Deployment:** Docker + Caddy reverse proxy on Hostinger VPS
+- **API:** Express.js backend at `api.taiyarineetki.com`
+
+## Features
+
+### Navigation (Sidebar)
+
+| Section | Description |
+|---------|-------------|
+| Dashboard | Admin overview |
+| Classes | Manage NEET classes |
+| Subjects | Manage subjects (Physics, Chemistry, Biology) |
+| Chapters | Manage chapters per subject |
+| Topics | Manage topics with PDF upload + rich text content |
+| Questions | Question bank management |
+| Home Content | Mobile app home screen content |
+| Members | Registered users list |
+| Notifications | Push notifications |
+
+### Feature Content
+
+| Feature | Admin Flow | Content Type |
+|---------|-----------|--------------|
+| Explanation | Flat list + form | PDF / URL based content |
+| Revision Recall | Subject → Class → Chapter → Questions | MCQ / Fill in Blank / Match the Following |
+| Hidden Links | Subject → Class → Chapter → Pages | PDF / URL based pages |
+| Exercise Revival | Subject → Class → Chapter → 5 Sections → Questions | MCQ / Fill in Blank / Match |
+| Master Exemplar | Subject → Class → Chapter → 5 Sections → Questions | MCQ / Fill in Blank / Match |
+| PYQs | Subject → Class → Chapter → 5 Sections → Questions | MCQ / Fill in Blank / Match |
+| Chapter Checkpoint | Test questions (flat list) | MCQ / Fill in Blank / Match |
+
+### 5 Sections (Exercise Revival / Master Exemplar / PYQs)
+
+1. Questions
+2. Explanation
+3. Source Line
+4. Hidden Concepts & Q&A
+5. MCQ Practice Zone
+
+## Development
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000)
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+## Deployment
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+# On VPS
+cd /opt/app/portal-main && git pull origin main
+cd /opt/app && docker compose -f docker-compose.prod.yml build --no-cache portal
+docker compose -f docker-compose.prod.yml up -d portal
+```
 
-## Learn More
+## Environment Variables
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `NEXT_PUBLIC_API_URL` — Backend API URL (set in docker-compose.prod.yml)
