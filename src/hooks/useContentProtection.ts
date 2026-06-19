@@ -1,3 +1,4 @@
+import Constants from 'expo-constants';
 import { useEffect } from 'react';
 import { Platform } from 'react-native';
 
@@ -7,13 +8,15 @@ type Options = {
   appSwitcherBlurIntensity?: number;
 };
 
+const isExpoGo = Constants.appOwnership === 'expo';
+
 export function useContentProtection(options: Options = {}) {
   const enabled = options.enabled ?? Platform.OS !== 'web';
   const key = options.key ?? 'default';
   const blurIntensity = options.appSwitcherBlurIntensity ?? 0.6;
 
   useEffect(() => {
-    if (!enabled || Platform.OS === 'android') return;
+    if (!enabled || isExpoGo) return;
 
     let cleanup = () => {};
     (async () => {

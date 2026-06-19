@@ -1,5 +1,8 @@
+import Constants from 'expo-constants';
 import React from 'react';
 import { Alert, Linking, Platform, StyleSheet, Text, View } from 'react-native';
+
+const isExpoGo = Constants.appOwnership === 'expo';
 
 type Props = {
   source: { uri: string } | { html: string };
@@ -137,7 +140,8 @@ export default function PlatformWebView({
   enableDebugLogs,
 }: Props) {
   const debugEnabled = Boolean(enableDebugLogs);
-  const injectedJS = buildInjectedJavaScript(Boolean(protectedContent), debugEnabled);
+  const safeProtected = isExpoGo ? false : Boolean(protectedContent);
+  const injectedJS = buildInjectedJavaScript(safeProtected, debugEnabled);
   const debugPrefix = debugLabel ? `[PlatformWebView:${debugLabel}]` : '[PlatformWebView]';
   const sourceUrl = 'uri' in source ? source.uri : undefined;
 
@@ -245,9 +249,9 @@ export default function PlatformWebView({
             console.log(`${debugPrefix}[Message]`, raw);
           }
         }}
-        onFileDownload={protectedContent ? () => Alert.alert('Download blocked', 'Downloads are disabled.') : undefined}
+        onFileDownload={safeProtected ? () => Alert.alert('Download blocked', 'Downloads are disabled.') : undefined}
         onShouldStartLoadWithRequest={
-          protectedContent
+          safeProtected
             ? (req: any) => {
                 const url = String(req?.url || '');
                 if (debugEnabled && __DEV__) {
