@@ -44,7 +44,7 @@ const Landing = ({ navigation }: { navigation: any }) => {
 
         {/* Main Content */}
         <View style={styles.contentContainer}>
-          <View style={[styles.spacer, Platform.OS === 'web' ? styles.spacerWeb : null]}>
+          <View style={styles.spacer}>
             {/* Hero section */}
             <View style={styles.heroSection}>
               <View style={styles.bigIconCircle}>
@@ -115,6 +115,9 @@ const Landing = ({ navigation }: { navigation: any }) => {
   );
 };
 
+const isAndroid = Platform.OS === 'android';
+const isSmallAndroid = isAndroid && height < 700;
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -128,7 +131,7 @@ const styles = StyleSheet.create({
   mainContainer: {
     flex: 1,
     paddingHorizontal: 24,
-    paddingTop: 32,
+    paddingTop: isAndroid ? 12 : 32,
   },
   mainContainerWeb: {
     width: '100%',
@@ -139,15 +142,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    marginTop: 8,
+    marginTop: isAndroid ? 0 : 8,
   },
   logoImage: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    width: isAndroid ? 38 : 42,
+    height: isAndroid ? 38 : 42,
+    borderRadius: isAndroid ? 19 : 21,
   },
   logoText: {
-    fontSize: 18,
+    fontSize: isAndroid ? 17 : 18,
     fontWeight: '800',
     color: '#1a1a1a',
   },
@@ -165,80 +168,76 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
   },
-  spacerWeb: {
-    flex: 0,
-    marginBottom: 24,
-  },
   heroSection: {
     alignItems: 'center',
-    paddingTop: height * 0.02,
+    paddingTop: isAndroid ? 0 : height * 0.02,
   },
   bigIconCircle: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
+    width: isSmallAndroid ? 70 : isAndroid ? 76 : 90,
+    height: isSmallAndroid ? 70 : isAndroid ? 76 : 90,
+    borderRadius: isSmallAndroid ? 35 : isAndroid ? 38 : 45,
     backgroundColor: 'rgba(255,255,255,0.4)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 20,
+    marginBottom: isAndroid ? 12 : 20,
   },
   bigIconImage: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
+    width: isSmallAndroid ? 54 : isAndroid ? 58 : 70,
+    height: isSmallAndroid ? 54 : isAndroid ? 58 : 70,
+    borderRadius: isSmallAndroid ? 27 : isAndroid ? 29 : 35,
   },
   namastePill: {
     backgroundColor: 'rgba(255,255,255,0.6)',
     borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-    marginBottom: 14,
+    paddingHorizontal: isAndroid ? 14 : 16,
+    paddingVertical: isAndroid ? 4 : 6,
+    marginBottom: isAndroid ? 8 : 14,
   },
   namasteText: {
-    fontSize: 15,
+    fontSize: isAndroid ? 13 : 15,
     fontWeight: '600',
     color: '#78350f',
   },
   heroTitle: {
-    fontSize: 34,
+    fontSize: isSmallAndroid ? 26 : isAndroid ? 28 : 34,
     fontWeight: '900',
     color: '#1a1a1a',
     textAlign: 'center',
-    lineHeight: 40,
-    marginBottom: 10,
+    lineHeight: isSmallAndroid ? 32 : isAndroid ? 34 : 40,
+    marginBottom: isAndroid ? 6 : 10,
   },
   heroTitleAccent: {
     color: '#78350f',
   },
   heroSubtitle: {
-    fontSize: 14,
+    fontSize: isAndroid ? 12 : 14,
     color: '#1a1a1a',
     fontWeight: '600',
-    marginBottom: 18,
+    marginBottom: isAndroid ? 10 : 18,
     textAlign: 'center',
   },
   badgeRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'center',
-    gap: 8,
-    marginBottom: 8,
+    gap: isAndroid ? 5 : 8,
+    marginBottom: isAndroid ? 5 : 8,
   },
   badge: {
     backgroundColor: 'rgba(255,255,255,0.75)',
     borderRadius: 20,
-    paddingHorizontal: 14,
-    paddingVertical: 7,
+    paddingHorizontal: isAndroid ? 10 : 14,
+    paddingVertical: isAndroid ? 4 : 7,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.9)',
   },
   badgeText: {
-    fontSize: 12,
+    fontSize: isAndroid ? 10 : 12,
     fontWeight: '700',
     color: '#1a1a1a',
   },
   bottomContainer: {
-    marginBottom: 48,
+    marginBottom: isAndroid ? 20 : 48,
   },
   bottomContainerWeb: {
     marginBottom: 24,
@@ -246,34 +245,34 @@ const styles = StyleSheet.create({
   bottomCard: {
     backgroundColor: 'rgba(255,255,255,0.7)',
     borderRadius: 20,
-    padding: 20,
+    padding: isAndroid ? 14 : 20,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.9)',
   },
   getStartedButton: {
     backgroundColor: '#1a1a1a',
-    paddingVertical: 16,
+    paddingVertical: isAndroid ? 12 : 16,
     borderRadius: 12,
-    marginBottom: 12,
+    marginBottom: isAndroid ? 8 : 12,
   },
   getStartedButtonText: {
     color: '#FED93A',
     textAlign: 'center',
-    fontSize: 17,
+    fontSize: isAndroid ? 15 : 17,
     fontWeight: '700',
   },
   guestButton: {
     backgroundColor: '#fff',
     borderWidth: 1.5,
     borderColor: '#1a1a1a',
-    paddingVertical: 16,
+    paddingVertical: isAndroid ? 12 : 16,
     borderRadius: 12,
-    marginBottom: 12,
+    marginBottom: isAndroid ? 8 : 12,
   },
   guestButtonText: {
     color: '#1a1a1a',
     textAlign: 'center',
-    fontSize: 17,
+    fontSize: isAndroid ? 15 : 17,
     fontWeight: '600',
   },
   termsText: {

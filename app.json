@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Taiyari NEET ki",
-    "slug": "taiyari-neet-ki",
+    "slug": "jassi2019",
     "version": "1.0.4",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
@@ -21,7 +21,9 @@
       "**/*"
     ],
     "plugins": [
-      "./plugins/withRazorpayConfig"
+      "./plugins/withRazorpayConfig",
+      "expo-font",
+      "expo-web-browser"
     ],
     "ios": {
       "supportsTablet": true,
@@ -64,9 +66,9 @@
     },
     "extra": {
       "eas": {
-        "projectId": "e55c6314-0b1e-43af-a737-ce4557b6f804"
+        "projectId": "c9c3c597-1bb0-4c56-9761-fb2a2daf5c27"
       }
     },
-    "owner": "jassi2018"
+    "owner": "jassi2019s-team"
   }
 }

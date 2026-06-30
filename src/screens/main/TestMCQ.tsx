@@ -339,7 +339,7 @@ const styles = StyleSheet.create({
   quizTimerText: { fontSize: 13, fontWeight: '900', color: '#111' },
   quizTimerWarningText: { color: '#C62828' },
   progressTrack: { height: 6, backgroundColor: 'rgba(0,0,0,0.15)', borderRadius: 6, overflow: 'hidden' },
-  progressBar: { height: '100%', backgroundColor: '#fff', borderRadius: 6 },
+  progressBar: { height: 6, backgroundColor: '#fff', borderRadius: 6 },
 
   centerWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
   loadingText: { marginTop: 12, fontSize: 14, color: '#666' },

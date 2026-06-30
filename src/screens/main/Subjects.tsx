@@ -334,7 +334,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     marginTop: 4,
   },
-  subProgFill: { height: '100%', borderRadius: 5 },
+  subProgFill: { height: 5, borderRadius: 5 },
   subProgText: {
     fontSize: 9, color: '#888',
     marginTop: 5, fontWeight: '600',

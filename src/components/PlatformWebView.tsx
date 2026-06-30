@@ -1,6 +1,6 @@
 import Constants from 'expo-constants';
-import React from 'react';
-import { Alert, Linking, Platform, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { Alert, Animated, Easing, Image, Linking, Platform, StyleSheet, Text, View } from 'react-native';
 
 const isExpoGo = Constants.appOwnership === 'expo';
 
@@ -57,41 +57,132 @@ const isTopFrameRequest = (req: any): boolean => {
   return true;
 };
 
+const DISABLE_ZOOM_JS = `
+(function () {
+  try {
+    var meta = document.createElement('meta');
+    meta.name = 'viewport';
+    meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
+    document.getElementsByTagName('head')[0].appendChild(meta);
+    // Also remove any existing viewport meta that allows zoom
+    var existing = document.querySelectorAll('meta[name="viewport"]');
+    for (var i = 0; i < existing.length; i++) {
+      if (existing[i] !== meta) existing[i].parentNode.removeChild(existing[i]);
+    }
+    // Block pinch zoom via touch events
+    document.addEventListener('touchstart', function(e) {
+      if (e.touches.length > 1) { e.preventDefault(); }
+    }, { passive: false, capture: true });
+    document.addEventListener('touchmove', function(e) {
+      if (e.touches.length > 1) { e.preventDefault(); }
+    }, { passive: false, capture: true });
+    // Block ctrl+scroll zoom
+    document.addEventListener('wheel', function(e) {
+      if (e.ctrlKey) { e.preventDefault(); }
+    }, { passive: false, capture: true });
+    // Block double-tap zoom
+    var lastTap = 0;
+    document.addEventListener('touchend', function(e) {
+      var now = Date.now();
+      if (now - lastTap < 300) { e.preventDefault(); }
+      lastTap = now;
+    }, { passive: false, capture: true });
+  } catch (e) {}
+  true;
+})();`;
+
 const PROTECT_JS = `
 (function () {
   try {
+    // ===== 1. DISABLE ALL COPY FUNCTIONALITY =====
+
+    // CSS: disable all text selection
     var style = document.createElement('style');
     style.type = 'text/css';
-    style.innerHTML = '*{ -webkit-user-select:none !important; user-select:none !important; -webkit-touch-callout:none !important; } img{ pointer-events:none !important; -webkit-user-drag:none !important; } @media print{ body{display:none !important;} } [aria-label="Enter fullscreen"],[aria-label="Exit fullscreen"],[aria-label="Fullscreen"],button[class*="fullscreen"],button[class*="Fullscreen"],.fullscreen-button,.fs-button,[data-testid="fullscreen-button"]{ display:none !important; visibility:hidden !important; } ::-webkit-media-controls-fullscreen-button{ display:none !important; }';
+    style.innerHTML = '* { user-select: none !important; -webkit-user-select: none !important; -moz-user-select: none !important; -ms-user-select: none !important; -webkit-touch-callout: none !important; -webkit-tap-highlight-color: transparent !important; } img { pointer-events: none !important; -webkit-user-drag: none !important; } @media print { body { display: none !important; } html { display: none !important; } } ::selection { background: transparent !important; color: inherit !important; } ::-moz-selection { background: transparent !important; color: inherit !important; }';
     document.documentElement.appendChild(style);
 
-    var events = ['contextmenu','copy','cut','paste','dragstart','selectstart','beforeprint'];
-    events.forEach(function(evt){
-      document.addEventListener(evt, function(e){ e.preventDefault(); e.stopPropagation(); return false; }, { capture: true });
+    // JS: block copy, cut, right-click context menu events
+    document.addEventListener('copy', function(e) { e.preventDefault(); }, { capture: true });
+    document.addEventListener('cut', function(e) { e.preventDefault(); }, { capture: true });
+    document.addEventListener('contextmenu', function(e) { e.preventDefault(); }, { capture: true });
+
+    // JS: block paste, drag, select, print events
+    var extraEvents = ['paste','dragstart','selectstart','beforeprint','beforecopy','beforecut'];
+    extraEvents.forEach(function(evt) {
+      document.addEventListener(evt, function(e) { e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation(); return false; }, { capture: true });
     });
 
-    // Block long press on images
-    document.addEventListener('touchstart', function(e){
-      if(e.target && e.target.tagName === 'IMG') { e.target.style.pointerEvents='none'; }
-    }, { capture: true, passive: false });
-
-    // Block text selection via touch
-    document.addEventListener('selectionchange', function(){
-      try { window.getSelection().removeAllRanges(); } catch(x){}
-    });
-
-    // Disable developer tools
-    document.addEventListener('keydown', function(e){
-      if(e.key==='F12'||(e.ctrlKey&&e.shiftKey&&(e.key==='I'||e.key==='J'||e.key==='C'))||(e.ctrlKey&&e.key==='u')){e.preventDefault();}
+    // JS: disable keyboard shortcuts Ctrl+C, Ctrl+A, Ctrl+X, Ctrl+U
+    document.addEventListener('keydown', function(e) {
+      if ((e.ctrlKey || e.metaKey) && ['c','a','x','u'].includes(e.key.toLowerCase())) {
+        e.preventDefault();
+      }
+      // Also block F12, Ctrl+Shift+I/J/C (dev tools)
+      if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && ['I','J','C'].includes(e.key))) {
+        e.preventDefault(); e.stopImmediatePropagation();
+      }
     }, { capture: true });
 
-    // Hide fullscreen buttons (Canva etc)
-    setInterval(function(){
-      try{
-        var btns = document.querySelectorAll('[aria-label*="fullscreen"],[aria-label*="Fullscreen"],button[class*="fullscreen"],button[class*="Fullscreen"]');
-        btns.forEach(function(b){ b.style.display='none'; });
+    // Override clipboard API
+    if (navigator.clipboard) {
+      Object.defineProperty(navigator, 'clipboard', { get: function() { return { writeText: function() { return Promise.reject(); }, readText: function() { return Promise.reject(); }, write: function() { return Promise.reject(); }, read: function() { return Promise.reject(); } }; } });
+    }
+
+    // Override document.execCommand
+    document.execCommand = function() { return false; };
+
+    // Block long press on all elements
+    document.addEventListener('touchstart', function(e) {
+      if (e.target) { e.target.style.webkitUserSelect = 'none'; e.target.style.userSelect = 'none'; e.target.style.webkitTouchCallout = 'none'; }
+      if (e.target && e.target.tagName === 'IMG') { e.target.style.pointerEvents = 'none'; }
+    }, { capture: true, passive: false });
+
+    // Aggressively clear any text selection
+    document.addEventListener('selectionchange', function() {
+      try { window.getSelection().removeAllRanges(); } catch(x) {}
+    });
+    setInterval(function() {
+      try { window.getSelection().removeAllRanges(); } catch(x) {}
+    }, 100);
+
+    // ===== 2. REMOVE CANVA WATERMARK / LOGO / BRANDING =====
+
+    // CSS: hide all Canva-related elements
+    var canvaCSS = document.createElement('style');
+    canvaCSS.type = 'text/css';
+    canvaCSS.innerHTML = '[class*="canva"] { display: none !important; } [id*="canva"] { display: none !important; } [data-testid*="canva"] { display: none !important; } .__canva-embed-watermark { display: none !important; } .canva-watermark { display: none !important; } a[href*="canva.com"] { display: none !important; } div[class*="watermark"] { display: none !important; } div[class*="logo"][class*="canva"] { display: none !important; } [class*="branding"] { display: none !important; } [class*="Branding"] { display: none !important; } [data-testid*="branding"] { display: none !important; } [aria-label*="Canva"] { display: none !important; } [class*="overflow-menu"] { display: none !important; } [class*="OverflowMenu"] { display: none !important; } [class*="more-options"] { display: none !important; } [class*="MoreOptions"] { display: none !important; } [class*="kebab"] { display: none !important; } [aria-label="More options"] { display: none !important; } [aria-label="More"] { display: none !important; } [class*="toolbar"] { display: none !important; } [class*="Toolbar"] { display: none !important; } header { display: none !important; } footer { display: none !important; } [aria-label*="fullscreen"] { display: none !important; } [aria-label*="Fullscreen"] { display: none !important; } button[class*="fullscreen"] { display: none !important; } button[class*="Fullscreen"] { display: none !important; }';
+    document.documentElement.appendChild(canvaCSS);
+
+    // JS: repeatedly scan and remove Canva branding + "Create with Canva" text
+    setInterval(function() {
+      try {
+        // Remove elements containing "Create with Canva" or "Created with Canva" text
+        document.querySelectorAll('*').forEach(function(el) {
+          if (el.childElementCount === 0 && el.innerText && (el.innerText.includes('Create with Canva') || el.innerText.includes('Created with Canva') || el.innerText.includes('Made with Canva'))) {
+            el.style.display = 'none';
+          }
+        });
+
+        // Remove Canva elements by selectors
+        var selectors = [
+          '[class*="canva"]','[id*="canva"]','[data-testid*="canva"]',
+          '.__canva-embed-watermark','.canva-watermark',
+          'a[href*="canva.com"]','div[class*="watermark"]',
+          '[class*="branding"]','[class*="Branding"]',
+          '[aria-label*="Canva"]',
+          '[class*="overflow-menu"]','[class*="OverflowMenu"]',
+          '[class*="more-options"]','[class*="MoreOptions"]',
+          '[class*="kebab"]',
+          '[aria-label="More options"]','[aria-label="More"]',
+          'header','footer',
+          '[class*="toolbar"]','[class*="Toolbar"]',
+          '[aria-label*="fullscreen"]','[aria-label*="Fullscreen"]',
+        ];
+        var els = document.querySelectorAll(selectors.join(','));
+        els.forEach(function(el){ el.style.display='none'; el.style.visibility='hidden'; el.style.height='0'; el.style.overflow='hidden'; });
       }catch(x){}
-    }, 1000);
+    }, 500);
   } catch (e) {}
   true;
 })();`;
@@ -124,13 +215,40 @@ const DEBUG_WEBVIEW_JS = `
   true;
 })();`;
 
-const buildInjectedJavaScript = (useProtection: boolean, useDebug: boolean): string | undefined => {
+const buildInjectedJavaScript = (useProtection: boolean, useDebug: boolean, disableZoom: boolean = true): string | undefined => {
   const scripts: string[] = [];
+  if (disableZoom) scripts.push(DISABLE_ZOOM_JS);
   if (useProtection) scripts.push(PROTECT_JS);
   if (useDebug) scripts.push(DEBUG_WEBVIEW_JS);
   if (scripts.length === 0) return undefined;
   return scripts.join('\n');
 };
+
+const appIcon = require('../../assets/icon.png');
+
+function PulseLoader() {
+  const scale = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    const pulse = Animated.loop(
+      Animated.sequence([
+        Animated.timing(scale, { toValue: 1.25, duration: 700, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        Animated.timing(scale, { toValue: 0.85, duration: 700, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+      ])
+    );
+    pulse.start();
+    return () => pulse.stop();
+  }, [scale]);
+
+  return (
+    <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: '#FFF8E8', alignItems: 'center', justifyContent: 'center' }}>
+      <Animated.View style={{ transform: [{ scale }] }}>
+        <Image source={appIcon} style={{ width: 64, height: 64, borderRadius: 16 }} resizeMode="contain" />
+      </Animated.View>
+      <Text style={{ marginTop: 14, fontSize: 13, color: '#92400E', fontWeight: '700' }}>Loading content...</Text>
+    </View>
+  );
+}
 
 export default function PlatformWebView({
   source,
@@ -140,7 +258,7 @@ export default function PlatformWebView({
   enableDebugLogs,
 }: Props) {
   const debugEnabled = Boolean(enableDebugLogs);
-  const safeProtected = isExpoGo ? false : Boolean(protectedContent);
+  const safeProtected = Boolean(protectedContent);
   const injectedJS = buildInjectedJavaScript(safeProtected, debugEnabled);
   const debugPrefix = debugLabel ? `[PlatformWebView:${debugLabel}]` : '[PlatformWebView]';
   const sourceUrl = 'uri' in source ? source.uri : undefined;
@@ -184,12 +302,7 @@ export default function PlatformWebView({
         domStorageEnabled={true}
         allowsFullscreenVideo={false}
         startInLoadingState={true}
-        renderLoading={() => (
-          <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' }}>
-            <View style={{ width: 36, height: 36, borderRadius: 18, borderWidth: 3, borderColor: '#F6C228', borderTopColor: 'transparent' }} />
-            <Text style={{ marginTop: 10, fontSize: 12, color: '#999' }}>Loading...</Text>
-          </View>
-        )}
+        renderLoading={() => <PulseLoader />}
         originWhitelist={['*']}
         mixedContentMode="always"
         allowFileAccess={true}
@@ -199,14 +312,18 @@ export default function PlatformWebView({
         cacheEnabled={true}
         cacheMode="LOAD_CACHE_ELSE_NETWORK"
         userAgent={isCanvaUri ? canvaCompatibleUserAgent : undefined}
-        scalesPageToFit={true}
+        scalesPageToFit={false}
         injectedJavaScriptBeforeContentLoaded={injectedJS}
         injectedJavaScript={injectedJS}
         setSupportMultipleWindows={false}
         allowsLinkPreview={false}
         textZoom={100}
-        decelerationRate="fast"
+        decelerationRate={0.99}
         overScrollMode="never"
+        bounces={false}
+        textInteractionEnabled={!safeProtected}
+        nestedScrollEnabled={false}
+        showsHorizontalScrollIndicator={false}
         onLoadStart={(event: any) => {
           if (!debugEnabled || !__DEV__) return;
           console.log(`${debugPrefix}[LoadStart]`, {

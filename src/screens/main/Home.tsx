@@ -678,7 +678,7 @@ const styles = StyleSheet.create({
   pSub: { fontSize: 8, color: '#aaa', marginBottom: 7 },
   pSubOk: { color: '#2E7D32', fontWeight: '700' },
   pBar: { height: 4, borderRadius: 4, backgroundColor: '#eee', overflow: 'hidden' },
-  pFill: { height: '100%', borderRadius: 4 },
+  pFill: { height: 4, borderRadius: 4 },
 
   /* Quick Actions */
   quickRow: { gap: 10, paddingBottom: 6 },

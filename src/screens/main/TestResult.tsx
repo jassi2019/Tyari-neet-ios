@@ -371,7 +371,7 @@ const styles = StyleSheet.create({
   bdInfo: { flex: 1 },
   bdName: { fontSize: 12, fontWeight: '800', color: '#111', marginBottom: 4 },
   bdBar: { height: 5, borderRadius: 5, backgroundColor: '#f0f0f0', overflow: 'hidden' },
-  bdFill: { height: '100%', borderRadius: 5 },
+  bdFill: { height: 5, borderRadius: 5 },
   bdPct: { fontSize: 12, fontWeight: '900', color: '#111' },
 
   reviewSection: { paddingHorizontal: 16, marginTop: 14 },

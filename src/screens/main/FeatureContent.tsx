@@ -88,8 +88,26 @@ export const FeatureContent = ({ navigation, route }: Props) => {
   };
   const handleChapterPress = (ch: any) => {
     if (isQuestionBased) {
-      setPendingChapter(ch);
-      setShowQuestionTypeModal(true);
+      if (featureType === 'revision_recall') {
+        // Revision Recall Station — skip question type modal, go directly to MCQ
+        navigation.navigate('TestMCQ', {
+          testName: `${featureName} · ${selectedSubject?.name}`,
+          subjectName: selectedSubject?.name || 'Subject',
+          subjectEmoji: SUBJECT_EMOJI[selectedSubject?.name?.trim().toLowerCase()] || '📘',
+          subjectId: selectedSubject?.id || '',
+          classId: selectedClass?.id || '',
+          chapterId: ch.id,
+          chapterName: ch.name,
+          chapterNum: String(ch.number).padStart(2, '0'),
+          totalTime: 30 * 60,
+          featureType,
+          questionType: 'MCQ',
+        });
+      } else {
+        // Other question-based features — show question type modal
+        setPendingChapter(ch);
+        setShowQuestionTypeModal(true);
+      }
     } else {
       setSelectedChapter(ch);
       setStep('content');

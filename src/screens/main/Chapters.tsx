@@ -39,24 +39,16 @@ type Filter = (typeof FILTERS)[number];
 
 export const Chapters = ({ navigation, route }: ChaptersScreenProps) => {
   const { isGuest } = useAuth();
-  const subjectId = route?.params?.subjectId;
-  const subjectTitle = route?.params?.subjectTitle;
+  const subjectId = route?.params?.subjectId ?? '';
+  const subjectTitle = route?.params?.subjectTitle ?? '';
   const initialClassId = route?.params?.classId;
   const featureName = route?.params?.featureName;
   const freeOnly = route?.params?.freeOnly ?? false;
 
-  if (!subjectId || !subjectTitle) {
-    return (
-      <SafeAreaView style={styles.centered} edges={['top']}>
-        <Text style={styles.errorText}>Invalid subject data. Please try again.</Text>
-      </SafeAreaView>
-    );
-  }
-
   const [filter, setFilter] = useState<Filter>('All');
 
   const { data: classes } = useGetAllClasses({ enabled: !isGuest });
-  const guestClasses = getGuestClassesForSubjectWithFreeTopics(subjectId);
+  const guestClasses = subjectId ? getGuestClassesForSubjectWithFreeTopics(subjectId) : [];
 
   const allClasses: TClass[] = isGuest ? guestClasses : classes?.data || [];
   const selectedClassId = initialClassId || allClasses[0]?.id || '';
@@ -72,10 +64,21 @@ export const Chapters = ({ navigation, route }: ChaptersScreenProps) => {
   );
 
   const chaptersToRender: TChapter[] = isGuest
-    ? getGuestChaptersWithFreeTopics(subjectId, selectedClassId)
+    ? (subjectId ? getGuestChaptersWithFreeTopics(subjectId, selectedClassId) : [])
     : chapters?.data || [];
 
   const { completedTopics, getChapterTotal } = useProgress();
+
+  if (!subjectId || !subjectTitle) {
+    return (
+      <SafeAreaView style={styles.centered} edges={['top']}>
+        <Text style={styles.errorText}>Invalid subject data. Please try again.</Text>
+        <TouchableOpacity style={{ marginTop: 16, padding: 12 }} onPress={() => navigation.goBack()}>
+          <Text style={{ color: '#92400E', fontWeight: '700', fontSize: 14 }}>← Go Back</Text>
+        </TouchableOpacity>
+      </SafeAreaView>
+    );
+  }
 
   const getChapterProgress = (ch: TChapter) => {
     const total = getChapterTotal(ch.id) || (ch as any).Topic?.length || 0;
@@ -122,7 +125,10 @@ export const Chapters = ({ navigation, route }: ChaptersScreenProps) => {
   if (!isGuest && chaptersError) {
     return (
       <SafeAreaView style={styles.centered} edges={['top']}>
-        <Text style={styles.errorText}>{chaptersError.message}</Text>
+        <Text style={styles.errorText}>{chaptersError.message || 'Failed to load chapters'}</Text>
+        <TouchableOpacity style={{ marginTop: 16, padding: 12 }} onPress={() => navigation.goBack()}>
+          <Text style={{ color: '#92400E', fontWeight: '700', fontSize: 14 }}>← Go Back</Text>
+        </TouchableOpacity>
       </SafeAreaView>
     );
   }
@@ -208,9 +214,9 @@ export const Chapters = ({ navigation, route }: ChaptersScreenProps) => {
                           <Text style={styles.chMetaText}>· {done}/{total} done</Text>
                         )}
                       </View>
-                      {total > 0 && (
+                      {total > 0 && pct >= 0 && (
                         <View style={styles.chBar}>
-                          <View style={[styles.chBarFill, { width: `${pct}%` }]} />
+                          <View style={[styles.chBarFill, { width: `${Math.min(Math.max(pct || 0, 0), 100)}%` }]} />
                         </View>
                       )}
                     </View>
@@ -301,7 +307,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     marginTop: 6,
   },
-  chBarFill: { height: '100%', backgroundColor: '#92400E' },
+  chBarFill: { height: 4, borderRadius: 4, backgroundColor: '#92400E' },
   chArrow: {
     width: 28, height: 28, borderRadius: 14,
     backgroundColor: '#FFF8E1',

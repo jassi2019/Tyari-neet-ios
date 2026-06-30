@@ -51,8 +51,8 @@ const pickFromId = (id: string, len: number) => {
 };
 
 const Topics = ({ navigation, route }: TopicsScreenProps) => {
-  const chapterId = route?.params?.chapterId;
-  const subjectId = route?.params?.subjectId;
+  const chapterId = route?.params?.chapterId ?? '';
+  const subjectId = route?.params?.subjectId ?? '';
   const chapterTitle = route?.params?.chapterTitle || 'Topics';
   const subjectTitle = route?.params?.subjectTitle;
   const chapterNumber = route?.params?.chapterNumber;
@@ -61,6 +61,35 @@ const Topics = ({ navigation, route }: TopicsScreenProps) => {
 
   const { isGuest, user } = useAuth();
   const [showPremiumModal, setShowPremiumModal] = useState(false);
+
+  const { data, isLoading, error } = useGetTopicsByChapterIdAndSubjectId(
+    { chapterId, subjectId },
+    { enabled: !isGuest && Boolean(chapterId && subjectId) }
+  );
+  const { isLoading: favoritesLoading } = useGetFavorites({ enabled: !isGuest });
+
+  const allTopics: TTopic[] = isGuest
+    ? (chapterId && subjectId ? getGuestTopicsByChapterAndSubject(chapterId, subjectId) : [])
+    : data?.data || [];
+  const topicsList: TTopic[] = freeOnly
+    ? allTopics.filter((t) => !isPremiumServiceType(t.serviceType))
+    : allTopics;
+
+  const { isCompleted, getCompletedCount, setChapterTopics } = useProgress();
+
+  // Save chapter total + topic IDs whenever the topics list changes (so Chapters screen can show real progress).
+  useEffect(() => {
+    if (chapterId && topicsList.length > 0) {
+      setChapterTopics(chapterId, topicsList.map((t) => t.id));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chapterId, topicsList.length]);
+
+  const completedCount = getCompletedCount(topicsList.map((t) => t.id));
+  const progressPct =
+    topicsList.length > 0
+      ? Math.round((completedCount / topicsList.length) * 100)
+      : 0;
 
   if (!chapterId || !subjectId) {
     return (
@@ -72,35 +101,6 @@ const Topics = ({ navigation, route }: TopicsScreenProps) => {
       </SafeAreaView>
     );
   }
-
-  const { data, isLoading, error } = useGetTopicsByChapterIdAndSubjectId(
-    { chapterId, subjectId },
-    { enabled: !isGuest }
-  );
-  const { isLoading: favoritesLoading } = useGetFavorites({ enabled: !isGuest });
-
-  const allTopics: TTopic[] = isGuest
-    ? getGuestTopicsByChapterAndSubject(chapterId, subjectId)
-    : data?.data || [];
-  const topicsList: TTopic[] = freeOnly
-    ? allTopics.filter((t) => !isPremiumServiceType(t.serviceType))
-    : allTopics;
-
-  const { isCompleted, getCompletedCount, setChapterTopics } = useProgress();
-
-  // Save chapter total + topic IDs whenever the topics list changes (so Chapters screen can show real progress).
-  useEffect(() => {
-    if (topicsList.length > 0) {
-      setChapterTopics(chapterId, topicsList.map((t) => t.id));
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [chapterId, topicsList.length]);
-
-  const completedCount = getCompletedCount(topicsList.map((t) => t.id));
-  const progressPct =
-    topicsList.length > 0
-      ? Math.round((completedCount / topicsList.length) * 100)
-      : 0;
 
   const handleTopicPress = (topic: TTopic) => {
     if (isPremiumServiceType(topic.serviceType)) {

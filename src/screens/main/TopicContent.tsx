@@ -294,7 +294,7 @@ export const TopicContent = ({ navigation, route }: TopicContentProps) => {
       <PlatformWebView
         source={webViewSource}
         style={{ flex: 1 }}
-        protectedContent={!isCanvaContent}
+        protectedContent={true}
         debugLabel={effectiveTopic?.name || 'TopicContent'}
         enableDebugLogs={__DEV__}
       />

@@ -296,3 +296,26 @@ Tests login → plan fetch → order create → signature verify → subscriptio
 - Hero banner uses `aspectRatio: 16/9` + `contain` so it never crops on small devices
 - Bottom nav Plus button opens Library tab
 - Native Android `mipmap-*` icons regenerated from `assets/icon.png` via `expo prebuild`
+
+### Content Protection & Anti-Piracy
+- **Text copy/select fully disabled** on all content screens (CSS `user-select:none` + JS event blocking for copy/cut/paste/contextmenu + keyboard shortcut Ctrl+C/A/X/U blocked + clipboard API overridden + aggressive selection clearing every 100ms)
+- **Canva branding removed** — logo, 3-dot menu, "Created with Canva" watermark, header/footer/toolbar all hidden via CSS + periodic JS DOM cleanup every 500ms
+- **Screenshot & screen recording blocked** app-wide using `expo-screen-capture` (`usePreventScreenCapture` + `FLAG_SECURE` on Android)
+- **Pinch zoom disabled** on content WebView (viewport meta `user-scalable=no` + touch event blocking)
+- **WebView `textInteractionEnabled={false}`** for OS-level text selection blocking
+
+### Android UI Fixes
+- **Landing screen overlap fixed** — hero section and bottom card no longer overlap on Android; sizes dynamically adjusted per platform while iOS layout remains untouched
+- **Android navigation bar auto-hide** — system nav bar hides automatically, shows on swipe (`expo-navigation-bar` immersive mode)
+- **`decelerationRate` crash fix** — changed from `"fast"` (string) to `0.99` (number) to prevent `java.lang.String cannot be cast to java.lang.Double` on Android Fabric/New Architecture
+
+### Revision Recall Station
+- **"Choose Question Type" modal removed** from Revision Recall Station flow — chapter click now directly opens MCQ screen without showing the question type picker
+- Other question-based features (Exercise Revival, Master Exemplar, PYQ, Chapter Checkpoint) still show the question type modal as before
+
+### Bug Fixes
+- React Hooks violation fixed in Chapters.tsx and Topics.tsx (hooks moved before conditional early returns)
+- Progress bar height fixed across multiple screens (`height: '100%'` → fixed pixel values to prevent Fabric crash)
+- Added missing `app-icon.png` asset
+- SDK upgraded from 53 to 54 for Expo Go compatibility
+- Docker containers set to `restart=always` on VPS for auto-recovery after server reboot

@@ -1,7 +1,9 @@
 import { NavigationContainer } from '@react-navigation/native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { StatusBar } from 'expo-status-bar';
-import React from 'react';
+import * as NavigationBar from 'expo-navigation-bar';
+import React, { useEffect } from 'react';
+import { Platform } from 'react-native';
 import 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { enableScreens } from 'react-native-screens';
@@ -22,6 +24,15 @@ const queryClient = new QueryClient();
 // so every screen is covered, not just Home/TopicContent.
 function AppShell() {
   useContentProtection({ key: 'app-global', appSwitcherBlurIntensity: 0.7 });
+
+  useEffect(() => {
+    if (Platform.OS === 'android') {
+      // Auto-hide navigation bar, show on swipe
+      NavigationBar.setBehaviorAsync('overlay-swipe').catch(() => {});
+      NavigationBar.setVisibilityAsync('hidden').catch(() => {});
+    }
+  }, []);
+
   return <RootNavigator />;
 }
 
