@@ -130,6 +130,12 @@ export const TestMCQ = ({ navigation, route }: TestMCQProps) => {
   const questions = apiQuestions;
   const total = questions.length;
 
+  // Debug: log image data
+  if (__DEV__ && questions.length > 0) {
+    console.log('[TestMCQ] Question 0 image:', questions[0]?.questionImage);
+    console.log('[TestMCQ] Raw Q0:', JSON.stringify({ text: rawQuestions[0]?.text, questionImage: rawQuestions[0]?.questionImage }));
+  }
+
   const [currentIdx, setCurrentIdx] = useState(0);
   const [answers, setAnswers] = useState<AnswerState[]>([]);
   const [timeLeft, setTimeLeft] = useState(totalTime);
@@ -299,7 +305,15 @@ export const TestMCQ = ({ navigation, route }: TestMCQProps) => {
         <View style={styles.qTextBox}>
           <Text style={styles.qText}>{currentQ?.text}</Text>
           {currentQ?.questionImage ? (
-            <Image source={{ uri: currentQ.questionImage }} style={styles.qImage} resizeMode="contain" />
+            <View style={{ marginTop: 10, alignItems: 'center', backgroundColor: '#f0f0f0', borderRadius: 10, overflow: 'hidden' }}>
+              <Image
+                source={{ uri: currentQ.questionImage }}
+                style={{ width: 280, height: 180, borderRadius: 10 }}
+                resizeMode="contain"
+                onError={(e) => console.log('[TestMCQ] Image error:', e.nativeEvent.error)}
+                onLoad={() => console.log('[TestMCQ] Image loaded successfully')}
+              />
+            </View>
           ) : null}
         </View>
 
@@ -395,8 +409,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.06, shadowRadius: 14, elevation: 2,
   },
   qText: { fontSize: 14, color: '#111', lineHeight: 22, fontWeight: '600' },
-  qImage: { width: '100%', height: 200, borderRadius: 10, marginTop: 10 } as any,
-  optImage: { width: '100%', height: 100, borderRadius: 8, marginTop: 6 } as any,
+  qImage: { width: 300, height: 200, borderRadius: 10, marginTop: 10, alignSelf: 'center' } as any,
+  optImage: { width: 200, height: 100, borderRadius: 8, marginTop: 6 } as any,
 
   options: { gap: 10 },
   option: {

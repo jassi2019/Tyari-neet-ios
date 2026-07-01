@@ -313,9 +313,35 @@ Tests login → plan fetch → order create → signature verify → subscriptio
 - **"Choose Question Type" modal removed** from Revision Recall Station flow — chapter click now directly opens MCQ screen without showing the question type picker
 - Other question-based features (Exercise Revival, Master Exemplar, PYQ, Chapter Checkpoint) still show the question type modal as before
 
+### Test Series Feature (NEW)
+- Backend: `test_series` + `test_series_questions` tables + CRUD API (`/api/v1/test-series`)
+- Mobile: Daily/Weekly/Full Syllabus test click → Test list ("Test-1, Test-2...") → Test detail (syllabus + Start Test) → MCQ
+- Subject/Class/Chapter selection removed from test flow
+- TestMCQ updated to fetch questions from test series endpoint
+
+### Exercise Revival / Exemplar / PYQ — New Question List Flow
+- Backend: `exercise_questions` table + CRUD API (`/api/v1/exercise-questions`)
+- Chapter click → Exercise questions list → Question click → Popup: "Explanation" (Canva link) + "MCQ Zone"
+- Admin page: `https://api.taiyarineetki.com/api/v1/exercise-questions/admin`
+- Same flow for exercise_revival, master_exemplar, pyq features
+
+### Image Support in MCQs
+- Question model: added `questionImage`, `optionAImage`, `optionBImage`, `optionCImage`, `optionDImage`, `explanationImage` fields
+- Upload config: now accepts images (JPG/PNG/GIF/WebP) in addition to PDFs
+- Image upload page: `https://api.taiyarineetki.com/api/v1/uploads/image-upload`
+- TestMCQ: renders question/option images when available
+- Admin panel: Image URL fields added to Add Question form
+
+### Admin Panel Changes
+- Question Type selector: only MCQ (Fill in Blank, Match, True/False removed)
+- Image URL fields added to question forms (both Questions and Feature Content pages)
+- Notification delete fix (FK constraint on notification_reads)
+- Auto-login on Image Upload and Exercise Questions admin pages
+
 ### Bug Fixes
 - React Hooks violation fixed in Chapters.tsx and Topics.tsx (hooks moved before conditional early returns)
 - Progress bar height fixed across multiple screens (`height: '100%'` → fixed pixel values to prevent Fabric crash)
 - Added missing `app-icon.png` asset
 - SDK upgraded from 53 to 54 for Expo Go compatibility
 - Docker containers set to `restart=always` on VPS for auto-recovery after server reboot
+- Server SSH key setup for remote management
