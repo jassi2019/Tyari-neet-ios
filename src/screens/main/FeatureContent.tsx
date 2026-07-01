@@ -493,9 +493,6 @@ export const FeatureContent = ({ navigation, route }: Props) => {
                   <View style={{ gap: 10, marginTop: 14 }}>
                     {[
                       { key: 'MCQ', emoji: '📝', label: 'MCQ', desc: 'Multiple Choice Questions', colors: ['#66BB6A', '#43A047'] as [string, string] },
-                      { key: 'FILL_BLANK', emoji: '✏️', label: 'Fill in the Blanks', desc: 'Type the correct answer', colors: ['#42A5F5', '#1976D2'] as [string, string] },
-                      { key: 'MATCH', emoji: '🔗', label: 'Match the Following', desc: 'Match pairs correctly', colors: ['#AB47BC', '#7B1FA2'] as [string, string] },
-                      { key: 'TRUE_FALSE', emoji: '✅', label: 'True / False', desc: 'Mark statement true or false', colors: ['#FF7043', '#E64A19'] as [string, string] },
                     ].map((qt) => (
                       <TouchableOpacity key={qt.key} style={s.qtCard} activeOpacity={0.85} onPress={() => handleQuestionTypeSelect(qt.key)}>
                         <LinearGradient colors={qt.colors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.qtIcon}>
