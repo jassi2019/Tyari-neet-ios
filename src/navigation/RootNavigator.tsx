@@ -35,6 +35,8 @@ import Leaderboard from '../screens/main/Leaderboard';
 import TestMCQ from '../screens/main/TestMCQ';
 import TestResult from '../screens/main/TestResult';
 import Tests from '../screens/main/Tests';
+import TestSeriesList from '../screens/main/TestSeriesList';
+import TestSeriesDetail from '../screens/main/TestSeriesDetail';
 import TopicContent from '../screens/main/TopicContent';
 import Topics from '../screens/main/Topics';
 import NotFoundScreen from '../screens/NotFoundScreen';
@@ -133,6 +135,8 @@ function MainStack() {
       <Stack.Screen name="DailyTestChapter" component={DailyTestChapter} />
       <Stack.Screen name="FeatureContent" component={FeatureContent} />
       <Stack.Screen name="Leaderboard" component={Leaderboard} />
+      <Stack.Screen name="TestSeriesList" component={TestSeriesList} />
+      <Stack.Screen name="TestSeriesDetail" component={TestSeriesDetail} />
       <Stack.Screen name="TestMCQ" component={TestMCQ} />
       <Stack.Screen name="TestResult" component={TestResult} />
       <Stack.Screen name="NotFound" component={NotFoundScreen} />

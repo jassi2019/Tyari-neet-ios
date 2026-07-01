@@ -1,10 +1,12 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { useGetQuestions } from '@/hooks/api/questions';
+import { useGetTestSeriesById } from '@/hooks/api/testseries';
 import { TQuestion } from '@/types/Question';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -22,8 +24,10 @@ export type MCQQuestion = {
   difficulty: string;
   marks: string;
   text: string;
-  options: { letter: string; text: string }[];
+  questionImage?: string | null;
+  options: { letter: string; text: string; image?: string | null }[];
   correctIndex: number;
+  explanationImage?: string | null;
 };
 
 export type AnswerState = {
@@ -46,6 +50,7 @@ type TestMCQProps = {
       totalTime?: number;
       featureType?: string;
       questionType?: string;
+      testSeriesId?: string;
     };
   };
 };
@@ -68,13 +73,15 @@ const mapToMCQ = (q: TQuestion, subjectEmoji: string, chapterName: string, chapt
   difficulty: q.difficulty,
   marks: q.marks,
   text: q.text,
+  questionImage: q.questionImage,
   options: [
-    { letter: 'A', text: q.optionA },
-    { letter: 'B', text: q.optionB },
-    { letter: 'C', text: q.optionC },
-    { letter: 'D', text: q.optionD },
+    { letter: 'A', text: q.optionA, image: q.optionAImage },
+    { letter: 'B', text: q.optionB, image: q.optionBImage },
+    { letter: 'C', text: q.optionC, image: q.optionCImage },
+    { letter: 'D', text: q.optionD, image: q.optionDImage },
   ],
   correctIndex: optionLetters.indexOf(q.correctOption),
+  explanationImage: q.explanationImage,
 });
 
 export const TestMCQ = ({ navigation, route }: TestMCQProps) => {
@@ -90,16 +97,31 @@ export const TestMCQ = ({ navigation, route }: TestMCQProps) => {
   const totalTime   = route?.params?.totalTime   || 30 * 60;
   const featureType = route?.params?.featureType || '';
   const questionType = route?.params?.questionType || '';
+  const testSeriesId = route?.params?.testSeriesId || '';
 
-  const { data, isLoading, error } = useGetQuestions(
-    { chapterId: chapterId || undefined, subjectId, classId, featureType: featureType || undefined },
-    { enabled: Boolean(subjectId && classId) }
+  // Fetch from test series endpoint when testSeriesId is provided
+  const { data: tsData, isLoading: tsLoading } = useGetTestSeriesById(
+    testSeriesId,
+    { enabled: Boolean(testSeriesId) }
   );
 
-  // Filter by questionType if provided
-  const filteredByType = questionType
-    ? (data?.data || []).filter((q: any) => (q.questionType || 'MCQ') === questionType)
+  // Fetch from regular questions endpoint when no testSeriesId
+  const { data, isLoading: qLoading, error } = useGetQuestions(
+    { chapterId: chapterId || undefined, subjectId, classId, featureType: featureType || undefined },
+    { enabled: Boolean(!testSeriesId && subjectId && classId) }
+  );
+
+  const isLoading = testSeriesId ? tsLoading : qLoading;
+
+  // Merge: pick whichever source has data
+  const rawQuestions = testSeriesId
+    ? (tsData?.data?.Questions || [])
     : (data?.data || []);
+
+  // Filter by questionType if provided (only for non-test-series)
+  const filteredByType = (!testSeriesId && questionType)
+    ? rawQuestions.filter((q: any) => (q.questionType || 'MCQ') === questionType)
+    : rawQuestions;
 
   const apiQuestions: MCQQuestion[] = filteredByType.map((q: any) =>
     mapToMCQ(q, subjectEmoji, chapterName, chapterNum)
@@ -147,8 +169,9 @@ export const TestMCQ = ({ navigation, route }: TestMCQProps) => {
       skipped,
       answers: ans,
       questions: qs,
+      testSeriesId: testSeriesId || undefined,
     });
-  }, [chapterName, navigation, subjectName, testName]);
+  }, [chapterName, navigation, subjectName, testName, testSeriesId]);
 
   useEffect(() => {
     if (total === 0) return;
@@ -275,6 +298,9 @@ export const TestMCQ = ({ navigation, route }: TestMCQProps) => {
         {/* Question Text */}
         <View style={styles.qTextBox}>
           <Text style={styles.qText}>{currentQ?.text}</Text>
+          {currentQ?.questionImage ? (
+            <Image source={{ uri: currentQ.questionImage }} style={styles.qImage} resizeMode="contain" />
+          ) : null}
         </View>
 
         {/* Options */}
@@ -293,7 +319,12 @@ export const TestMCQ = ({ navigation, route }: TestMCQProps) => {
                     {opt.letter}
                   </Text>
                 </View>
-                <Text style={styles.optText}>{opt.text}</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.optText}>{opt.text}</Text>
+                  {opt.image ? (
+                    <Image source={{ uri: opt.image }} style={styles.optImage} resizeMode="contain" />
+                  ) : null}
+                </View>
                 <View style={[styles.optTick, isSelected && styles.optTickSelected]}>
                   {isSelected && <Text style={styles.optTickMark}>✓</Text>}
                 </View>
@@ -364,6 +395,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.06, shadowRadius: 14, elevation: 2,
   },
   qText: { fontSize: 14, color: '#111', lineHeight: 22, fontWeight: '600' },
+  qImage: { width: '100%', height: 200, borderRadius: 10, marginTop: 10 } as any,
+  optImage: { width: '100%', height: 100, borderRadius: 8, marginTop: 6 } as any,
 
   options: { gap: 10 },
   option: {

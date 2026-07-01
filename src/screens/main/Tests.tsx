@@ -89,8 +89,12 @@ export const Tests = ({ navigation }: TestsScreenProps) => {
   const stepNum = step === 'type' ? 1 : step === 'subject' ? 2 : 3;
 
   const handleTypePress = (type: typeof TEST_TYPES[0]) => {
-    setSelectedType(type);
-    setStep('subject');
+    navigation.navigate('TestSeriesList', {
+      testType: type.id,
+      testTypeTitle: type.title,
+      testTypeEmoji: type.emoji,
+      testTypeAccent: type.accent,
+    });
   };
 
   const handleSubjectPress = (subject: any) => {

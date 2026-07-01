@@ -20,6 +20,12 @@ export type TQuestion = {
   Chapter?: TChapter;
   Subject?: TSubject;
   Class?: TClass;
+  questionImage?: string | null;
+  optionAImage?: string | null;
+  optionBImage?: string | null;
+  optionCImage?: string | null;
+  optionDImage?: string | null;
+  explanationImage?: string | null;
   createdAt: string;
   updatedAt: string;
 };
