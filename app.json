@@ -1,8 +1,8 @@
 {
   "expo": {
     "name": "Taiyari NEET ki",
-    "slug": "jassi2019",
-    "version": "1.0.4",
+    "slug": "taiyari-neet-ki",
+    "version": "1.0.6",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "icon": "./assets/icon.png",
@@ -11,7 +11,7 @@
       "resizeMode": "contain",
       "backgroundColor": "#F59E0B"
     },
-    "runtimeVersion": "1.0.4",
+    "runtimeVersion": "1.0.6",
     "updates": {
       "url": "https://u.expo.dev/e55c6314-0b1e-43af-a737-ce4557b6f804",
       "fallbackToCacheTimeout": 0,
@@ -47,7 +47,7 @@
     },
     "android": {
       "package": "com.taiyarineetki.app",
-      "versionCode": 3,
+      "versionCode": 21,
       "jsEngine": "hermes",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
@@ -55,20 +55,23 @@
       },
       "permissions": [
         "INTERNET",
-        "ACCESS_NETWORK_STATE",
-        "CAMERA",
-        "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE"
+        "ACCESS_NETWORK_STATE"
       ],
       "blockedPermissions": [
-        "android.permission.RECORD_AUDIO"
+        "android.permission.RECORD_AUDIO",
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.READ_MEDIA_VIDEO",
+        "android.permission.READ_MEDIA_AUDIO"
       ]
     },
     "extra": {
       "eas": {
-        "projectId": "c9c3c597-1bb0-4c56-9761-fb2a2daf5c27"
+        "projectId": "e55c6314-0b1e-43af-a737-ce4557b6f804"
       }
     },
-    "owner": "jassi2019s-team"
+    "owner": "jassi2018"
   }
 }

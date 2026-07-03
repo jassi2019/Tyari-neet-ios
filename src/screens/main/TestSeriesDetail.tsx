@@ -123,11 +123,22 @@ export const TestSeriesDetail = ({ navigation, route }: Props) => {
                   </View>
                 </View>
 
-                {/* Syllabus */}
-                {syllabus.length > 0 && (
+                {/* Syllabus - from admin-defined text or from questions */}
+                {(test.syllabus || syllabus.length > 0) && (
                   <View style={s.syllabusCard}>
                     <Text style={s.syllabusTitle}>Topics Covered</Text>
-                    {syllabus.map((item, idx) => (
+                    {test.syllabus ? (
+                      test.syllabus.split('\n').filter(Boolean).map((line: string, idx: number) => (
+                        <View key={idx} style={s.syllabusItem}>
+                          <View style={s.syllabusNum}>
+                            <Text style={s.syllabusNumText}>{idx + 1}</Text>
+                          </View>
+                          <View style={{ flex: 1 }}>
+                            <Text style={s.syllabusChapter} numberOfLines={2}>{line.trim()}</Text>
+                          </View>
+                        </View>
+                      ))
+                    ) : syllabus.map((item, idx) => (
                       <View key={idx} style={s.syllabusItem}>
                         <View style={s.syllabusNum}>
                           <Text style={s.syllabusNumText}>{idx + 1}</Text>
