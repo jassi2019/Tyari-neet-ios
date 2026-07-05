@@ -4,6 +4,7 @@ import { useGetAllClasses } from '@/hooks/api/classes';
 import { useGetChaptersBySubjectId } from '@/hooks/api/chapters';
 import { useGetFeatureContent, TFeatureContent } from '@/hooks/api/featurecontent';
 import { useGetExerciseQuestions, TExerciseQuestion } from '@/hooks/api/exercisequestions';
+import { useGetQuestions } from '@/hooks/api/questions';
 import { useContentProtection } from '@/hooks/useContentProtection';
 import { isPaidSubscriptionActive, isPremiumServiceType } from '@/lib/subscription';
 import PlatformWebView from '@/components/PlatformWebView';
@@ -90,9 +91,15 @@ export const FeatureContent = ({ navigation, route }: Props) => {
     { enabled: !!selectedChapter }
   );
 
-  // Fetch exercise questions when on exercise list step
+  // Fetch exercise questions from exercise_questions table
   const { data: exerciseQData, isLoading: exerciseQLoading } = useGetExerciseQuestions(
     { chapterId: selectedChapter?.id, featureType },
+    { enabled: isExerciseListFeature && !!selectedChapter && step === 'exerciseList' }
+  );
+
+  // Also fetch from main questions table as fallback
+  const { data: mainQData, isLoading: mainQLoading } = useGetQuestions(
+    { chapterId: selectedChapter?.id, subjectId: selectedSubject?.id, classId: selectedClass?.id, featureType },
     { enabled: isExerciseListFeature && !!selectedChapter && step === 'exerciseList' }
   );
 
@@ -100,7 +107,29 @@ export const FeatureContent = ({ navigation, route }: Props) => {
   const classes = classesData?.data || [];
   const chapters: TChapter[] = chaptersData?.data || [];
   const contents: TFeatureContent[] = (contentData as any)?.data || [];
-  const exerciseQuestions: TExerciseQuestion[] = exerciseQData?.data || [];
+  // Merge exercise_questions + questions table data
+  const exerciseQFromTable: TExerciseQuestion[] = exerciseQData?.data || [];
+  const mainQuestions = mainQData?.data || [];
+  // Convert main questions to exercise question format
+  const mainQAsExercise: TExerciseQuestion[] = mainQuestions.map((q: any) => ({
+    id: q.id,
+    questionNumber: String(q.sequence || ''),
+    questionText: q.text,
+    explanationURL: q.canvaExplanationURL || null,
+    featureType: featureType,
+    sequence: q.sequence || 1,
+    isActive: true,
+    chapterId: q.chapterId,
+    subjectId: q.subjectId,
+    classId: q.classId,
+  }));
+  // Combine both, deduplicate by id
+  const allExerciseIds = new Set(exerciseQFromTable.map(q => q.id));
+  const exerciseQuestions: TExerciseQuestion[] = [
+    ...exerciseQFromTable,
+    ...mainQAsExercise.filter(q => !allExerciseIds.has(q.id)),
+  ];
+  const isExerciseLoading = exerciseQLoading || mainQLoading;
 
   // Auto-skip to content step when pre-selected params are provided (Revision Recall → Explanation)
   const didAutoSkip = useRef(false);
@@ -385,21 +414,9 @@ export const FeatureContent = ({ navigation, route }: Props) => {
 
         {/* Step: Exercise Questions List (Exercise Revival / Exemplar / PYQ) */}
         {step === 'exerciseList' && (
-          <ScrollView style={{ flex: 1 }} contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
-            <View style={s.yellowSection}>
-              <View style={s.topBar}>
-                <TouchableOpacity onPress={handleBack} style={s.backBtn} activeOpacity={0.7}>
-                  <ChevronLeft size={22} color="#111" />
-                </TouchableOpacity>
-                <Text style={s.topTitle} numberOfLines={1}>{selectedChapter?.name || 'Questions'}</Text>
-              </View>
-              <View style={s.headerPanel}>
-                <Text style={s.headerGreet}>{featureName}</Text>
-                <Text style={s.headerTitle}>Questions</Text>
-              </View>
-            </View>
-            <View style={s.bodyCard}>
-              {exerciseQLoading ? (
+          <ScrollView style={{ flex: 1, backgroundColor: '#FFF8E8' }} contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
+            <View style={{ paddingHorizontal: 16, paddingTop: 10 }}>
+              {isExerciseLoading ? (
                 <View style={s.center}><ActivityIndicator size="large" color="#F5A623" /></View>
               ) : exerciseQuestions.length === 0 ? (
                 <View style={s.center}>
