@@ -14,6 +14,7 @@ import { ChevronLeft, FileText, ExternalLink } from 'lucide-react-native';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   Modal,
   Platform,
   ScrollView,
@@ -576,18 +577,27 @@ export const FeatureContent = ({ navigation, route }: Props) => {
                   <Text style={s.modalTitle}>Q{selectedExerciseQ?.questionNumber}</Text>
                   <Text style={s.modalSub} numberOfLines={2}>{selectedExerciseQ?.questionText}</Text>
                   <View style={{ gap: 10, marginTop: 14 }}>
-                    {selectedExerciseQ?.explanationURL ? (
-                      <TouchableOpacity style={s.qtCard} activeOpacity={0.85} onPress={handleExerciseExplanation}>
-                        <LinearGradient colors={['#42A5F5', '#1976D2']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.qtIcon}>
-                          <Text style={{ fontSize: 22 }}>📖</Text>
-                        </LinearGradient>
-                        <View style={{ flex: 1 }}>
-                          <Text style={s.qtLabel}>Explanation</Text>
-                          <Text style={s.qtDesc}>View detailed explanation</Text>
-                        </View>
-                        <Text style={s.classArrow}>→</Text>
-                      </TouchableOpacity>
-                    ) : null}
+                    <TouchableOpacity
+                      style={[s.qtCard, !selectedExerciseQ?.explanationURL && { opacity: 0.4 }]}
+                      activeOpacity={0.85}
+                      onPress={() => {
+                        if (selectedExerciseQ?.explanationURL) {
+                          handleExerciseExplanation();
+                        } else {
+                          // No canva link — show alert
+                          Alert.alert('Not Available', 'Explanation not added yet for this question.');
+                        }
+                      }}
+                    >
+                      <LinearGradient colors={['#42A5F5', '#1976D2']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.qtIcon}>
+                        <Text style={{ fontSize: 22 }}>📖</Text>
+                      </LinearGradient>
+                      <View style={{ flex: 1 }}>
+                        <Text style={s.qtLabel}>Explanation</Text>
+                        <Text style={s.qtDesc}>{selectedExerciseQ?.explanationURL ? 'View detailed explanation' : 'Coming soon'}</Text>
+                      </View>
+                      <Text style={s.classArrow}>→</Text>
+                    </TouchableOpacity>
                     <TouchableOpacity style={s.qtCard} activeOpacity={0.85} onPress={handleExerciseMCQ}>
                       <LinearGradient colors={['#66BB6A', '#43A047']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.qtIcon}>
                         <Text style={{ fontSize: 22 }}>📝</Text>
