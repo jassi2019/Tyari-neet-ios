@@ -107,32 +107,34 @@ export const TestMCQ = ({ navigation, route }: TestMCQProps) => {
     { enabled: Boolean(testSeriesId) }
   );
 
-  // Fetch from regular questions endpoint when no testSeriesId
-  // If exerciseQuestionId is provided, fetch child MCQs linked to that parent question
-  const { data, isLoading: qLoading, error } = useGetQuestions(
-    exerciseQuestionId
-      ? { parentQuestionId: exerciseQuestionId, subjectId, classId }
-      : { chapterId: chapterId || undefined, subjectId, classId, featureType: featureType || undefined },
-    { enabled: Boolean(!testSeriesId && subjectId && classId) }
+  // Fetch child MCQs if exerciseQuestionId provided
+  const { data: childData, isLoading: childLoading } = useGetQuestions(
+    { parentQuestionId: exerciseQuestionId, subjectId, classId },
+    { enabled: Boolean(!testSeriesId && exerciseQuestionId && subjectId && classId) }
   );
 
-  const isLoading = testSeriesId ? tsLoading : qLoading;
+  // Fetch regular questions (all chapter questions or fallback)
+  const { data, isLoading: qLoading, error } = useGetQuestions(
+    { chapterId: chapterId || undefined, subjectId, classId, featureType: featureType || undefined },
+    { enabled: Boolean(!testSeriesId && !exerciseQuestionId && subjectId && classId) }
+  );
+
+  const isLoading = testSeriesId ? tsLoading : (exerciseQuestionId ? childLoading : qLoading);
 
   // Merge: pick whichever source has data
+  const childMCQs = childData?.data || [];
+  const regularQuestions = data?.data || [];
+
   const rawQuestions = testSeriesId
     ? (tsData?.data?.Questions || [])
-    : (data?.data || []);
+    : exerciseQuestionId
+      ? (childMCQs.length > 0 ? childMCQs : regularQuestions.filter((q: any) => q.id === exerciseQuestionId))
+      : regularQuestions;
 
   // Filter by questionType if provided (only for non-test-series)
-  const filteredByType = (!testSeriesId && questionType)
+  const filteredByExercise = (!testSeriesId && questionType)
     ? rawQuestions.filter((q: any) => (q.questionType || 'MCQ') === questionType)
     : rawQuestions;
-
-  // When exerciseQuestionId is provided, API already filters by parentQuestionId
-  // If no child MCQs found, fall back to showing the parent question itself
-  const filteredByExercise = exerciseQuestionId && filteredByType.length === 0
-    ? rawQuestions.filter((q: any) => q.id === exerciseQuestionId)
-    : filteredByType;
 
   const apiQuestions: MCQQuestion[] = filteredByExercise.map((q: any) =>
     mapToMCQ(q, subjectEmoji, chapterName, chapterNum)
