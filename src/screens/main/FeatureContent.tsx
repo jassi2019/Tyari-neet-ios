@@ -462,7 +462,7 @@ export const FeatureContent = ({ navigation, route }: Props) => {
               <PlatformWebView
                 source={{ uri: viewUrl }}
                 style={{ flex: 1 }}
-                protectedContent={isPdf}
+                protectedContent={true}
                 debugLabel={viewerItem.title || 'FeatureViewer'}
               />
             </View>
