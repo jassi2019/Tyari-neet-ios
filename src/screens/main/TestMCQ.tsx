@@ -51,6 +51,7 @@ type TestMCQProps = {
       featureType?: string;
       questionType?: string;
       testSeriesId?: string;
+      exerciseQuestionId?: string;
     };
   };
 };
@@ -98,6 +99,7 @@ export const TestMCQ = ({ navigation, route }: TestMCQProps) => {
   const featureType = route?.params?.featureType || '';
   const questionType = route?.params?.questionType || '';
   const testSeriesId = route?.params?.testSeriesId || '';
+  const exerciseQuestionId = route?.params?.exerciseQuestionId || '';
 
   // Fetch from test series endpoint when testSeriesId is provided
   const { data: tsData, isLoading: tsLoading } = useGetTestSeriesById(
@@ -123,7 +125,12 @@ export const TestMCQ = ({ navigation, route }: TestMCQProps) => {
     ? rawQuestions.filter((q: any) => (q.questionType || 'MCQ') === questionType)
     : rawQuestions;
 
-  const apiQuestions: MCQQuestion[] = filteredByType.map((q: any) =>
+  // Filter by exerciseQuestionId — show only that specific question's MCQ
+  const filteredByExercise = exerciseQuestionId
+    ? filteredByType.filter((q: any) => q.id === exerciseQuestionId)
+    : filteredByType;
+
+  const apiQuestions: MCQQuestion[] = filteredByExercise.map((q: any) =>
     mapToMCQ(q, subjectEmoji, chapterName, chapterNum)
   );
 
