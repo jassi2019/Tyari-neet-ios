@@ -8,6 +8,7 @@ type TGetQuestionsParams = {
   subjectId?: string;
   classId?: string;
   featureType?: string;
+  parentQuestionId?: string;
 };
 
 const getQuestions = (params: TGetQuestionsParams): TApiPromise<TQuestion[]> =>

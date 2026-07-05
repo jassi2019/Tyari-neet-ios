@@ -108,8 +108,11 @@ export const TestMCQ = ({ navigation, route }: TestMCQProps) => {
   );
 
   // Fetch from regular questions endpoint when no testSeriesId
+  // If exerciseQuestionId is provided, fetch child MCQs linked to that parent question
   const { data, isLoading: qLoading, error } = useGetQuestions(
-    { chapterId: chapterId || undefined, subjectId, classId, featureType: featureType || undefined },
+    exerciseQuestionId
+      ? { parentQuestionId: exerciseQuestionId, subjectId, classId }
+      : { chapterId: chapterId || undefined, subjectId, classId, featureType: featureType || undefined },
     { enabled: Boolean(!testSeriesId && subjectId && classId) }
   );
 
@@ -125,9 +128,10 @@ export const TestMCQ = ({ navigation, route }: TestMCQProps) => {
     ? rawQuestions.filter((q: any) => (q.questionType || 'MCQ') === questionType)
     : rawQuestions;
 
-  // Filter by exerciseQuestionId — show only that specific question's MCQ
-  const filteredByExercise = exerciseQuestionId
-    ? filteredByType.filter((q: any) => q.id === exerciseQuestionId)
+  // When exerciseQuestionId is provided, API already filters by parentQuestionId
+  // If no child MCQs found, fall back to showing the parent question itself
+  const filteredByExercise = exerciseQuestionId && filteredByType.length === 0
+    ? rawQuestions.filter((q: any) => q.id === exerciseQuestionId)
     : filteredByType;
 
   const apiQuestions: MCQQuestion[] = filteredByExercise.map((q: any) =>
