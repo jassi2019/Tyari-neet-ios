@@ -304,7 +304,7 @@ export const TestMCQ = ({ navigation, route }: TestMCQProps) => {
         {/* Question Text */}
         <View style={styles.qTextBox}>
           <Text style={styles.qText}>{currentQ?.text}</Text>
-          {currentQ?.questionImage ? (
+          {currentQ?.questionImage && currentQ.questionImage.startsWith('http') ? (
             <View style={{ marginTop: 10, alignItems: 'center', backgroundColor: '#f0f0f0', borderRadius: 10, overflow: 'hidden' }}>
               <Image
                 source={{ uri: currentQ.questionImage }}
@@ -335,7 +335,7 @@ export const TestMCQ = ({ navigation, route }: TestMCQProps) => {
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.optText}>{opt.text}</Text>
-                  {opt.image ? (
+                  {opt.image && opt.image.startsWith('http') ? (
                     <Image source={{ uri: opt.image }} style={styles.optImage} resizeMode="contain" />
                   ) : null}
                 </View>

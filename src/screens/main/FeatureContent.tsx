@@ -422,7 +422,7 @@ export const FeatureContent = ({ navigation, route }: Props) => {
                 <View style={s.center}>
                   <Text style={{ fontSize: 40, marginBottom: 8 }}>📭</Text>
                   <Text style={s.emptyTitle}>No questions yet</Text>
-                  <Text style={s.emptyText}>Admin hasn't added questions for this chapter</Text>
+                  <Text style={s.emptyText}>Questions will appear here once added by admin</Text>
                 </View>
               ) : (
                 <View style={s.chList}>
