@@ -281,9 +281,69 @@ Tests login → plan fetch → order create → signature verify → subscriptio
 - **Play Store:** https://play.google.com/store/apps/details?id=com.taiyarineetki.app
 - **App Store:** https://apps.apple.com/app/taiyari-neet-ki/id6740091521
 
-## Recent Changes
+## Recent Changes (July 2026)
 
-### Payment & Webhook Hardening
+### Explanation Section — Topic-wise Canva Links
+- New field `explanationCanvaURL` added to Topic model
+- Admin page for managing topic explanation links: `/api/v1/topics/admin`
+- Explanation flow: Subject → Class → Chapter → Content from feature_contents table
+- Supports embed links, view links, short links, and HTML embed code (auto URL extraction)
+
+### Revision Recall — Topic-wise MCQ Flow
+- Flow changed: Subject → Class popup → Chapter → Topics list → Topic click → MCQ only
+- `topicId` filter added to Questions API for per-topic MCQ filtering
+- 4-step progress dots with breadcrumb
+
+### Test Series — Complete Overhaul
+- Admin panel: Test create/edit with Syllabus field, inline Questions management (add/edit/delete MCQs per test) with Canva link + Image fields
+- App: Direct test list (no Subject/Class step) → Intro screen (questions, duration, syllabus, negative marking) → MCQ with countdown timer → Submit → Result with review
+- Auto-duration: 1 question = 1 minute (if admin doesn't set)
+- Negative marking: +4 correct, -1 wrong, 0 skipped
+- Review: Each question shows correct/wrong status + explanation text
+- Retry button properly passes testSeriesId
+- Test series inject script for compiled admin panel (overlay approach, sidebar preserved)
+
+### Leaderboard / Weekly Ranking
+- Score automatically submitted to backend on test finish (`/api/v1/leaderboard/submit`)
+- Monthly period support added
+- Fallback to all-time data when current period has no entries
+- Leaderboard shows ranking with scores, XP, tests played
+
+### Content Isolation (No Mixing)
+- `featureType` exact match filter — each section shows only its own content
+- Compiled admin panel adds `_questions` suffix — backend handles both `pyq` and `pyq_questions`
+- `featureType` saved properly on question create/update (was missing before)
+- NULL featureType questions assigned to `general` — won't appear in any section
+
+### Child MCQ (parentQuestionId Linking)
+- "📝 MCQ" button injected into compiled admin panel question cards
+- Inline expand with Add/Edit/Delete child MCQ form
+- Canva Explanation Link + Image fields in child MCQ form
+- `parentQuestionId` linking — each question has its own child MCQs, no mixing
+- App: MCQ Zone in popup shows only child MCQs for that specific question
+
+### Home Page — Explore Free Content
+- Hero banner replaced with "Explore Free Content" card (dark navy + gold accent)
+- "Explore Now" → Bottom sheet modal with all 7 feature modules
+- Each module navigates to its respective FeatureContent screen
+
+### Canva Content Improvements
+- Branding removal: CSS + periodic JS scan (case-insensitive, partial match, parent cleanup)
+- `canva.link` short URL support added
+- HTML embed code auto-extraction (if admin pastes `<div>` tag, URL extracted automatically)
+- Zoom block via touch events (not viewport meta — preserves font size)
+- WebView matches original source code style (no scalesPageToFit, no textZoom override)
+
+### Admin Panel Enhancements
+- Test Series management injected into compiled panel (Daily/Weekly/Full Syllabus pages)
+- Child MCQ inline management on all feature-content question pages
+- Image + Canva link fields on all question forms
+- Navigation between test series pages works without reload
+- Sidebar stays visible on overlay pages
+
+### Previous Changes
+
+#### Payment & Webhook Hardening
 - Razorpay webhook now verifies `x-razorpay-signature` (HMAC-SHA256) before processing
 - Raw body captured on `/api/v1/webhooks/*` routes for signature verification
 - 401 errors during payment now sign the user out and prompt fresh login

@@ -35,7 +35,7 @@ type Props = { navigation: any };
 
 export const Leaderboard = ({ navigation }: Props) => {
   const [period, setPeriod] = useState<Period>('weekly');
-  const { data, isLoading } = useGetLeaderboard(period === 'monthly' ? 'weekly' : period, 50);
+  const { data, isLoading } = useGetLeaderboard(period, 50);
 
   const entries: TLeaderboardEntry[] = (data as any)?.data ?? [];
   const top3 = entries.slice(0, 3);

@@ -24,6 +24,7 @@ type TestResultProps = {
       skipped?: number;
       answers?: AnswerState[];
       questions?: MCQQuestion[];
+      testSeriesId?: string;
     };
   };
 };
@@ -51,8 +52,13 @@ export const TestResult = ({ navigation, route }: TestResultProps) => {
   const skipped        = route?.params?.skipped  ?? 0;
   const answers        = route?.params?.answers  || [];
   const questions      = route?.params?.questions || [];
+  const testSeriesId   = route?.params?.testSeriesId || '';
 
-  const score = Math.round((correct / Math.max(totalQuestions, 1)) * 100);
+  // Negative marking: +4 per correct, -1 per wrong, 0 for skipped
+  const totalMarks = totalQuestions * 4;
+  const rawScore = (correct * 4) - (wrong * 1);
+  const finalScore = Math.max(rawScore, 0);
+  const score = Math.round((finalScore / Math.max(totalMarks, 1)) * 100);
   const xpEarned = correct * 4;
 
   const getTitle = () => {
@@ -111,6 +117,7 @@ export const TestResult = ({ navigation, route }: TestResultProps) => {
       subjectName,
       chapterName,
       totalTime: 30 * 60,
+      testSeriesId: testSeriesId || undefined,
     });
   };
 
@@ -149,21 +156,21 @@ export const TestResult = ({ navigation, route }: TestResultProps) => {
         {/* Score Card */}
         <View style={styles.scoreCard}>
           <Text style={styles.scoreBig}>
-            {score}<Text style={styles.scoreMax}>/100</Text>
+            {finalScore}<Text style={styles.scoreMax}>/{totalMarks}</Text>
           </Text>
-          <Text style={styles.scoreLabel}>YOUR SCORE</Text>
+          <Text style={styles.scoreLabel}>YOUR SCORE ({score}%)</Text>
           <View style={styles.scoreStats}>
             <View style={styles.scoreStat}>
               <Text style={[styles.ssVal, { color: '#2E7D32' }]}>{correct}</Text>
-              <Text style={styles.ssLbl}>Correct</Text>
+              <Text style={styles.ssLbl}>Correct (+{correct * 4})</Text>
             </View>
             <View style={styles.scoreStat}>
               <Text style={[styles.ssVal, { color: '#C62828' }]}>{wrong}</Text>
-              <Text style={styles.ssLbl}>Wrong</Text>
+              <Text style={styles.ssLbl}>Wrong (-{wrong * 1})</Text>
             </View>
             <View style={styles.scoreStat}>
               <Text style={[styles.ssVal, { color: '#888' }]}>{skipped}</Text>
-              <Text style={styles.ssLbl}>Skipped</Text>
+              <Text style={styles.ssLbl}>Skipped (0)</Text>
             </View>
           </View>
         </View>
@@ -270,6 +277,12 @@ export const TestResult = ({ navigation, route }: TestResultProps) => {
                       </View>
                     );
                   })}
+                  {q.explanation ? (
+                    <View style={{ backgroundColor: '#EDE7F6', borderRadius: 8, padding: 10, marginTop: 6 }}>
+                      <Text style={{ fontSize: 10, fontWeight: '800', color: '#4A148C', marginBottom: 4 }}>💡 EXPLANATION</Text>
+                      <Text style={{ fontSize: 11.5, color: '#333', lineHeight: 17 }}>{q.explanation}</Text>
+                    </View>
+                  ) : null}
                 </View>
               );
             })}

@@ -9,6 +9,7 @@ type TGetQuestionsParams = {
   classId?: string;
   featureType?: string;
   parentQuestionId?: string;
+  topicId?: string;
 };
 
 const getQuestions = (params: TGetQuestionsParams): TApiPromise<TQuestion[]> =>
@@ -28,7 +29,7 @@ export const useGetQuestions = (
   options?: TQueryOpts<TQuestion[]>
 ) =>
   useQuery({
-    queryKey: ['questions', params.chapterId, params.subjectId, params.classId, params.featureType],
+    queryKey: ['questions', params.chapterId, params.subjectId, params.classId, params.featureType, params.topicId],
     queryFn: () => getQuestions(params),
     ...options,
   });

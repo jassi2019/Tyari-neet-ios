@@ -5,6 +5,8 @@ import { useGetChaptersBySubjectId } from '@/hooks/api/chapters';
 import { useGetFeatureContent, TFeatureContent } from '@/hooks/api/featurecontent';
 import { useGetExerciseQuestions, TExerciseQuestion } from '@/hooks/api/exercisequestions';
 import { useGetQuestions } from '@/hooks/api/questions';
+import { useGetTopicsByChapterIdAndSubjectId } from '@/hooks/api/topics';
+import { TTopic } from '@/types/Topic';
 import { useContentProtection } from '@/hooks/useContentProtection';
 import { isPaidSubscriptionActive, isPremiumServiceType } from '@/lib/subscription';
 import PlatformWebView from '@/components/PlatformWebView';
@@ -40,7 +42,7 @@ type Props = {
   };
 };
 
-type Step = 'subject' | 'chapter' | 'content' | 'viewer' | 'exerciseList';
+type Step = 'subject' | 'chapter' | 'content' | 'viewer' | 'exerciseList' | 'topicsList';
 
 // Features that show exercise question list instead of question type modal
 const EXERCISE_LIST_FEATURES = ['exercise_revival', 'master_exemplar', 'pyq'];
@@ -68,7 +70,6 @@ export const FeatureContent = ({ navigation, route }: Props) => {
   const [selectedChapter, setSelectedChapter] = useState<any>(null);
   const [showClassModal, setShowClassModal] = useState(false);
   const [showQuestionTypeModal, setShowQuestionTypeModal] = useState(false);
-  const [showRevisionModal, setShowRevisionModal] = useState(false);
   const [pendingChapter, setPendingChapter] = useState<any>(null);
   const [viewerItem, setViewerItem] = useState<TFeatureContent | null>(null);
   const [selectedExerciseQ, setSelectedExerciseQ] = useState<TExerciseQuestion | null>(null);
@@ -97,6 +98,14 @@ export const FeatureContent = ({ navigation, route }: Props) => {
     { chapterId: selectedChapter?.id, featureType },
     { enabled: isExerciseListFeature && !!selectedChapter && step === 'exerciseList' }
   );
+
+  // Fetch topics for flows that show Topics list (Explanation, Revision Recall)
+  const showTopicsFor = featureType === 'explanation' || featureType === 'revision_recall';
+  const { data: topicsData, isLoading: topicsLoading } = useGetTopicsByChapterIdAndSubjectId(
+    { chapterId: selectedChapter?.id || '', subjectId: selectedSubject?.id || '' },
+    { enabled: showTopicsFor && !!selectedChapter && step === 'topicsList' }
+  );
+  const topics: TTopic[] = topicsData?.data || [];
 
   // Also fetch from main questions table as fallback
   const { data: mainQData, isLoading: mainQLoading } = useGetQuestions(
@@ -158,11 +167,14 @@ export const FeatureContent = ({ navigation, route }: Props) => {
   };
   const handleChapterPress = (ch: any) => {
     if (isQuestionBased) {
-      if (featureType === 'revision_recall' || featureType === 'chapter_checkpoint') {
-        // Revision Recall & Chapter Checkpoint — directly open MCQ, no popup
-        const displayName = featureType === 'revision_recall' ? 'Revision Recall' : 'Chapter Check Point';
+      if (featureType === 'revision_recall') {
+        // Revision Recall — show Topics list, then MCQ per topic
+        setSelectedChapter(ch);
+        setStep('topicsList');
+      } else if (featureType === 'chapter_checkpoint') {
+        // Chapter Checkpoint — directly open MCQ, no popup
         navigation.navigate('TestMCQ', {
-          testName: `${displayName} · ${selectedSubject?.name}`,
+          testName: `Chapter Check Point · ${selectedSubject?.name}`,
           subjectName: selectedSubject?.name || 'Subject',
           subjectEmoji: SUBJECT_EMOJI[selectedSubject?.name?.trim().toLowerCase()] || '📘',
           subjectId: selectedSubject?.id || '',
@@ -184,14 +196,58 @@ export const FeatureContent = ({ navigation, route }: Props) => {
         setShowQuestionTypeModal(true);
       }
     } else if (featureType === 'explanation') {
-      // Explanation — show Explanation / Practice MCQ popup
-      setPendingChapter(ch);
-      setShowRevisionModal(true);
+      // Explanation — directly show content (from feature_contents table), no popup
+      setSelectedChapter(ch);
+      setStep('content');
     } else {
       setSelectedChapter(ch);
       setStep('content');
     }
   };
+  const handleTopicMCQ = (topic: TTopic) => {
+    navigation.navigate('TestMCQ', {
+      testName: `Revision Recall · ${topic.name}`,
+      subjectName: selectedSubject?.name || 'Subject',
+      subjectEmoji: SUBJECT_EMOJI[selectedSubject?.name?.trim().toLowerCase()] || '📘',
+      subjectId: selectedSubject?.id || '',
+      classId: selectedClass?.id || '',
+      chapterId: selectedChapter?.id || '',
+      chapterName: selectedChapter?.name || '',
+      chapterNum: String(selectedChapter?.number || '').padStart(2, '0'),
+      totalTime: 30 * 60,
+      featureType: 'revision_recall',
+      questionType: 'MCQ',
+      topicId: topic.id,
+    });
+  };
+
+  const handleTopicExplanation = (topic: TTopic) => {
+    // Priority: explanationCanvaURL > contentURL
+    const url = (topic.explanationCanvaURL && topic.explanationCanvaURL.trim())
+      ? topic.explanationCanvaURL.trim()
+      : (topic.contentURL && topic.contentURL.trim())
+        ? topic.contentURL.trim()
+        : '';
+    if (url) {
+      setViewerItem({
+        id: topic.id,
+        title: topic.name,
+        description: '',
+        contentURL: url,
+        featureType: 'explanation',
+        serviceType: topic.serviceType || 'FREE',
+        sequence: topic.sequence || 0,
+        isActive: true,
+        chapterId: selectedChapter?.id || '',
+        subjectId: selectedSubject?.id || '',
+        classId: selectedClass?.id || '',
+      } as TFeatureContent);
+      setStep('viewer');
+    } else {
+      Alert.alert('Coming Soon', 'Explanation for this topic has not been added yet.');
+    }
+  };
+
   const handleExerciseQPress = (eq: TExerciseQuestion) => {
     setSelectedExerciseQ(eq);
     setShowExercisePopup(true);
@@ -251,38 +307,14 @@ export const FeatureContent = ({ navigation, route }: Props) => {
     });
     setPendingChapter(null);
   };
-  const handleExplanationContent = () => {
-    if (!pendingChapter) return;
-    setShowRevisionModal(false);
-    // Load explanation content for this chapter
-    setSelectedChapter(pendingChapter);
-    setStep('content');
-    setPendingChapter(null);
-  };
-  const handleExplanationMCQ = () => {
-    if (!pendingChapter) return;
-    setShowRevisionModal(false);
-    navigation.navigate('TestMCQ', {
-      testName: `Explanation · ${selectedSubject?.name}`,
-      subjectName: selectedSubject?.name || 'Subject',
-      subjectEmoji: SUBJECT_EMOJI[selectedSubject?.name?.trim().toLowerCase()] || '📘',
-      subjectId: selectedSubject?.id || '',
-      classId: selectedClass?.id || '',
-      chapterId: pendingChapter.id,
-      chapterName: pendingChapter.name,
-      chapterNum: String(pendingChapter.number).padStart(2, '0'),
-      totalTime: 30 * 60,
-      featureType: 'explanation',
-      questionType: 'MCQ',
-    });
-    setPendingChapter(null);
-  };
   const handleBack = () => {
     if (step === 'viewer') {
       setViewerItem(null);
-      // Go back to exerciseList if coming from exercise flow, otherwise content
-      setStep(isExerciseListFeature ? 'exerciseList' : 'content');
+      // Go back to content if explanation, exerciseList if exercise, otherwise content
+      if (isExerciseListFeature) setStep('exerciseList');
+      else setStep('content');
     }
+    else if (step === 'topicsList') { setSelectedChapter(null); setStep('chapter'); }
     else if (step === 'exerciseList') { setSelectedChapter(null); setStep('chapter'); }
     else if (step === 'content') { setSelectedChapter(null); setStep('chapter'); }
     else if (step === 'chapter') { setSelectedSubject(null); setSelectedClass(null); setStep('subject'); }
@@ -304,8 +336,10 @@ export const FeatureContent = ({ navigation, route }: Props) => {
   if (selectedClass) breadcrumb.push(selectedClass.name);
   if (selectedChapter) breadcrumb.push(selectedChapter.name);
 
-  const stepTitle = step === 'subject' ? 'Choose Subject' : step === 'chapter' ? 'Choose Chapter' : selectedChapter?.name || 'Content';
-  const stepNum = step === 'subject' ? 1 : step === 'chapter' ? 2 : 3;
+  const stepTitle = step === 'subject' ? 'Choose Subject' : step === 'chapter' ? 'Choose Chapter' : step === 'topicsList' ? 'Choose Topic' : selectedChapter?.name || 'Content';
+  const hasTopicsStep = featureType === 'explanation' || featureType === 'revision_recall';
+  const totalSteps = hasTopicsStep ? 4 : 3;
+  const stepNum = step === 'subject' ? 1 : step === 'chapter' ? 2 : (step === 'topicsList' ? 3 : (hasTopicsStep ? 4 : 3));
 
   return (
     <LinearGradient colors={['#F5A623', '#F9C45A', '#FCDA3E']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }}>
@@ -320,7 +354,7 @@ export const FeatureContent = ({ navigation, route }: Props) => {
 
         {/* Step dots */}
         <View style={s.stepDots}>
-          {[1, 2, 3].map((n) => (
+          {Array.from({ length: totalSteps }, (_, i) => i + 1).map((n) => (
             <View key={n} style={[s.dot, n === stepNum && s.dotActive, n < stepNum && s.dotDone]} />
           ))}
         </View>
@@ -335,7 +369,7 @@ export const FeatureContent = ({ navigation, route }: Props) => {
           ))}
         </View>
 
-        {step !== 'viewer' && step !== 'exerciseList' && (
+        {step !== 'viewer' && step !== 'exerciseList' && step !== 'topicsList' && (
         <ScrollView style={{ flex: 1, backgroundColor: '#FFF8E8' }} contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
           {/* Step 1: Subject */}
           {step === 'subject' && (
@@ -449,12 +483,69 @@ export const FeatureContent = ({ navigation, route }: Props) => {
           </ScrollView>
         )}
 
+        {/* Step: Topics List (Explanation / Revision Recall) */}
+        {step === 'topicsList' && (
+          <ScrollView style={{ flex: 1, backgroundColor: '#FFF8E8' }} contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
+            <View style={{ paddingHorizontal: 16, paddingTop: 10 }}>
+              {topicsLoading ? (
+                <View style={s.center}><ActivityIndicator size="large" color="#F5A623" /></View>
+              ) : topics.length === 0 ? (
+                <View style={s.center}>
+                  <Text style={{ fontSize: 40, marginBottom: 8 }}>📭</Text>
+                  <Text style={s.emptyTitle}>No topics yet</Text>
+                  <Text style={s.emptyText}>Topics will appear here once added by admin</Text>
+                </View>
+              ) : (
+                <View style={s.chList}>
+                  {topics.map((topic, i) => {
+                    const isRevisionRecall = featureType === 'revision_recall';
+                    const hasLink = isRevisionRecall || !!(
+                      (topic.explanationCanvaURL && topic.explanationCanvaURL.trim()) ||
+                      (topic.contentURL && topic.contentURL.trim())
+                    );
+                    return (
+                      <TouchableOpacity
+                        key={topic.id}
+                        style={[s.contentCard, !hasLink && { opacity: 0.5 }]}
+                        activeOpacity={0.85}
+                        onPress={() => isRevisionRecall ? handleTopicMCQ(topic) : handleTopicExplanation(topic)}
+                      >
+                        <LinearGradient
+                          colors={isRevisionRecall ? ['#66BB6A', '#43A047'] : (hasLink ? ['#42A5F5', '#1976D2'] : ['#9E9E9E', '#757575'])}
+                          start={{ x: 0, y: 0 }}
+                          end={{ x: 1, y: 1 }}
+                          style={s.contentNum}
+                        >
+                          <Text style={s.contentNumText}>{String(i + 1).padStart(2, '0')}</Text>
+                        </LinearGradient>
+                        <View style={{ flex: 1 }}>
+                          <Text style={s.contentTitle} numberOfLines={2}>{topic.name}</Text>
+                          <Text style={[s.contentDesc, { color: isRevisionRecall ? '#2E7D32' : (hasLink ? '#2E7D32' : '#999') }]}>
+                            {isRevisionRecall ? 'Tap to start MCQ' : (hasLink ? 'Tap to view explanation' : 'Coming soon')}
+                          </Text>
+                        </View>
+                        <ChevronLeft size={16} color={isRevisionRecall ? '#43A047' : '#1976D2'} style={{ transform: [{ rotate: '180deg' }] }} />
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              )}
+            </View>
+          </ScrollView>
+        )}
+
         {/* Step 4: Content Viewer */}
         {step === 'viewer' && viewerItem && (() => {
-          const isPdf = /\.pdf(\?|$)/i.test(viewerItem.contentURL);
+          // Extract URL from HTML embed code if admin pasted full <div> tag
+          let rawUrl = viewerItem.contentURL || '';
+          if (rawUrl.trim().startsWith('<')) {
+            const srcMatch = rawUrl.match(/src=["']([^"']+)["']/);
+            if (srcMatch) rawUrl = srcMatch[1];
+          }
+          const isPdf = /\.pdf(\?|$)/i.test(rawUrl);
           const viewUrl = isPdf
-            ? viewerItem.contentURL.replace(/\.pdf(\?|$)/i, '/index.html$1')
-            : viewerItem.contentURL;
+            ? rawUrl.replace(/\.pdf(\?|$)/i, '/index.html$1')
+            : rawUrl;
           return (
             <View style={{ flex: 1, backgroundColor: '#fff' }}>
               <View style={s.viewerHeader}>
@@ -523,43 +614,6 @@ export const FeatureContent = ({ navigation, route }: Props) => {
                         <Text style={s.classArrow}>→</Text>
                       </TouchableOpacity>
                     ))}
-                  </View>
-                </View>
-              </TouchableWithoutFeedback>
-            </View>
-          </TouchableWithoutFeedback>
-        </Modal>
-
-        {/* Explanation — Explanation / Practice MCQ Modal */}
-        <Modal animationType="slide" transparent visible={showRevisionModal} onRequestClose={() => setShowRevisionModal(false)}>
-          <TouchableWithoutFeedback onPress={() => setShowRevisionModal(false)}>
-            <View style={s.modalBackdrop}>
-              <TouchableWithoutFeedback onPress={(e) => e.stopPropagation()}>
-                <View style={s.modalSheet}>
-                  <View style={s.modalGrip} />
-                  <Text style={s.modalTitle}>{pendingChapter?.name}</Text>
-                  <Text style={s.modalSub}>What would you like to do?</Text>
-                  <View style={{ gap: 10, marginTop: 14 }}>
-                    <TouchableOpacity style={s.qtCard} activeOpacity={0.85} onPress={handleExplanationContent}>
-                      <LinearGradient colors={['#42A5F5', '#1976D2']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.qtIcon}>
-                        <Text style={{ fontSize: 22 }}>📖</Text>
-                      </LinearGradient>
-                      <View style={{ flex: 1 }}>
-                        <Text style={s.qtLabel}>Explanation</Text>
-                        <Text style={s.qtDesc}>Read chapter explanation</Text>
-                      </View>
-                      <Text style={s.classArrow}>→</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={s.qtCard} activeOpacity={0.85} onPress={handleExplanationMCQ}>
-                      <LinearGradient colors={['#66BB6A', '#43A047']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.qtIcon}>
-                        <Text style={{ fontSize: 22 }}>📝</Text>
-                      </LinearGradient>
-                      <View style={{ flex: 1 }}>
-                        <Text style={s.qtLabel}>Practice MCQ</Text>
-                        <Text style={s.qtDesc}>Test your knowledge</Text>
-                      </View>
-                      <Text style={s.classArrow}>→</Text>
-                    </TouchableOpacity>
                   </View>
                 </View>
               </TouchableWithoutFeedback>

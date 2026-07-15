@@ -120,8 +120,25 @@ export const Home = ({ navigation }: HomeScreenProps) => {
       ? profile.data.name.charAt(0).toUpperCase() + profile.data.name.slice(1)
       : 'Future Doctor';
 
+  const [showFreeContentModal, setShowFreeContentModal] = useState(false);
+
   const goToFreeContent = () => {
-    navigation.navigate('SubjectSelect', { freeOnly: true });
+    setShowFreeContentModal(true);
+  };
+
+  const FREE_CONTENT_FEATURES = [
+    { icon: '💡', name: 'Explanation', desc: 'Detailed topic explanations', featureType: 'explanation' },
+    { icon: '🧠', name: 'Revision Recall', desc: 'Smart revision with MCQs', featureType: 'revision_recall' },
+    { icon: '🔗', name: 'Hidden Links', desc: 'Connect concepts, unlock clarity', featureType: 'hidden_links' },
+    { icon: '📋', name: 'Exercise Revival', desc: 'Back exercise to Mastery', featureType: 'exercise_revival' },
+    { icon: '🏆', name: 'Master Exemplar', desc: 'Exemplar Deep Practice Zone', featureType: 'master_exemplar' },
+    { icon: '📖', name: 'Previous Year Questions', desc: 'PYQ to Question Mastery', featureType: 'pyq' },
+    { icon: '🛡️', name: 'Chapter Checkpoint', desc: 'Full chapter test', featureType: 'chapter_checkpoint' },
+  ];
+
+  const openFreeFeature = (featureType: string, featureName: string) => {
+    setShowFreeContentModal(false);
+    navigation.navigate('FeatureContent', { featureType, featureName });
   };
 
   useContentProtection({ key: 'home-screen' });
@@ -206,13 +223,42 @@ export const Home = ({ navigation }: HomeScreenProps) => {
             </TouchableOpacity>
           </View>
 
-          {/* Hero Banner */}
+          {/* Hero Banner - Explore Free Content */}
           <TouchableOpacity
-            style={styles.hero}
             activeOpacity={0.9}
             onPress={goToFreeContent}
+            style={{ marginHorizontal: 14, marginTop: 10 }}
           >
-            <Image source={heroBanner} style={styles.heroBannerImg} />
+            <LinearGradient
+              colors={['#1a1a2e', '#16213e', '#0f3460']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={{ borderRadius: 20, padding: 18, gap: 14, borderWidth: 1, borderColor: 'rgba(245,166,35,0.3)' }}
+            >
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <View style={{ backgroundColor: '#F5A623', paddingHorizontal: 10, paddingVertical: 3, borderRadius: 20 }}>
+                  <Text style={{ color: '#000', fontSize: 9, fontWeight: '900', letterSpacing: 1.5 }}>100% FREE</Text>
+                </View>
+                <Text style={{ fontSize: 22 }}>✨</Text>
+              </View>
+              <View style={{ flexDirection: 'row', gap: 14, alignItems: 'center' }}>
+                <View style={{ width: 48, height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.1)' }}>
+                  <Text style={{ fontSize: 26 }}>🏆</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: '#F5A623', fontSize: 16, fontWeight: '900', letterSpacing: 0.3 }}>Explore Free Content</Text>
+                  <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 11, marginTop: 3, lineHeight: 16 }}>Premium Syllabus & 10,000+ Practice MCQs</Text>
+                </View>
+              </View>
+              <LinearGradient
+                colors={['#F5A623', '#FFB74D']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={{ borderRadius: 12, paddingVertical: 12, alignItems: 'center' }}
+              >
+                <Text style={{ color: '#000', fontSize: 13, fontWeight: '900', letterSpacing: 0.5 }}>Explore Now →</Text>
+              </LinearGradient>
+            </LinearGradient>
           </TouchableOpacity>
         </View>
 
@@ -492,6 +538,47 @@ export const Home = ({ navigation }: HomeScreenProps) => {
           </View>
         </TouchableWithoutFeedback>
       </Modal>
+    {/* Free Content Features Modal */}
+    <Modal animationType="slide" transparent visible={showFreeContentModal} onRequestClose={() => setShowFreeContentModal(false)}>
+      <TouchableWithoutFeedback onPress={() => setShowFreeContentModal(false)}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'flex-end' }}>
+          <TouchableWithoutFeedback onPress={(e) => e.stopPropagation()}>
+            <View style={{ backgroundColor: '#FFF8E8', borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingHorizontal: 18, paddingTop: 22, paddingBottom: 36, maxHeight: '80%' }}>
+              <View style={{ width: 40, height: 4, borderRadius: 4, backgroundColor: '#ddd', alignSelf: 'center', marginBottom: 16 }} />
+              <Text style={{ fontSize: 19, fontWeight: '900', color: '#111', textAlign: 'center', marginBottom: 4 }}>Explore Free Content</Text>
+              <Text style={{ fontSize: 12, color: '#666', textAlign: 'center', marginBottom: 18 }}>All features available for free</Text>
+              <ScrollView showsVerticalScrollIndicator={false}>
+                <View style={{ gap: 10 }}>
+                  {FREE_CONTENT_FEATURES.map((f, idx) => (
+                    <TouchableOpacity
+                      key={f.featureType}
+                      style={{ backgroundColor: '#fff', borderRadius: 18, padding: 16, flexDirection: 'row', alignItems: 'center', gap: 14, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 10, elevation: 2 }}
+                      activeOpacity={0.85}
+                      onPress={() => openFreeFeature(f.featureType, f.name)}
+                    >
+                      <LinearGradient
+                        colors={[['#42A5F5','#1976D2'],['#66BB6A','#43A047'],['#AB47BC','#7B1FA2'],['#FF7043','#E64A19'],['#F5A623','#E09600'],['#EF5350','#C62828'],['#26A69A','#00897B']][idx] as [string, string]}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={{ width: 48, height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center' }}
+                      >
+                        <Text style={{ fontSize: 22 }}>{f.icon}</Text>
+                      </LinearGradient>
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ fontSize: 15, fontWeight: '800', color: '#111', marginBottom: 2 }}>{f.name}</Text>
+                        <Text style={{ fontSize: 11, color: '#777' }}>{f.desc}</Text>
+                      </View>
+                      <Text style={{ fontSize: 18, fontWeight: '900', color: '#F6C228' }}>→</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </ScrollView>
+            </View>
+          </TouchableWithoutFeedback>
+        </View>
+      </TouchableWithoutFeedback>
+    </Modal>
+
     </SafeAreaView>
     </LinearGradient>
   );

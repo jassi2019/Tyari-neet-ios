@@ -14,6 +14,7 @@ export type TTopic = {
   masterExemplarContent?: string;
   pyqContent?: string;
   chapterCheckpointContent?: string;
+  explanationCanvaURL?: string;
   sequence: number;
   serviceType: 'FREE' | 'PREMIUM';
   Chapter: TChapter;

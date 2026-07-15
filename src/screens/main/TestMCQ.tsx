@@ -2,6 +2,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useGetQuestions } from '@/hooks/api/questions';
 import { useGetTestSeriesById } from '@/hooks/api/testseries';
 import { TQuestion } from '@/types/Question';
+import api from '@/lib/api';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -27,6 +28,7 @@ export type MCQQuestion = {
   questionImage?: string | null;
   options: { letter: string; text: string; image?: string | null }[];
   correctIndex: number;
+  explanation?: string | null;
   explanationImage?: string | null;
 };
 
@@ -52,6 +54,7 @@ type TestMCQProps = {
       questionType?: string;
       testSeriesId?: string;
       exerciseQuestionId?: string;
+      topicId?: string;
     };
   };
 };
@@ -82,6 +85,7 @@ const mapToMCQ = (q: TQuestion, subjectEmoji: string, chapterName: string, chapt
     { letter: 'D', text: q.optionD, image: q.optionDImage },
   ],
   correctIndex: optionLetters.indexOf(q.correctOption),
+  explanation: q.explanation,
   explanationImage: q.explanationImage,
 });
 
@@ -100,6 +104,7 @@ export const TestMCQ = ({ navigation, route }: TestMCQProps) => {
   const questionType = route?.params?.questionType || '';
   const testSeriesId = route?.params?.testSeriesId || '';
   const exerciseQuestionId = route?.params?.exerciseQuestionId || '';
+  const topicId     = route?.params?.topicId     || '';
 
   // Fetch from test series endpoint when testSeriesId is provided
   const { data: tsData, isLoading: tsLoading } = useGetTestSeriesById(
@@ -115,7 +120,7 @@ export const TestMCQ = ({ navigation, route }: TestMCQProps) => {
 
   // Fetch regular questions (all chapter questions or fallback)
   const { data, isLoading: qLoading, error } = useGetQuestions(
-    { chapterId: chapterId || undefined, subjectId, classId, featureType: featureType || undefined },
+    { chapterId: chapterId || undefined, subjectId, classId, featureType: featureType || undefined, topicId: topicId || undefined },
     { enabled: Boolean(!testSeriesId && !exerciseQuestionId && subjectId && classId) }
   );
 
@@ -158,10 +163,14 @@ export const TestMCQ = ({ navigation, route }: TestMCQProps) => {
   const questionsRef = useRef(questions);
   questionsRef.current = questions;
 
-  // Init answers array when questions load
+  // Init answers array when questions load + auto-calc duration if not set
   useEffect(() => {
     if (questions.length > 0 && answers.length === 0) {
       setAnswers(Array(questions.length).fill(null).map(() => ({ selectedIndex: null, skipped: false })));
+      // Auto-duration: 1 question = 1 minute (if totalTime was default 30*60 and questions are different count)
+      if (!route?.params?.totalTime && questions.length > 0) {
+        setTimeLeft(questions.length * 60);
+      }
     }
   }, [questions.length]);
 
@@ -178,6 +187,34 @@ export const TestMCQ = ({ navigation, route }: TestMCQProps) => {
     const correct = ans.filter((a, i) => a.selectedIndex === qs[i]?.correctIndex).length;
     const wrong   = ans.filter((a, i) => a.selectedIndex !== null && a.selectedIndex !== qs[i]?.correctIndex).length;
     const skipped = ans.filter((a) => a.selectedIndex === null).length;
+    const totalMarks = qs.length * 4;
+    const rawScore = (correct * 4) - (wrong * 1);
+    const finalScore = Math.max(rawScore, 0);
+    const percentage = Math.round((finalScore / Math.max(totalMarks, 1)) * 100);
+    const xp = correct * 4;
+
+    // Submit score to leaderboard
+    console.log('[TestMCQ] Submitting score:', { correct, wrong, skipped, finalScore, percentage, xp });
+    api.post('/api/v1/leaderboard/submit', {
+      subjectId: subjectId || undefined,
+      chapterId: chapterId || undefined,
+      classId: classId || undefined,
+      testType: featureType || 'daily',
+      questionType: 'MCQ',
+      totalQuestions: qs.length,
+      correctAnswers: correct,
+      wrongAnswers: wrong,
+      skipped,
+      score: finalScore,
+      percentage,
+      timeTaken: totalTime - (timerRef.current ? 0 : 0),
+      xp,
+    }).then((res: any) => {
+      console.log('[TestMCQ] Score submitted:', res?.data || res);
+    }).catch((err: any) => {
+      console.log('[TestMCQ] Score submit error:', err?.message || err);
+    });
+
     navigation.replace('TestResult', {
       testName,
       subjectName,
@@ -190,7 +227,7 @@ export const TestMCQ = ({ navigation, route }: TestMCQProps) => {
       questions: qs,
       testSeriesId: testSeriesId || undefined,
     });
-  }, [chapterName, navigation, subjectName, testName, testSeriesId]);
+  }, [chapterName, chapterId, classId, featureType, navigation, subjectId, subjectName, testName, testSeriesId, totalTime]);
 
   useEffect(() => {
     if (total === 0) return;
