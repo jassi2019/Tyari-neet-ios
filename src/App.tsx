@@ -13,17 +13,13 @@ import ErrorBoundary from './components/ErrorBoundary';
 import ErrorFallback from './components/ErrorFallback';
 import { AuthProvider } from './contexts/AuthContext';
 import { FeatureProvider } from './contexts/FeatureContext';
-import { useContentProtection } from './hooks/useContentProtection';
 import RootNavigator from './navigation/RootNavigator';
 
 enableScreens();
 
 const queryClient = new QueryClient();
 
-// App-wide screenshot/recording block. Stays active for the entire app lifetime
-// so every screen is covered, not just Home/TopicContent.
 function AppShell() {
-  useContentProtection({ key: 'app-global', appSwitcherBlurIntensity: 0.7 });
 
   useEffect(() => {
     if (Platform.OS === 'android') {

@@ -437,6 +437,22 @@ export const Profile = ({ navigation }: AccountProps) => {
                 <ChevronRight size={20} color="#4A635D" />
               </TouchableOpacity>
 
+              <TouchableOpacity style={styles.infoItem} onPress={() => navigation.navigate('TermsAndConditions')}>
+                <View style={styles.settingsItemLeft}>
+                  <MaterialIcons name="description" size={20} color="#4A635D" />
+                  <Text style={styles.settingsItemText}>Terms & Conditions</Text>
+                </View>
+                <ChevronRight size={20} color="#4A635D" />
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.infoItem} onPress={() => navigation.navigate('RefundPolicy')}>
+                <View style={styles.settingsItemLeft}>
+                  <MaterialIcons name="money-off" size={20} color="#4A635D" />
+                  <Text style={styles.settingsItemText}>Refund Policy</Text>
+                </View>
+                <ChevronRight size={20} color="#4A635D" />
+              </TouchableOpacity>
+
               <TouchableOpacity style={styles.infoItem} onPress={() => navigation.navigate('ContactUs')}>
                 <View style={styles.settingsItemLeft}>
                   <MaterialIcons name="mail-outline" size={20} color="#4A635D" />

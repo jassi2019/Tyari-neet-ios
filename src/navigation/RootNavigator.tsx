@@ -112,6 +112,7 @@ function AuthStack() {
       <Stack.Screen name="ResetPassword" component={ResetPassword} />
       <Stack.Screen name="Privacy" component={Privacy} />
       <Stack.Screen name="TermsAndConditions" component={TermsAndConditions} />
+      <Stack.Screen name="RefundPolicy" component={RefundPolicy} />
     </Stack.Navigator>
   );
 }

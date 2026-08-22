@@ -241,7 +241,7 @@ const styles = StyleSheet.create({
     flex: 1, alignItems: 'center', justifyContent: 'center',
     backgroundColor: '#FFF8E8', paddingHorizontal: 16,
   },
-  scroll: { paddingBottom: 120, backgroundColor: '#FFF8E8' },
+  scroll: { paddingBottom: 40, backgroundColor: '#FFF8E8', flexGrow: 1 },
 
   yellowSection: { backgroundColor: 'transparent' },
   topBar: {

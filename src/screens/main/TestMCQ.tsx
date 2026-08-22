@@ -180,7 +180,7 @@ export const TestMCQ = ({ navigation, route }: TestMCQProps) => {
     return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
   };
 
-  const finishTest = useCallback(() => {
+  const finishTest = useCallback(async () => {
     if (timerRef.current) clearInterval(timerRef.current);
     const ans = answersRef.current;
     const qs  = questionsRef.current;
@@ -193,9 +193,9 @@ export const TestMCQ = ({ navigation, route }: TestMCQProps) => {
     const percentage = Math.round((finalScore / Math.max(totalMarks, 1)) * 100);
     const xp = correct * 4;
 
-    // Submit score to leaderboard
+    // Submit score to leaderboard BEFORE navigating
     console.log('[TestMCQ] Submitting score:', { correct, wrong, skipped, finalScore, percentage, xp });
-    api.post('/api/v1/leaderboard/submit', {
+    await api.post('/api/v1/leaderboard/submit', {
       subjectId: subjectId || undefined,
       chapterId: chapterId || undefined,
       classId: classId || undefined,
@@ -207,13 +207,8 @@ export const TestMCQ = ({ navigation, route }: TestMCQProps) => {
       skipped,
       score: finalScore,
       percentage,
-      timeTaken: totalTime - (timerRef.current ? 0 : 0),
       xp,
-    }).then((res: any) => {
-      console.log('[TestMCQ] Score submitted:', res?.data || res);
-    }).catch((err: any) => {
-      console.log('[TestMCQ] Score submit error:', err?.message || err);
-    });
+    }).catch(() => {});
 
     navigation.replace('TestResult', {
       testName,

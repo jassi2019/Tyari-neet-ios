@@ -2,7 +2,7 @@ import PlatformWebView from '@/components/PlatformWebView';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFeature } from '@/contexts/FeatureContext';
 import { useGetTopicById } from '@/hooks/api/topics';
-import { useContentProtection } from '@/hooks/useContentProtection';
+import { usePreventScreenCapture } from 'expo-screen-capture';
 import { useProgress } from '@/hooks/useProgress';
 import { isPaidSubscriptionActive, isPremiumServiceType } from '@/lib/subscription';
 import { TTopic } from '@/types/Topic';
@@ -80,8 +80,8 @@ export const TopicContent = ({ navigation, route }: TopicContentProps) => {
   }, [topicId, isPremiumTopic, hasPremium, markCompleted, topic?.name]);
 
   // Protect lesson content from screenshots / screen recordings (best-effort).
-  // NOTE: Web cannot be reliably protected, so keep this native-only.
-  useContentProtection({ enabled: Platform.OS !== 'web', key: 'topic-content', appSwitcherBlurIntensity: 0.65 });
+  // Block screenshots/recording only on content screen
+  usePreventScreenCapture();
 
   const {
     data: topicResponse,

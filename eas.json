@@ -35,7 +35,12 @@
     },
     "production": {
       "channel": "production",
-      "credentialsSource": "local",
+      "android": {
+        "credentialsSource": "local"
+      },
+      "ios": {
+        "credentialsSource": "remote"
+      },
       "env": {
         "EXPO_PUBLIC_BACKEND_URL": "https://api.taiyarineetki.com",
         "EXPO_PUBLIC_RAZORPAY_KEY_ID": "rzp_live_Sk4vSpgDHyeyc4"
@@ -43,6 +48,10 @@
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "ios": {
+        "ascAppId": "6758075558"
+      }
+    }
   }
 }

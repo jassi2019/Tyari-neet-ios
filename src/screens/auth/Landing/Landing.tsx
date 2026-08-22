@@ -96,15 +96,19 @@ const Landing = ({ navigation }: { navigation: any }) => {
                 </TouchableOpacity>
               )}
 
-              {/* Terms and Privacy */}
+              {/* Legal Links */}
               <Text style={styles.termsText}>
                 By Signing Up, I agree to the{' '}
                 <Text style={styles.linkText} onPress={() => navigation.navigate('TermsAndConditions')}>
                   Terms & Conditions
-                </Text>{' '}
-                and{' '}
+                </Text>
+                {', '}
                 <Text style={styles.linkText} onPress={() => navigation.navigate('Privacy')}>
                   Privacy Policy
+                </Text>
+                {' & '}
+                <Text style={styles.linkText} onPress={() => navigation.navigate('RefundPolicy')}>
+                  Refund Policy
                 </Text>
               </Text>
             </View>

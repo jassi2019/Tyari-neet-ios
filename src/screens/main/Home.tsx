@@ -141,7 +141,7 @@ export const Home = ({ navigation }: HomeScreenProps) => {
     navigation.navigate('FeatureContent', { featureType, featureName });
   };
 
-  useContentProtection({ key: 'home-screen' });
+  // useContentProtection removed — not in original code, causes iOS black screen
 
   const { setActiveFeature: setActiveFeatureType } = useFeature();
   const { currentStreak, longestStreak, visitedDates, totalDaysStudied } = useStreak();

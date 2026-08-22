@@ -5,6 +5,7 @@ export type TChapter = {
   description: string;
   subjectId: string;
   classId: string;
+  serviceType?: 'FREE' | 'PREMIUM';
   createdAt: string;
   updatedAt: string;
 };

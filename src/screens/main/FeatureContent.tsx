@@ -60,8 +60,6 @@ export const FeatureContent = ({ navigation, route }: Props) => {
   const isQuestionBased = QUESTION_FEATURES.includes(featureType);
   const { isGuest, user } = useAuth();
   const hasPremium = isPaidSubscriptionActive(user?.subscription);
-  // Content protection only when viewing PDF content, not on navigation screens
-
 
   const [step, setStep] = useState<Step>('subject');
   const [showPremiumModal, setShowPremiumModal] = useState(false);
@@ -82,8 +80,8 @@ export const FeatureContent = ({ navigation, route }: Props) => {
   const preChapterId = route?.params?.preSelectedChapterId;
   const preChapterName = route?.params?.preSelectedChapterName;
 
-  const { data: subjectsData } = useGetAllSubjects({ enabled: !isGuest });
-  const { data: classesData } = useGetAllClasses({ enabled: !isGuest });
+  const { data: subjectsData } = useGetAllSubjects({});
+  const { data: classesData } = useGetAllClasses({});
   const { data: chaptersData, isLoading: chaptersLoading } = useGetChaptersBySubjectId(
     { subjectId: selectedSubject?.id, classId: selectedClass?.id },
     { enabled: !!selectedSubject && !!selectedClass }
@@ -172,7 +170,7 @@ export const FeatureContent = ({ navigation, route }: Props) => {
         setSelectedChapter(ch);
         setStep('topicsList');
       } else if (featureType === 'chapter_checkpoint') {
-        // Chapter Checkpoint — directly open MCQ, no popup
+        // Chapter Checkpoint — directly open MCQ
         navigation.navigate('TestMCQ', {
           testName: `Chapter Check Point · ${selectedSubject?.name}`,
           subjectName: selectedSubject?.name || 'Subject',
@@ -399,17 +397,49 @@ export const FeatureContent = ({ navigation, route }: Props) => {
               <View style={s.center}><Text style={s.emptyText}>No chapters found</Text></View>
             ) : (
               <View style={s.chList}>
-                {chapters.map((ch) => (
-                  <TouchableOpacity key={ch.id} style={s.chCard} activeOpacity={0.85} onPress={() => handleChapterPress(ch)}>
-                    <LinearGradient colors={['#FFB74D', '#F6C228']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.chNum}>
-                      <Text style={s.chNumText}>{String(ch.number).padStart(2, '0')}</Text>
-                    </LinearGradient>
-                    <View style={{ flex: 1 }}>
-                      <Text style={s.chName} numberOfLines={1}>{ch.name}</Text>
-                    </View>
-                    <Text style={s.chArrow}>›</Text>
-                  </TouchableOpacity>
-                ))}
+                {chapters.map((ch, idx) => {
+                  const isChFree = (ch as any).serviceType !== 'PREMIUM';
+                  const isLocked = !isChFree && !hasPremium;
+                  const showUnlockAnim = !isChFree && hasPremium;
+                  return (
+                    <TouchableOpacity
+                      key={ch.id}
+                      style={[s.chCard, isLocked && { opacity: 0.6 }]}
+                      activeOpacity={0.85}
+                      onPress={() => {
+                        if (isLocked) {
+                          Alert.alert('Coming Soon', 'This chapter will be unlocked in a few days. Stay tuned!');
+                        } else if (showUnlockAnim) {
+                          // Paid user clicking locked chapter — show unlock animation then open
+                          Alert.alert('🔓 Unlocked!', 'This chapter is available with your premium plan.', [
+                            { text: 'Open Now →', onPress: () => handleChapterPress(ch) }
+                          ]);
+                        } else {
+                          handleChapterPress(ch);
+                        }
+                      }}
+                    >
+                      <LinearGradient
+                        colors={isLocked ? ['#9E9E9E', '#757575'] : (showUnlockAnim ? ['#66BB6A', '#43A047'] : ['#FFB74D', '#F6C228'])}
+                        start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.chNum}
+                      >
+                        <Text style={s.chNumText}>{String(ch.number).padStart(2, '0')}</Text>
+                      </LinearGradient>
+                      <View style={{ flex: 1 }}>
+                        <Text style={s.chName} numberOfLines={1}>{ch.name}</Text>
+                        {isLocked && <Text style={{ fontSize: 10, color: '#999', marginTop: 2 }}>Unlocking soon...</Text>}
+                        {showUnlockAnim && <Text style={{ fontSize: 10, color: '#43A047', fontWeight: '700', marginTop: 2 }}>✨ Premium Unlocked</Text>}
+                      </View>
+                      {isLocked ? (
+                        <Text style={{ fontSize: 14, color: '#bbb' }}>🔒</Text>
+                      ) : showUnlockAnim ? (
+                        <Text style={{ fontSize: 14 }}>🔓</Text>
+                      ) : (
+                        <Text style={s.chArrow}>›</Text>
+                      )}
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
             )
           )}

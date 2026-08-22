@@ -1,9 +1,7 @@
-import Constants from 'expo-constants';
 import { X } from 'lucide-react-native';
-import React, { useEffect } from 'react';
+import React from 'react';
 import {
   Modal,
-  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -25,32 +23,7 @@ type Props = {
   onStart?: () => void;
 };
 
-const PROTECT_KEY = 'feature-detail-modal';
-const isExpoGo = Constants.appOwnership === 'expo';
-
 export const FeatureDetailModal = ({ visible, feature, onClose, onStart }: Props) => {
-  useEffect(() => {
-    if (!visible || isExpoGo) return;
-    let cleanup = () => {};
-    (async () => {
-      try {
-        const ScreenCapture = await import('expo-screen-capture');
-        await ScreenCapture.preventScreenCaptureAsync(PROTECT_KEY);
-        if (Platform.OS === 'ios' && typeof ScreenCapture.enableAppSwitcherProtectionAsync === 'function') {
-          await ScreenCapture.enableAppSwitcherProtectionAsync(0.8);
-        }
-        cleanup = () => {
-          ScreenCapture.allowScreenCaptureAsync(PROTECT_KEY).catch(() => undefined);
-          if (Platform.OS === 'ios' && typeof ScreenCapture.disableAppSwitcherProtectionAsync === 'function') {
-            ScreenCapture.disableAppSwitcherProtectionAsync().catch(() => undefined);
-          }
-        };
-      } catch {
-        // Expo Go or unsupported environment — skip silently
-      }
-    })();
-    return () => cleanup();
-  }, [visible]);
 
   if (!feature) return null;
 
