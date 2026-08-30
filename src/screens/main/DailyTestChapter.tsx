@@ -75,6 +75,7 @@ export const DailyTestChapter = ({ navigation, route }: DailyTestChapterProps) =
       chapterName: selectedChapter.name,
       chapterNum: String(selectedChapter.number).padStart(2, '0'),
       totalTime: 30 * 60,
+      featureType: 'daily_test',
     });
   };
 

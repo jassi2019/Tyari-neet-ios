@@ -13,6 +13,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 import ErrorFallback from './components/ErrorFallback';
 import { AuthProvider } from './contexts/AuthContext';
 import { FeatureProvider } from './contexts/FeatureContext';
+import { usePreventScreenCapture } from 'expo-screen-capture';
 import RootNavigator from './navigation/RootNavigator';
 
 enableScreens();
@@ -32,9 +33,15 @@ function AppShell() {
   return <RootNavigator />;
 }
 
+function AndroidScreenProtection() {
+  usePreventScreenCapture();
+  return null;
+}
+
 export default function App() {
   return (
     <ErrorBoundary FallbackComponent={ErrorFallback}>
+      {Platform.OS === 'android' && <AndroidScreenProtection />}
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <FeatureProvider>

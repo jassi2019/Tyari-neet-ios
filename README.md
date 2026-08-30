@@ -1,6 +1,6 @@
 # Taiyari NEET Ki
 
-India's best NEET preparation app — free study material, 10,000+ MCQs, chapter-wise notes for Physics, Chemistry & Biology.
+India's best NEET preparation app — free study material, MCQs, chapter-wise notes for Physics, Chemistry & Biology.
 
 ## Tech Stack
 
@@ -281,7 +281,81 @@ Tests login → plan fetch → order create → signature verify → subscriptio
 - **Play Store:** https://play.google.com/store/apps/details?id=com.taiyarineetki.app
 - **App Store:** https://apps.apple.com/app/taiyari-neet-ki/id6740091521
 
-## Recent Changes (July 2026)
+## Recent Changes (August 29-30, 2026)
+
+### Test Series — Admin Portal + Backend API (NEW)
+- Full backend: models, controllers, routes for `test_series` + `test_series_questions`
+- API: GET (public), POST/PUT/DELETE (admin only) at `/api/v1/test-series`
+- Response flattens `TestSeriesQuestions[].Question` into `Questions[]` array for app compatibility
+- Portal: new Test Series page with Daily/Weekly/Full Syllabus tabs
+- Question picker (select from bank) + manual question creation inline
+- Time limits: Daily=40min, Weekly=180min, Full Syllabus=180min (stored in seconds)
+
+### Feature Content Isolation & Cleanup
+- Backend `feature-content` GET now filters `isActive=true` by default (portal passes `includeInactive=true`)
+- Deleted/inactive content no longer shows in app
+- Each feature type only shows its own content — no cross-feature mixing
+- DB cleanup: moved misplaced content (Question Practice → exercise_revival, Uttar Maala → hidden_links, Revision Recall Station → revision_recall)
+- Cache staleTime reduced from 60s to 10s with `refetchOnMount: true`
+
+### Explanation Feature — Viewer Only
+- Explanation always opens Canva viewer directly, never shows MCQ popup
+- Works regardless of `contentType` (canva_only, mcq_only, both)
+
+### Revision Recall — Topic-based MCQ
+- Topics list only shows topics that have MCQ questions attached (not all chapter topics)
+- `topicId` exact match filter on backend (no OR NULL fallback)
+- Portal: Topic dropdown in form (at form level, not per-question)
+- Topic auto-restores when editing existing questions
+
+### Hidden Links — Content-based Viewer
+- Flow: Subject → Class → Chapter → Content list → Tap → Canva viewer directly (no MCQ popup)
+- Content fetched from `feature_contents` table with `featureType=hidden_links`
+
+### Exercise Revival / Master Exemplar / PYQ
+- Flow: Subject → Class → Chapter → Content list → Tap → Popup (Explanation + MCQ options)
+- `canva_only` content opens viewer directly
+- `both`/`mcq_only` shows popup with available options
+- Explanation button always visible (shows alert if URL not added)
+- Portal: Explanation URL field now visible for ALL content types (was hidden for mcq_only)
+
+### Chapter Checkpoint — Direct MCQ
+- Flow: Subject → Class → Chapter → MCQ test directly
+- Portal: sidebar link fixed, no topic dropdown (MCQ only)
+- Questions stored directly in `questions` table with `featureType=chapter_checkpoint`
+
+### Daily Test — featureType Mapping
+- `featureType=daily_test` maps to questions with `featureType=NULL` (legacy chapter questions)
+- Prevents orphan questions from showing in other features
+
+### Image Support in MCQ
+- Backend `imageURL` field now properly mapped to app's `questionImage` in `mapToMCQ`
+- Portal: image upload button with preview on all MCQ forms
+- Backend upload endpoint at `/api/v1/uploads/image`
+
+### Timer — Test Series Only
+- Timer only shows when `testSeriesId` is present
+- Hidden for Revision Recall, Exercise Revival, and all other MCQ features
+
+### Retry Button Fix
+- TestResult passes all params (subjectId, classId, chapterId, featureType, featureContentId, topicId) back to TestMCQ
+
+### Topics Restoration
+- 1648 topics migrated from old database (`app-postgres-1`) to new database (`tyari-neet-ios-postgres-1`)
+- `topicId` column added to `questions` table with FK reference
+
+### Portal Fixes
+- Test Series page: question picker + manual question builder
+- Dialog width: `max-w-lg` default restored, test-series uses `!max-w-4xl`
+- PDFUpload crash fix: HTML embed code no longer passed as `href`
+- Card display: raw HTML embed shows "Canva embed link added" instead
+- Topics page: broken image placeholder replaced with gradient + topic name
+- Feature content cards: optional chaining on `.length` and `.map()` calls
+
+### Hero Banner
+- Removed "10,000+" from hero banner text
+
+## Previous Changes (July 2026)
 
 ### Explanation Section — Topic-wise Canva Links
 - New field `explanationCanvaURL` added to Topic model

@@ -8,6 +8,7 @@ type TGetQuestionsParams = {
   subjectId?: string;
   classId?: string;
   featureType?: string;
+  featureContentId?: string;
   parentQuestionId?: string;
   topicId?: string;
 };
@@ -29,7 +30,7 @@ export const useGetQuestions = (
   options?: TQueryOpts<TQuestion[]>
 ) =>
   useQuery({
-    queryKey: ['questions', params.chapterId, params.subjectId, params.classId, params.featureType, params.topicId],
+    queryKey: ['questions', params.chapterId, params.subjectId, params.classId, params.featureType, params.featureContentId, params.topicId],
     queryFn: () => getQuestions(params),
     ...options,
   });

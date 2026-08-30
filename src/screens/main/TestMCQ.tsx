@@ -77,7 +77,7 @@ const mapToMCQ = (q: TQuestion, subjectEmoji: string, chapterName: string, chapt
   difficulty: q.difficulty,
   marks: q.marks,
   text: q.text,
-  questionImage: q.questionImage,
+  questionImage: q.imageURL || q.questionImage,
   options: [
     { letter: 'A', text: q.optionA, image: q.optionAImage },
     { letter: 'B', text: q.optionB, image: q.optionBImage },
@@ -104,6 +104,7 @@ export const TestMCQ = ({ navigation, route }: TestMCQProps) => {
   const questionType = route?.params?.questionType || '';
   const testSeriesId = route?.params?.testSeriesId || '';
   const exerciseQuestionId = route?.params?.exerciseQuestionId || '';
+  const featureContentId = route?.params?.featureContentId || '';
   const topicId     = route?.params?.topicId     || '';
 
   // Fetch from test series endpoint when testSeriesId is provided
@@ -120,7 +121,7 @@ export const TestMCQ = ({ navigation, route }: TestMCQProps) => {
 
   // Fetch regular questions (all chapter questions or fallback)
   const { data, isLoading: qLoading, error } = useGetQuestions(
-    { chapterId: chapterId || undefined, subjectId, classId, featureType: featureType || undefined, topicId: topicId || undefined },
+    { chapterId: chapterId || undefined, subjectId, classId, featureType: featureType || undefined, featureContentId: featureContentId || undefined, topicId: topicId || undefined },
     { enabled: Boolean(!testSeriesId && !exerciseQuestionId && subjectId && classId) }
   );
 
@@ -156,8 +157,9 @@ export const TestMCQ = ({ navigation, route }: TestMCQProps) => {
 
   const [currentIdx, setCurrentIdx] = useState(0);
   const [answers, setAnswers] = useState<AnswerState[]>([]);
-  const [timeLeft, setTimeLeft] = useState(totalTime);
+  const [timeLeft, setTimeLeft] = useState(totalTime || 30 * 60);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const timerStarted = useRef(false);
   const answersRef = useRef(answers);
   answersRef.current = answers;
   const questionsRef = useRef(questions);
@@ -213,7 +215,9 @@ export const TestMCQ = ({ navigation, route }: TestMCQProps) => {
     navigation.replace('TestResult', {
       testName,
       subjectName,
+      subjectEmoji,
       chapterName,
+      chapterNum,
       totalQuestions: qs.length,
       correct,
       wrong,
@@ -221,11 +225,19 @@ export const TestMCQ = ({ navigation, route }: TestMCQProps) => {
       answers: ans,
       questions: qs,
       testSeriesId: testSeriesId || undefined,
+      subjectId: subjectId || undefined,
+      classId: classId || undefined,
+      chapterId: chapterId || undefined,
+      featureType: featureType || undefined,
+      featureContentId: featureContentId || undefined,
+      topicId: topicId || undefined,
+      totalTime,
     });
   }, [chapterName, chapterId, classId, featureType, navigation, subjectId, subjectName, testName, testSeriesId, totalTime]);
 
   useEffect(() => {
-    if (total === 0) return;
+    if (total === 0 || timerStarted.current) return;
+    timerStarted.current = true;
     timerRef.current = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
@@ -316,11 +328,13 @@ export const TestMCQ = ({ navigation, route }: TestMCQProps) => {
             <Text style={styles.quizCounterNum}>{String(currentIdx + 1).padStart(2, '0')}</Text>
             <Text style={styles.quizCounterLabel}> / {total}</Text>
           </View>
-          <View style={[styles.quizTimer, isWarning && styles.quizTimerWarning]}>
-            <Text style={[styles.quizTimerText, isWarning && styles.quizTimerWarningText]}>
-              ⏱ {formatTime(timeLeft)}
-            </Text>
-          </View>
+          {testSeriesId ? (
+            <View style={[styles.quizTimer, isWarning && styles.quizTimerWarning]}>
+              <Text style={[styles.quizTimerText, isWarning && styles.quizTimerWarningText]}>
+                ⏱ {formatTime(timeLeft)}
+              </Text>
+            </View>
+          ) : null}
         </View>
         <View style={styles.progressTrack}>
           <View style={[styles.progressBar, { width: `${progressPct}%` }]} />

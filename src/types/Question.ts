@@ -20,6 +20,7 @@ export type TQuestion = {
   Chapter?: TChapter;
   Subject?: TSubject;
   Class?: TClass;
+  imageURL?: string | null;       // actual field returned by backend
   questionImage?: string | null;
   optionAImage?: string | null;
   optionBImage?: string | null;

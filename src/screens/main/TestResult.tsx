@@ -17,7 +17,9 @@ type TestResultProps = {
     params?: {
       testName?: string;
       subjectName?: string;
+      subjectEmoji?: string;
       chapterName?: string;
+      chapterNum?: string;
       totalQuestions?: number;
       correct?: number;
       wrong?: number;
@@ -25,6 +27,13 @@ type TestResultProps = {
       answers?: AnswerState[];
       questions?: MCQQuestion[];
       testSeriesId?: string;
+      subjectId?: string;
+      classId?: string;
+      chapterId?: string;
+      featureType?: string;
+      featureContentId?: string;
+      topicId?: string;
+      totalTime?: number;
     };
   };
 };
@@ -43,16 +52,25 @@ const BAR_COLORS = { good: '#43A047', mid: '#F6C228', bad: '#EF5350' };
 export const TestResult = ({ navigation, route }: TestResultProps) => {
   const [showReview, setShowReview] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
-  const testName       = route?.params?.testName       || 'Test';
-  const subjectName    = route?.params?.subjectName    || '';
-  const chapterName    = route?.params?.chapterName    || '';
-  const totalQuestions = route?.params?.totalQuestions || 0;
-  const correct        = route?.params?.correct  ?? 0;
-  const wrong          = route?.params?.wrong    ?? 0;
-  const skipped        = route?.params?.skipped  ?? 0;
-  const answers        = route?.params?.answers  || [];
-  const questions      = route?.params?.questions || [];
-  const testSeriesId   = route?.params?.testSeriesId || '';
+  const testName        = route?.params?.testName       || 'Test';
+  const subjectName     = route?.params?.subjectName    || '';
+  const subjectEmoji    = route?.params?.subjectEmoji   || '📘';
+  const chapterName     = route?.params?.chapterName    || '';
+  const chapterNum      = route?.params?.chapterNum     || '';
+  const totalQuestions  = route?.params?.totalQuestions || 0;
+  const correct         = route?.params?.correct  ?? 0;
+  const wrong           = route?.params?.wrong    ?? 0;
+  const skipped         = route?.params?.skipped  ?? 0;
+  const answers         = route?.params?.answers  || [];
+  const questions       = route?.params?.questions || [];
+  const testSeriesId    = route?.params?.testSeriesId || '';
+  const subjectId       = route?.params?.subjectId || '';
+  const classId         = route?.params?.classId || '';
+  const chapterId       = route?.params?.chapterId || '';
+  const featureType     = route?.params?.featureType || '';
+  const featureContentId = route?.params?.featureContentId || '';
+  const topicId         = route?.params?.topicId || '';
+  const totalTime       = route?.params?.totalTime || 30 * 60;
 
   // Negative marking: +4 per correct, -1 per wrong, 0 for skipped
   const totalMarks = totalQuestions * 4;
@@ -115,9 +133,17 @@ export const TestResult = ({ navigation, route }: TestResultProps) => {
     navigation.replace('TestMCQ', {
       testName,
       subjectName,
+      subjectEmoji,
       chapterName,
-      totalTime: 30 * 60,
+      chapterNum,
+      totalTime,
       testSeriesId: testSeriesId || undefined,
+      subjectId: subjectId || undefined,
+      classId: classId || undefined,
+      chapterId: chapterId || undefined,
+      featureType: featureType || undefined,
+      featureContentId: featureContentId || undefined,
+      topicId: topicId || undefined,
     });
   };
 

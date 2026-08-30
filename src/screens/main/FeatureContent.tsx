@@ -72,6 +72,8 @@ export const FeatureContent = ({ navigation, route }: Props) => {
   const [viewerItem, setViewerItem] = useState<TFeatureContent | null>(null);
   const [selectedExerciseQ, setSelectedExerciseQ] = useState<TExerciseQuestion | null>(null);
   const [showExercisePopup, setShowExercisePopup] = useState(false);
+  const [selectedContentItem, setSelectedContentItem] = useState<TFeatureContent | null>(null);
+  const [showContentTypePopup, setShowContentTypePopup] = useState(false);
   const isExerciseListFeature = EXERCISE_LIST_FEATURES.includes(featureType);
 
   // Pre-selected params (from Revision Recall → Explanation flow)
@@ -88,7 +90,7 @@ export const FeatureContent = ({ navigation, route }: Props) => {
   );
   const { data: contentData, isLoading: contentLoading } = useGetFeatureContent(
     { featureType, chapterId: selectedChapter?.id },
-    { enabled: !!selectedChapter }
+    { enabled: !!selectedChapter && !['revision_recall', 'chapter_checkpoint'].includes(featureType) }
   );
 
   // Fetch exercise questions from exercise_questions table
@@ -103,7 +105,22 @@ export const FeatureContent = ({ navigation, route }: Props) => {
     { chapterId: selectedChapter?.id || '', subjectId: selectedSubject?.id || '' },
     { enabled: showTopicsFor && !!selectedChapter && step === 'topicsList' }
   );
-  const topics: TTopic[] = topicsData?.data || [];
+  // For revision_recall: fetch questions to know which topics have MCQs attached
+  const { data: rrQData, isLoading: rrQLoading } = useGetQuestions(
+    { chapterId: selectedChapter?.id, subjectId: selectedSubject?.id, classId: selectedClass?.id, featureType },
+    { enabled: featureType === 'revision_recall' && !!selectedChapter && step === 'topicsList' }
+  );
+  const allTopics: TTopic[] = Array.from(
+    new Map((topicsData?.data || []).map((t: TTopic) => [t.id, t])).values()
+  );
+  // For revision_recall: only show topics that have questions with matching topicId
+  const topics: TTopic[] = featureType === 'revision_recall'
+    ? (() => {
+        const rrQuestions = rrQData?.data || [];
+        const topicIdsWithQuestions = new Set(rrQuestions.map((q: any) => q.topicId).filter(Boolean));
+        return allTopics.filter(t => topicIdsWithQuestions.has(t.id));
+      })()
+    : allTopics;
 
   // Also fetch from main questions table as fallback
   const { data: mainQData, isLoading: mainQLoading } = useGetQuestions(
@@ -166,7 +183,7 @@ export const FeatureContent = ({ navigation, route }: Props) => {
   const handleChapterPress = (ch: any) => {
     if (isQuestionBased) {
       if (featureType === 'revision_recall') {
-        // Revision Recall — show Topics list, then MCQ per topic
+        // Revision Recall — show Topics list (admin-added topics), then MCQ per topic
         setSelectedChapter(ch);
         setStep('topicsList');
       } else if (featureType === 'chapter_checkpoint') {
@@ -184,16 +201,12 @@ export const FeatureContent = ({ navigation, route }: Props) => {
           featureType,
           questionType: 'MCQ',
         });
-      } else if (isExerciseListFeature) {
-        // Exercise Revival, Exemplar, PYQ — show exercise questions list
-        setSelectedChapter(ch);
-        setStep('exerciseList');
       } else {
-        // Other question-based features — show question type modal
-        setPendingChapter(ch);
-        setShowQuestionTypeModal(true);
+        // Exercise Revival, Exemplar, PYQ, others — show content list
+        setSelectedChapter(ch);
+        setStep('content');
       }
-    } else if (featureType === 'explanation') {
+    } else if (featureType === 'hidden_links' || featureType === 'explanation') {
       // Explanation — directly show content (from feature_contents table), no popup
       setSelectedChapter(ch);
       setStep('content');
@@ -220,12 +233,20 @@ export const FeatureContent = ({ navigation, route }: Props) => {
   };
 
   const handleTopicExplanation = (topic: TTopic) => {
-    // Priority: explanationCanvaURL > contentURL
-    const url = (topic.explanationCanvaURL && topic.explanationCanvaURL.trim())
-      ? topic.explanationCanvaURL.trim()
-      : (topic.contentURL && topic.contentURL.trim())
-        ? topic.contentURL.trim()
-        : '';
+    // Priority: feature-specific content > explanationCanvaURL > contentURL
+    const featureContent = featureType === 'hidden_links' ? (topic as any).hiddenLinksContent
+      : featureType === 'exercise_revival' ? (topic as any).exerciseRevivalContent
+      : featureType === 'master_exemplar' ? (topic as any).masterExemplarContent
+      : featureType === 'pyq' ? (topic as any).pyqContent
+      : featureType === 'chapter_checkpoint' ? (topic as any).chapterCheckpointContent
+      : null;
+    const url = (featureContent && featureContent.trim())
+      ? featureContent.trim()
+      : (topic.explanationCanvaURL && topic.explanationCanvaURL.trim())
+        ? topic.explanationCanvaURL.trim()
+        : (topic.contentURL && topic.contentURL.trim())
+          ? topic.contentURL.trim()
+          : '';
     if (url) {
       setViewerItem({
         id: topic.id,
@@ -308,8 +329,9 @@ export const FeatureContent = ({ navigation, route }: Props) => {
   const handleBack = () => {
     if (step === 'viewer') {
       setViewerItem(null);
-      // Go back to content if explanation, exerciseList if exercise, otherwise content
+      // Go back to exerciseList if exercise, topicsList if revision_recall, otherwise content
       if (isExerciseListFeature) setStep('exerciseList');
+      else if (featureType === 'revision_recall') setStep('topicsList');
       else setStep('content');
     }
     else if (step === 'topicsList') { setSelectedChapter(null); setStep('chapter'); }
@@ -318,15 +340,65 @@ export const FeatureContent = ({ navigation, route }: Props) => {
     else if (step === 'chapter') { setSelectedSubject(null); setSelectedClass(null); setStep('subject'); }
     else { navigation.goBack(); }
   };
+  const extractUrl = (raw: string) => {
+    if (!raw) return '';
+    if (raw.trim().startsWith('<')) {
+      const m = raw.match(/src=["']([^"']+)["']/);
+      return m ? m[1] : '';
+    }
+    return raw.trim();
+  };
   const openContent = (item: TFeatureContent) => {
     if (isPremiumServiceType(item.serviceType) && !hasPremium) {
       setShowPremiumModal(true);
       return;
     }
-    if (item.contentURL) {
+    // Explanation feature: always open viewer directly, no MCQ popup
+    if (featureType === 'explanation') {
+      const url = extractUrl(item.contentURL || '');
+      if (url) { setViewerItem(item); setStep('viewer'); }
+      else { Alert.alert('Not Available', 'Explanation not added yet.'); }
+      return;
+    }
+    // Other features: both or mcq_only show popup with options
+    if (item.contentType === 'both' || item.contentType === 'mcq_only') {
+      setSelectedContentItem(item);
+      setShowContentTypePopup(true);
+      return;
+    }
+    // canva_only: directly open viewer
+    const url = extractUrl(item.contentURL || '');
+    if (url) {
       setViewerItem(item);
       setStep('viewer');
+    } else {
+      Alert.alert('Not Available', 'Content not added yet.');
     }
+  };
+
+  const handleContentExplanation = () => {
+    if (!extractUrl(selectedContentItem?.contentURL || '')) return;
+    setShowContentTypePopup(false);
+    setViewerItem(selectedContentItem);
+    setStep('viewer');
+  };
+  const handleContentMCQ = () => {
+    if (!selectedContentItem) return;
+    setShowContentTypePopup(false);
+    navigation.navigate('TestMCQ', {
+      testName: `${featureName} · ${selectedContentItem.title}`,
+      subjectName: selectedSubject?.name || 'Subject',
+      subjectEmoji: SUBJECT_EMOJI[selectedSubject?.name?.trim().toLowerCase()] || '📘',
+      subjectId: selectedSubject?.id || '',
+      classId: selectedClass?.id || '',
+      chapterId: selectedChapter?.id || '',
+      chapterName: selectedChapter?.name || '',
+      chapterNum: String(selectedChapter?.number || '').padStart(2, '0'),
+      totalTime: 30 * 60,
+      featureType,
+      questionType: 'MCQ',
+      featureContentId: selectedContentItem.id,
+    });
   };
 
   const breadcrumb = [featureName];
@@ -466,6 +538,8 @@ export const FeatureContent = ({ navigation, route }: Props) => {
                       {item.description ? <Text style={s.contentDesc} numberOfLines={1}>{item.description}</Text> : null}
                       <View style={s.contentMeta}>
                         <Text style={[s.contentTag, isPremiumServiceType(item.serviceType) && !hasPremium && { backgroundColor: '#FFF3CD', color: '#8B6914' }]}>{item.serviceType === 'FREE' ? '✓ FREE' : hasPremium ? '✓ PREMIUM' : '🔒 PAID'}</Text>
+                        {item.contentType === 'both' && <Text style={[s.contentTag, { backgroundColor: '#E8F5E9', color: '#2E7D32', marginLeft: 4 }]}>📖+📝</Text>}
+                        {item.contentType === 'mcq_only' && <Text style={[s.contentTag, { backgroundColor: '#E8F5E9', color: '#2E7D32', marginLeft: 4 }]}>📝 MCQ</Text>}
                       </View>
                     </View>
                     <ExternalLink size={16} color="#92400E" />
@@ -529,7 +603,9 @@ export const FeatureContent = ({ navigation, route }: Props) => {
                 <View style={s.chList}>
                   {topics.map((topic, i) => {
                     const isRevisionRecall = featureType === 'revision_recall';
+                    const featureSpecificContent = featureType === 'hidden_links' ? (topic as any).hiddenLinksContent : null;
                     const hasLink = isRevisionRecall || !!(
+                      (featureSpecificContent && featureSpecificContent.trim()) ||
                       (topic.explanationCanvaURL && topic.explanationCanvaURL.trim()) ||
                       (topic.contentURL && topic.contentURL.trim())
                     );
@@ -683,6 +759,53 @@ export const FeatureContent = ({ navigation, route }: Props) => {
                       <Text style={s.classArrow}>→</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={s.qtCard} activeOpacity={0.85} onPress={handleExerciseMCQ}>
+                      <LinearGradient colors={['#66BB6A', '#43A047']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.qtIcon}>
+                        <Text style={{ fontSize: 22 }}>📝</Text>
+                      </LinearGradient>
+                      <View style={{ flex: 1 }}>
+                        <Text style={s.qtLabel}>MCQ Zone</Text>
+                        <Text style={s.qtDesc}>Practice MCQ questions</Text>
+                      </View>
+                      <Text style={s.classArrow}>→</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </TouchableWithoutFeedback>
+            </View>
+          </TouchableWithoutFeedback>
+        </Modal>
+
+        {/* Content Type Popup — Explanation / MCQ (for both/mcq_only contentType) */}
+        <Modal animationType="slide" transparent visible={showContentTypePopup} onRequestClose={() => setShowContentTypePopup(false)}>
+          <TouchableWithoutFeedback onPress={() => setShowContentTypePopup(false)}>
+            <View style={s.modalBackdrop}>
+              <TouchableWithoutFeedback onPress={(e) => e.stopPropagation()}>
+                <View style={s.modalSheet}>
+                  <View style={s.modalGrip} />
+                  <Text style={s.modalTitle}>{selectedContentItem?.title}</Text>
+                  <Text style={s.modalSub}>Choose how you want to learn</Text>
+                  <View style={{ gap: 10, marginTop: 14 }}>
+                    <TouchableOpacity
+                      style={s.qtCard}
+                      activeOpacity={0.85}
+                      onPress={() => {
+                        if (extractUrl(selectedContentItem?.contentURL || '')) {
+                          handleContentExplanation();
+                        } else {
+                          Alert.alert('Not Available', 'Explanation not added yet for this content.');
+                        }
+                      }}
+                    >
+                      <LinearGradient colors={['#42A5F5', '#1976D2']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.qtIcon}>
+                        <Text style={{ fontSize: 22 }}>📖</Text>
+                      </LinearGradient>
+                      <View style={{ flex: 1 }}>
+                        <Text style={s.qtLabel}>Explanation</Text>
+                        <Text style={s.qtDesc}>View detailed explanation</Text>
+                      </View>
+                      <Text style={s.classArrow}>→</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={s.qtCard} activeOpacity={0.85} onPress={handleContentMCQ}>
                       <LinearGradient colors={['#66BB6A', '#43A047']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.qtIcon}>
                         <Text style={{ fontSize: 22 }}>📝</Text>
                       </LinearGradient>

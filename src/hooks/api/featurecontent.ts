@@ -8,6 +8,7 @@ export type TFeatureContent = {
   contentURL: string;
   featureType: string;
   serviceType: string;
+  contentType?: 'canva_only' | 'mcq_only' | 'both';
   sequence: number;
   isActive: boolean;
   chapterId: string;
@@ -30,5 +31,6 @@ export const useGetFeatureContent = (params: Params, options?: { enabled?: boole
     queryKey: ['feature-content', params],
     queryFn: () => api.get<{ data: TFeatureContent[] }>('/api/v1/feature-content', { params }),
     enabled: Boolean(options?.enabled ?? true),
-    staleTime: 60 * 1000,
+    staleTime: 10 * 1000,
+    refetchOnMount: true,
   });

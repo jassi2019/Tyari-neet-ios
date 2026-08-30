@@ -247,7 +247,7 @@ export const Home = ({ navigation }: HomeScreenProps) => {
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={{ color: '#F5A623', fontSize: 16, fontWeight: '900', letterSpacing: 0.3 }}>Explore Free Content</Text>
-                  <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 11, marginTop: 3, lineHeight: 16 }}>Premium Syllabus & 10,000+ Practice MCQs</Text>
+                  <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 11, marginTop: 3, lineHeight: 16 }}>Premium Syllabus & Practice MCQs</Text>
                 </View>
               </View>
               <LinearGradient
