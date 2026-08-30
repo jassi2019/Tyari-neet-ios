@@ -57,7 +57,8 @@ const PlanCard = ({ plan, onSelect, isSelected, iapProduct }: TPlanCardProps) =>
   const totalAmount = getPlanTotalAmount(plan);
   const gstRate = getPlanGstRate(plan);
 
-  const priceText = `${formatInr(totalAmount)} Incl. GST`;
+  const priceText = formatInr(totalAmount);
+  const baseText = `${formatInr(plan.amount)} + ${gstRate}% GST`;
 
   const validUntilText = `Valid until ${new Date(plan.validUntil).toLocaleDateString('en-GB', {
     day: '2-digit',
@@ -93,7 +94,7 @@ const PlanCard = ({ plan, onSelect, isSelected, iapProduct }: TPlanCardProps) =>
         </View>
         <View style={styles.planPricing}>
           <Text style={styles.planAmount}>{priceText}</Text>
-          {showGst && <Text style={styles.planGst}>incl. {gstRate}% GST</Text>}
+          <Text style={styles.planGst}>{baseText}</Text>
         </View>
       </View>
 
