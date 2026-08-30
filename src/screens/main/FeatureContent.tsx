@@ -591,7 +591,7 @@ export const FeatureContent = ({ navigation, route }: Props) => {
         {step === 'topicsList' && (
           <ScrollView style={{ flex: 1, backgroundColor: '#FFF8E8' }} contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
             <View style={{ paddingHorizontal: 16, paddingTop: 10 }}>
-              {topicsLoading ? (
+              {(topicsLoading || (featureType === 'revision_recall' && rrQLoading)) ? (
                 <View style={s.center}><ActivityIndicator size="large" color="#F5A623" /></View>
               ) : topics.length === 0 ? (
                 <View style={s.center}>
