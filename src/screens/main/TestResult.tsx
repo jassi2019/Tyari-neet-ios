@@ -75,8 +75,8 @@ export const TestResult = ({ navigation, route }: TestResultProps) => {
   // Negative marking: +4 per correct, -1 per wrong, 0 for skipped
   const totalMarks = totalQuestions * 4;
   const rawScore = (correct * 4) - (wrong * 1);
-  // Test series: allow negative score, others: minimum 0
-  const finalScore = testSeriesId ? rawScore : Math.max(rawScore, 0);
+  // Test series + chapter checkpoint: allow negative score, others: minimum 0
+  const finalScore = (testSeriesId || featureType === 'chapter_checkpoint') ? rawScore : Math.max(rawScore, 0);
   const score = Math.round((Math.max(finalScore, 0) / Math.max(totalMarks, 1)) * 100);
   const xpEarned = correct * 4;
 
