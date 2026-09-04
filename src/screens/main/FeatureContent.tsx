@@ -471,8 +471,9 @@ export const FeatureContent = ({ navigation, route }: Props) => {
               <View style={s.chList}>
                 {chapters.map((ch, idx) => {
                   const isChFree = (ch as any).serviceType !== 'PREMIUM';
-                  const isLocked = !isChFree && !hasPremium;
-                  const showUnlockAnim = !isChFree && hasPremium;
+                  const isUnlocked = (ch as any).serviceType === 'UNLOCKED';
+                  const isLocked = !isChFree && !isUnlocked && !hasPremium;
+                  const showUnlockMsg = !isChFree && !isUnlocked && hasPremium;
                   return (
                     <TouchableOpacity
                       key={ch.id}
@@ -480,27 +481,27 @@ export const FeatureContent = ({ navigation, route }: Props) => {
                       activeOpacity={0.85}
                       onPress={() => {
                         if (isLocked) {
-                          Alert.alert('Coming Soon', 'This chapter will be unlocked in a few days. Stay tuned!');
-                        } else if (showUnlockAnim) {
-                          // Paid user clicking locked chapter — show unlock animation then open
-                          Alert.alert('🔓 Unlocked!', 'This chapter is available with your premium plan.', [
-                            { text: 'Open Now →', onPress: () => handleChapterPress(ch) }
+                          Alert.alert('Go to Premium', 'Subscribe to unlock this chapter and get full access to all content.', [
+                            { text: 'Maybe Later', style: 'cancel' },
+                            { text: 'View Plans', onPress: () => navigation.navigate('Plans') }
                           ]);
+                        } else if (showUnlockMsg) {
+                          Alert.alert('Learn One Step at a Time', 'New chapters unlock regularly. This chapter will be available soon!');
                         } else {
                           handleChapterPress(ch);
                         }
                       }}
                     >
                       <LinearGradient
-                        colors={isLocked ? ['#9E9E9E', '#757575'] : (showUnlockAnim ? ['#66BB6A', '#43A047'] : ['#FFB74D', '#F6C228'])}
+                        colors={isLocked ? ['#9E9E9E', '#757575'] : (showUnlockMsg ? ['#FFA726', '#FB8C00'] : ['#FFB74D', '#F6C228'])}
                         start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.chNum}
                       >
                         <Text style={s.chNumText}>{String(ch.number).padStart(2, '0')}</Text>
                       </LinearGradient>
                       <View style={{ flex: 1 }}>
                         <Text style={s.chName} numberOfLines={1}>{ch.name}</Text>
-                        {isLocked && <Text style={{ fontSize: 10, color: '#999', marginTop: 2 }}>Unlocking soon...</Text>}
-                        {showUnlockAnim && <Text style={{ fontSize: 10, color: '#43A047', fontWeight: '700', marginTop: 2 }}>✨ Premium Unlocked</Text>}
+                        {isLocked && <Text style={{ fontSize: 10, color: '#C62828', fontWeight: '600', marginTop: 2 }}>🔒 Go to Premium</Text>}
+                        {showUnlockMsg && <Text style={{ fontSize: 10, color: '#E65100', fontWeight: '600', marginTop: 2 }}>🔜 Coming Soon</Text>}
                       </View>
                       {isLocked ? (
                         <Text style={{ fontSize: 14, color: '#bbb' }}>🔒</Text>
