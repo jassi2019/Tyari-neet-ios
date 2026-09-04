@@ -470,38 +470,43 @@ export const FeatureContent = ({ navigation, route }: Props) => {
             ) : (
               <View style={s.chList}>
                 {chapters.map((ch, idx) => {
-                  const isChFree = (ch as any).serviceType !== 'PREMIUM';
-                  const isUnlocked = (ch as any).serviceType === 'UNLOCKED';
-                  const isLocked = !isChFree && !isUnlocked && !hasPremium;
-                  const showUnlockMsg = !isChFree && !isUnlocked && hasPremium;
+                  const sType = (ch as any).serviceType || 'FREE';
+                  const isChLocked = sType === 'LOCKED';
+                  const isChPremium = sType === 'PREMIUM';
+                  // LOCKED: nobody can open (content not ready)
+                  // PREMIUM: only paid users can open, free users see "Go to Premium"
+                  // FREE: everyone can open
+                  const isLocked = isChLocked || (isChPremium && !hasPremium);
+                  const showUnlockMsg = isChLocked && hasPremium;
                   return (
                     <TouchableOpacity
                       key={ch.id}
                       style={[s.chCard, isLocked && { opacity: 0.6 }]}
                       activeOpacity={0.85}
                       onPress={() => {
-                        if (isLocked) {
+                        if (isChLocked) {
+                          Alert.alert('Learn One Step at a Time', 'New chapters unlock regularly. This chapter will be available soon!');
+                        } else if (isChPremium && !hasPremium) {
                           Alert.alert('Go to Premium', 'Subscribe to unlock this chapter and get full access to all content.', [
                             { text: 'Maybe Later', style: 'cancel' },
                             { text: 'View Plans', onPress: () => navigation.navigate('Plans') }
                           ]);
-                        } else if (showUnlockMsg) {
-                          Alert.alert('Learn One Step at a Time', 'New chapters unlock regularly. This chapter will be available soon!');
                         } else {
                           handleChapterPress(ch);
                         }
                       }}
                     >
                       <LinearGradient
-                        colors={isLocked ? ['#9E9E9E', '#757575'] : (showUnlockMsg ? ['#FFA726', '#FB8C00'] : ['#FFB74D', '#F6C228'])}
+                        colors={isChLocked ? ['#9E9E9E', '#757575'] : (isChPremium && !hasPremium ? ['#B71C1C', '#C62828'] : (isChPremium ? ['#66BB6A', '#43A047'] : ['#FFB74D', '#F6C228']))}
                         start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.chNum}
                       >
                         <Text style={s.chNumText}>{String(ch.number).padStart(2, '0')}</Text>
                       </LinearGradient>
                       <View style={{ flex: 1 }}>
                         <Text style={s.chName} numberOfLines={1}>{ch.name}</Text>
-                        {isLocked && <Text style={{ fontSize: 10, color: '#C62828', fontWeight: '600', marginTop: 2 }}>🔒 Go to Premium</Text>}
-                        {showUnlockMsg && <Text style={{ fontSize: 10, color: '#E65100', fontWeight: '600', marginTop: 2 }}>🔜 Coming Soon</Text>}
+                        {isChLocked && <Text style={{ fontSize: 10, color: '#999', fontWeight: '600', marginTop: 2 }}>🔜 Coming Soon</Text>}
+                        {isChPremium && !hasPremium && <Text style={{ fontSize: 10, color: '#C62828', fontWeight: '600', marginTop: 2 }}>🔒 Go to Premium</Text>}
+                        {isChPremium && hasPremium && <Text style={{ fontSize: 10, color: '#2E7D32', fontWeight: '600', marginTop: 2 }}>✅ Premium</Text>}
                       </View>
                       {isLocked ? (
                         <Text style={{ fontSize: 14, color: '#bbb' }}>🔒</Text>
