@@ -5,6 +5,7 @@ import {
   useCreateOrder,
   useCreateSubscription,
 } from '@/hooks/api/payment';
+import { useCreatePayUOrder } from '@/hooks/api/payu';
 import { useSendLogReport } from '@/hooks/api/log';
 import { useGetProfile } from '@/hooks/api/user';
 import {
@@ -93,6 +94,8 @@ export const PaymentScreen = ({ navigation, route }: PaymentScreenProps) => {
     mutateAsync: createRazorpaySubscriptionAsync,
     isPending: isCreatingRazorpaySubscription,
   } = useCreateSubscription();
+  const { mutateAsync: createPayUOrderAsync, isPending: isCreatingPayUOrder } =
+    useCreatePayUOrder();
   const { mutateAsync: createAppleSubscriptionAsync, isPending: isCreatingAppleSubscription } =
     useCreateAppleIapSubscription();
   const sendLogReport = useSendLogReport();
@@ -168,25 +171,15 @@ export const PaymentScreen = ({ navigation, route }: PaymentScreenProps) => {
       setIsPurchasing(true);
 
       try {
-        const orderRes = await createOrderAsync(plan.id);
-        const order = orderRes?.data;
-        if (!order) {
-          throw new Error('Unable to create order. Please try again.');
+        const payuRes = await createPayUOrderAsync(plan.id);
+        const payuParams = payuRes?.data;
+        if (!payuParams) {
+          throw new Error('Unable to create payment order. Please try again.');
         }
 
-        const payment = await initiateRazorpayPayment({ order, plan });
-
-        await createRazorpaySubscriptionAsync({
-          planId: plan.id,
-          orderId: payment.orderId,
-          paymentId: payment.paymentId,
-          signature: payment.signature,
-        });
-
-        await refreshAuthUser();
-
-        navigation.navigate('SubscriptionMessage', {
-          success: true,
+        // Navigate to PayU WebView checkout screen
+        navigation.navigate('PayUCheckout', {
+          payuParams,
           plan,
         });
       } catch (error: any) {
@@ -390,6 +383,7 @@ export const PaymentScreen = ({ navigation, route }: PaymentScreenProps) => {
     isCreatingAppleSubscription ||
     isCreatingOrder ||
     isCreatingRazorpaySubscription ||
+    isCreatingPayUOrder ||
     isLoadingStoreProduct;
 
   const isSubscription = Platform.OS === 'ios' && storeProduct?.type === 'subs';
@@ -534,7 +528,7 @@ export const PaymentScreen = ({ navigation, route }: PaymentScreenProps) => {
           <View style={styles.disclosureCard}>
             <Text style={styles.disclosureTitle}>One-time Payment</Text>
             <Text style={styles.disclosureText}>
-              Payment will be processed securely via Razorpay. This purchase does not automatically
+              Payment will be processed securely via PayU. This purchase does not automatically
               renew. {validUntilText}.
             </Text>
 

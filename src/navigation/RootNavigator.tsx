@@ -20,6 +20,7 @@ import Chapters from '../screens/main/Chapters';
 import Home from '../screens/main/Home';
 import Library from '../screens/main/Library';
 import Payment from '../screens/main/Payment';
+import PayUCheckout from '../screens/main/PayUCheckout';
 import Plans from '../screens/main/Plans';
 import Privacy from '../screens/main/Privacy';
 import Profile from '../screens/main/Profile';
@@ -127,6 +128,7 @@ function MainStack() {
       <Stack.Screen name="TopicContent" component={TopicContent} />
       <Stack.Screen name="Plans" component={Plans} />
       <Stack.Screen name="Payment" component={Payment} />
+      <Stack.Screen name="PayUCheckout" component={PayUCheckout} />
       <Stack.Screen name="SubscriptionMessage" component={SubscriptionMessage} />
       <Stack.Screen name="AboutUs" component={AboutUs} />
       <Stack.Screen name="ContactUs" component={ContactUs} />
