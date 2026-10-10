@@ -1,0 +1,129 @@
+#!/bin/bash
+# Safe OTA release — verify before shipping, so a bad bundle never reaches users.
+#
+#   bash scripts/safe-release.sh "your release message"
+#
+# Nothing is published unless every check passes. Your uncommitted work is
+# always restored, and Ctrl+C aborts cleanly at any point.
+
+set -u
+cd "$(dirname "$0")/.." || exit 1
+MSG="${1:-}"
+[ -z "$MSG" ] && { echo "Usage: bash scripts/safe-release.sh \"release message\""; exit 1; }
+
+RED=$'\e[31m'; GRN=$'\e[32m'; YLW=$'\e[33m'; OFF=$'\e[0m'
+ok(){  echo "${GRN}  OK${OFF}   $1"; }
+bad(){ echo "${RED}  FAIL${OFF} $1"; exit 1; }
+inf(){ echo "${YLW}==>${OFF} $1"; }
+
+# ---------- 1. runtimeVersion at rest ----------
+inf "1/5  runtimeVersion check"
+RV=$(grep -o '"runtimeVersion": *"[^"]*"' app.json | head -1 | sed 's/.*"\([0-9.]*\)"$/\1/')
+[ "$RV" = "1.0.6" ] || bad "runtimeVersion is $RV, expected 1.0.6 — fix app.json (a previous run may have aborted)"
+ok "runtimeVersion = 1.0.6"
+
+# ---------- 2. payment files must never change ----------
+inf "2/5  payment files untouched"
+PAY=$(git status --porcelain src/screens/main/Payment.tsx src/screens/main/Plans.tsx 2>/dev/null)
+[ -z "$PAY" ] || bad "Payment.tsx/Plans.tsx modified — these must never change:
+$PAY"
+ok "Payment.tsx and Plans.tsx clean"
+
+# ---------- 3. secrets (tracked diff + untracked files) ----------
+inf "3/5  secrets scan"
+SECRET_RE='(rzp_live|sk_live|AIza[0-9A-Za-z_-]{20}|merchant_?salt|smtp_?password|BEGIN [A-Z ]*PRIVATE KEY)'
+HITS=$( { git diff HEAD -- . ':(exclude)*.lock' ':(exclude)package-lock.json' | grep -E '^\+' | grep -vE '^\+\+\+'
+          git ls-files --others --exclude-standard -z 2>/dev/null \
+            | grep -zv '^scripts/safe-release\.sh$' \
+            | xargs -0 -r grep -nHE "$SECRET_RE" 2>/dev/null
+        } | grep -iE "$SECRET_RE" | head -5)
+[ -z "$HITS" ] || bad "possible secret found — do not ship:
+$HITS"
+ok "no secrets found"
+
+# ---------- 4. no NEW TypeScript errors vs last commit ----------
+inf "4/5  TypeScript (comparing against last commit)"
+count_ts(){
+  local out rc cnt
+  out=$(npx tsc --noEmit 2>&1); rc=$?
+  cnt=$(printf '%s' "$out" | grep -c "error TS")
+  # tsc exits 0 when clean, 2 when it found type errors. Anything else
+  # (out of memory, missing binary, killed) means the check did not really run.
+  if [ "$rc" -gt 2 ] || { [ "$rc" != "0" ] && [ "$cnt" = "0" ]; }; then echo "TSC_BROKEN"; return; fi
+  echo "$cnt"
+}
+NOW=$(count_ts)
+[ "$NOW" = "TSC_BROKEN" ] && bad "tsc could not run — cannot verify TypeScript"
+
+STASH=0
+restore_stash(){
+  if [ "$STASH" = "1" ]; then
+    if git stash pop -q 2>/dev/null; then STASH=0
+    else echo "${RED}  CRITICAL: your work is still saved in git stash — run: git stash pop${OFF}"; fi
+  fi
+}
+on_signal(){ restore_stash; echo "${RED}  aborted — nothing was published${OFF}"; exit 130; }
+trap restore_stash EXIT
+trap on_signal INT TERM
+if [ -n "$(git status --porcelain)" ]; then
+  git stash push -u -q -m safe-release-base || bad "could not stash your work for the baseline check"
+  STASH=1
+fi
+BASE=$(count_ts)
+restore_stash
+[ "$STASH" = "1" ] && bad "could not restore your stashed work — run 'git stash pop' manually. NOTHING was published."
+trap - EXIT INT TERM
+[ "$BASE" = "TSC_BROKEN" ] && bad "tsc could not run on baseline — cannot verify TypeScript"
+
+if [ "$NOW" -gt "$BASE" ]; then
+  echo "${RED}  new TypeScript errors introduced:${OFF}"
+  npx tsc --noEmit 2>&1 | grep "error TS" | head -10
+  bad "errors went from $BASE to $NOW"
+fi
+ok "no new TS errors ($NOW total, baseline $BASE)"
+
+# ---------- 5. bundle must build ----------
+inf "5/5  bundle export"
+rm -rf .release-check
+npx expo export --output-dir .release-check --platform all >/dev/null 2>&1; EXPORT_RC=$?
+rm -rf .release-check
+[ "$EXPORT_RC" = "0" ] || bad "bundle export failed — app would crash on launch"
+ok "bundle exports cleanly"
+
+# ---------- publish ----------
+PREV=$(npx eas update:list --branch production --non-interactive 2>/dev/null \
+       | grep -E "Runtime Version|Group ID" | paste - - | awk '{print $3" -> "$6}' | head -2)
+echo
+inf "All checks passed. Publishing..."
+
+FAILED=0
+restore_rv(){ sed -i 's/"runtimeVersion": "1.0.7"/"runtimeVersion": "1.0.6"/' app.json; }
+on_signal_rv(){ restore_rv; echo "${RED}  aborted during publish — rerun the script${OFF}"; exit 130; }
+trap restore_rv EXIT
+trap on_signal_rv INT TERM
+for RUNTIME in 1.0.6 1.0.7; do
+  if [ "$RUNTIME" = "1.0.7" ]; then
+    sed -i 's/"runtimeVersion": "1.0.6"/"runtimeVersion": "1.0.7"/' app.json
+    grep -q '"runtimeVersion": "1.0.7"' app.json || bad "could not switch runtimeVersion to 1.0.7"
+  fi
+  for BRANCH in production preview; do
+    echo "    -> $BRANCH @ $RUNTIME"
+    npx eas update --branch "$BRANCH" --message "$MSG ($RUNTIME)" --non-interactive \
+      || { echo "${RED}    publish FAILED: $BRANCH @ $RUNTIME${OFF}"; FAILED=1; }
+  done
+done
+restore_rv
+trap - EXIT INT TERM
+grep -q '"runtimeVersion": "1.0.6"' app.json || bad "runtimeVersion NOT restored — fix app.json by hand"
+ok "runtimeVersion restored to 1.0.6"
+
+echo
+if [ "$FAILED" = "1" ]; then
+  bad "one or more publishes failed — users may have a partial release. Rerun this script."
+fi
+echo "${GRN}Released:${OFF} $MSG"
+echo "Users get it on next app restart."
+if [ -n "$PREV" ]; then
+  echo "${YLW}Rollback (previous versions, run per runtime):${OFF}"
+  echo "$PREV" | while read -r L; do echo "    $L   ->   npx eas update:republish --group ${L##* }"; done
+fi
