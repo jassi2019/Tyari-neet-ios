@@ -38,6 +38,7 @@ type Props = {
       preSelectedClassId?: string;
       preSelectedChapterId?: string;
       preSelectedChapterName?: string;
+      freeOnly?: boolean;
     };
   };
 };
@@ -60,8 +61,10 @@ export const FeatureContent = ({ navigation, route }: Props) => {
   const isQuestionBased = QUESTION_FEATURES.includes(featureType);
   const { isGuest, user } = useAuth();
   const hasPremium = isPaidSubscriptionActive(user?.subscription);
+  const freeOnly = route?.params?.freeOnly ?? false;
 
   const [step, setStep] = useState<Step>('subject');
+  useContentProtection({ enabled: step === 'viewer', key: 'feature-content-viewer' });
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [selectedSubject, setSelectedSubject] = useState<any>(null);
   const [selectedClass, setSelectedClass] = useState<any>(null);
@@ -85,12 +88,12 @@ export const FeatureContent = ({ navigation, route }: Props) => {
   const { data: subjectsData } = useGetAllSubjects({});
   const { data: classesData } = useGetAllClasses({});
   const { data: chaptersData, isLoading: chaptersLoading } = useGetChaptersBySubjectId(
-    { subjectId: selectedSubject?.id, classId: selectedClass?.id },
+    { subjectId: selectedSubject?.id, classId: selectedClass?.id, freeOnly, featureType },
     { enabled: !!selectedSubject && !!selectedClass }
   );
   const { data: contentData, isLoading: contentLoading } = useGetFeatureContent(
     { featureType, chapterId: selectedChapter?.id },
-    { enabled: !!selectedChapter && !['revision_recall', 'chapter_checkpoint'].includes(featureType) }
+    { enabled: !!selectedChapter && !['chapter_checkpoint'].includes(featureType) }
   );
 
   // Fetch exercise questions from exercise_questions table
@@ -114,13 +117,15 @@ export const FeatureContent = ({ navigation, route }: Props) => {
     new Map((topicsData?.data || []).map((t: TTopic) => [t.id, t])).values()
   );
   // For revision_recall: only show topics that have questions with matching topicId
+  // For non-premium users in non-question features: only show FREE topics
+  const filteredTopics = (freeOnly && !isQuestionBased) ? allTopics.filter(t => t.serviceType === 'FREE') : allTopics;
   const topics: TTopic[] = featureType === 'revision_recall'
     ? (() => {
         const rrQuestions = rrQData?.data || [];
         const topicIdsWithQuestions = new Set(rrQuestions.map((q: any) => q.topicId).filter(Boolean));
-        return allTopics.filter(t => topicIdsWithQuestions.has(t.id));
+        return filteredTopics.filter(t => topicIdsWithQuestions.has(t.id));
       })()
-    : allTopics;
+    : filteredTopics;
 
   // Also fetch from main questions table as fallback
   const { data: mainQData, isLoading: mainQLoading } = useGetQuestions(
@@ -130,7 +135,10 @@ export const FeatureContent = ({ navigation, route }: Props) => {
 
   const subjects = subjectsData?.data || [];
   const classes = classesData?.data || [];
-  const chapters: TChapter[] = chaptersData?.data || [];
+  const allChapters: TChapter[] = chaptersData?.data || [];
+  const chapters: TChapter[] = freeOnly
+    ? allChapters.filter((ch) => !isPremiumServiceType((ch as any).serviceType) && (ch as any).serviceType !== 'LOCKED')
+    : allChapters;
   const contents: TFeatureContent[] = (contentData as any)?.data || [];
   // Merge exercise_questions + questions table data
   const exerciseQFromTable: TExerciseQuestion[] = exerciseQData?.data || [];
@@ -183,7 +191,7 @@ export const FeatureContent = ({ navigation, route }: Props) => {
   const handleChapterPress = (ch: any) => {
     if (isQuestionBased) {
       if (featureType === 'revision_recall') {
-        // Revision Recall — show Topics list (admin-added topics), then MCQ per topic
+        // Revision Recall — show Topics list, then MCQ per topic
         setSelectedChapter(ch);
         setStep('topicsList');
       } else if (featureType === 'chapter_checkpoint') {
@@ -472,12 +480,10 @@ export const FeatureContent = ({ navigation, route }: Props) => {
                 {chapters.map((ch, idx) => {
                   const sType = (ch as any).serviceType || 'FREE';
                   const isChLocked = sType === 'LOCKED';
-                  const isChPremium = sType === 'PREMIUM';
-                  // LOCKED: nobody can open (content not ready)
-                  // PREMIUM: only paid users can open, free users see "Go to Premium"
-                  // FREE: everyone can open
-                  const isLocked = isChLocked || (isChPremium && !hasPremium);
-                  const showUnlockMsg = isChLocked && hasPremium;
+                  // In normal flow (not freeOnly): non-premium users see lock on all chapters
+                  // In freeOnly flow: only free-topic chapters shown, all can open
+                  const showLock = !freeOnly && !hasPremium && !isChLocked;
+                  const isLocked = isChLocked || showLock;
                   return (
                     <TouchableOpacity
                       key={ch.id}
@@ -485,8 +491,15 @@ export const FeatureContent = ({ navigation, route }: Props) => {
                       activeOpacity={0.85}
                       onPress={() => {
                         if (isChLocked) {
-                          Alert.alert('Learn One Step at a Time', 'New chapters unlock regularly. This chapter will be available soon!');
-                        } else if (isChPremium && !hasPremium) {
+                          if (hasPremium) {
+                            Alert.alert('Learn One Step at a Time', 'New chapters unlock regularly. This chapter will be available soon!');
+                          } else {
+                            Alert.alert('Go to Premium', 'Subscribe to unlock this chapter and get full access to all content.', [
+                              { text: 'Maybe Later', style: 'cancel' },
+                              { text: 'View Plans', onPress: () => navigation.navigate('Plans') }
+                            ]);
+                          }
+                        } else if (!hasPremium && !freeOnly) {
                           Alert.alert('Go to Premium', 'Subscribe to unlock this chapter and get full access to all content.', [
                             { text: 'Maybe Later', style: 'cancel' },
                             { text: 'View Plans', onPress: () => navigation.navigate('Plans') }
@@ -497,21 +510,19 @@ export const FeatureContent = ({ navigation, route }: Props) => {
                       }}
                     >
                       <LinearGradient
-                        colors={isChLocked ? ['#9E9E9E', '#757575'] : (isChPremium && !hasPremium ? ['#B71C1C', '#C62828'] : (isChPremium ? ['#66BB6A', '#43A047'] : ['#FFB74D', '#F6C228']))}
+                        colors={isChLocked ? ['#9E9E9E', '#757575'] : (!hasPremium && !freeOnly ? ['#B71C1C', '#C62828'] : ['#FFB74D', '#F6C228'])}
                         start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.chNum}
                       >
                         <Text style={s.chNumText}>{String(ch.number).padStart(2, '0')}</Text>
                       </LinearGradient>
                       <View style={{ flex: 1 }}>
                         <Text style={s.chName} numberOfLines={1}>{ch.name}</Text>
-                        {isChLocked && <Text style={{ fontSize: 10, color: '#999', fontWeight: '600', marginTop: 2 }}>🔜 Coming Soon</Text>}
-                        {isChPremium && !hasPremium && <Text style={{ fontSize: 10, color: '#C62828', fontWeight: '600', marginTop: 2 }}>🔒 Go to Premium</Text>}
-                        {isChPremium && hasPremium && <Text style={{ fontSize: 10, color: '#2E7D32', fontWeight: '600', marginTop: 2 }}>✅ Premium</Text>}
+                        {isChLocked && hasPremium && <Text style={{ fontSize: 10, color: '#999', fontWeight: '600', marginTop: 2 }}>🔜 Learn one step at a time</Text>}
+                        {isChLocked && !hasPremium && <Text style={{ fontSize: 10, color: '#C62828', fontWeight: '600', marginTop: 2 }}>🔒 Go to Premium</Text>}
+                        {!isChLocked && !hasPremium && !freeOnly && <Text style={{ fontSize: 10, color: '#C62828', fontWeight: '600', marginTop: 2 }}>🔒 Go to Premium</Text>}
                       </View>
                       {isLocked ? (
                         <Text style={{ fontSize: 14, color: '#bbb' }}>🔒</Text>
-                      ) : showUnlockAnim ? (
-                        <Text style={{ fontSize: 14 }}>🔓</Text>
                       ) : (
                         <Text style={s.chArrow}>›</Text>
                       )}
@@ -526,7 +537,7 @@ export const FeatureContent = ({ navigation, route }: Props) => {
           {step === 'content' && (
             contentLoading ? (
               <View style={s.center}><ActivityIndicator size="large" color="#F5A623" /></View>
-            ) : contents.filter(c => c.isActive).length === 0 ? (
+            ) : contents.filter(c => c.isActive && (!freeOnly || !isPremiumServiceType(c.serviceType))).length === 0 ? (
               <View style={s.center}>
                 <Text style={{ fontSize: 40, marginBottom: 8 }}>📭</Text>
                 <Text style={s.emptyTitle}>No content yet</Text>
@@ -534,7 +545,7 @@ export const FeatureContent = ({ navigation, route }: Props) => {
               </View>
             ) : (
               <View style={s.chList}>
-                {contents.filter(c => c.isActive).map((item, i) => (
+                {contents.filter(c => c.isActive && (!freeOnly || !isPremiumServiceType(c.serviceType))).map((item, i) => (
                   <TouchableOpacity key={item.id} style={s.contentCard} activeOpacity={0.85} onPress={() => openContent(item)}>
                     <View style={s.contentNum}>
                       <Text style={s.contentNumText}>{String(i + 1).padStart(2, '0')}</Text>

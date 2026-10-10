@@ -3,22 +3,24 @@ import { TApiPromise, TQueryOpts } from '@/types/api';
 import { TChapter } from '@/types/Chapter';
 import { useQuery } from '@tanstack/react-query';
 
-const getChaptersBySubjectId = (subjectId: string, classId: string): TApiPromise<TChapter[]> => {
+const getChaptersBySubjectId = (subjectId: string, classId: string, freeOnly?: boolean, featureType?: string): TApiPromise<TChapter[]> => {
   return api.get(`/api/v1/chapters`, {
     params: {
       subjectId,
       classId,
+      ...(freeOnly ? { freeOnly: 'true' } : {}),
+      ...(freeOnly && featureType ? { featureType } : {}),
     },
   });
 };
 
 export const useGetChaptersBySubjectId = (
-  { subjectId, classId }: { subjectId: string; classId: string },
+  { subjectId, classId, freeOnly, featureType }: { subjectId: string; classId: string; freeOnly?: boolean; featureType?: string },
   options?: TQueryOpts<TChapter[]>
 ) => {
   return useQuery({
-    queryKey: ['chapters', subjectId, classId],
-    queryFn: () => getChaptersBySubjectId(subjectId, classId),
+    queryKey: ['chapters', subjectId, classId, freeOnly, featureType],
+    queryFn: () => getChaptersBySubjectId(subjectId, classId, freeOnly, featureType),
     ...options,
   });
 };

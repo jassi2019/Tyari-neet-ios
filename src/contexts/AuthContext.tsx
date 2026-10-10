@@ -1,9 +1,10 @@
 import api from '@/lib/api';
+import { setOnSessionExpired } from '@/lib/api';
 import tokenManager from '@/lib/tokenManager';
 import { TUser } from '@/types/User';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
-import { AppState } from 'react-native';
+import { Alert, AppState } from 'react-native';
 
 const USER_KEY = '@auth_user';
 const GUEST_KEY = '@auth_guest_mode';
@@ -204,6 +205,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setIsGuest(false);
     setHasSession(false);
   };
+
+  // Auto logout when session expired (another device logged in)
+  useEffect(() => {
+    setOnSessionExpired(() => {
+      Alert.alert(
+        'Session Expired',
+        'Your account has been logged in on another device. You have been logged out.',
+        [{ text: 'OK', onPress: () => signOut() }]
+      );
+    });
+  }, []);
 
   return (
     <AuthContext.Provider

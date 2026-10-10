@@ -1,10 +1,12 @@
 import { useGetAllClasses } from '@/hooks/api/classes';
 import { useGetAllSubjects } from '@/hooks/api/subjects';
 import { useAuth } from '@/contexts/AuthContext';
+import { isPaidSubscriptionActive } from '@/lib/subscription';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ChevronLeft } from 'lucide-react-native';
 import React, { useState } from 'react';
 import {
+  Alert,
   Modal,
   ScrollView,
   StyleSheet,
@@ -69,7 +71,23 @@ const SUBJECT_EMOJI: Record<string, string> = {
 };
 
 export const Tests = ({ navigation }: TestsScreenProps) => {
-  const { isGuest } = useAuth();
+  const { user, isGuest } = useAuth();
+  const hasPremium = isPaidSubscriptionActive(user?.subscription);
+
+  const requirePremium = (): boolean => {
+    if (isGuest || !hasPremium) {
+      Alert.alert(
+        'Premium Required',
+        'Tests are available for premium subscribers only. Subscribe to unlock all tests.',
+        [
+          { text: 'Maybe Later', style: 'cancel' },
+          { text: 'View Plans', onPress: () => navigation.navigate('Plans') },
+        ]
+      );
+      return false;
+    }
+    return true;
+  };
   const { data: classesData } = useGetAllClasses({ enabled: !isGuest });
   const { data: subjectsData } = useGetAllSubjects({ enabled: !isGuest });
   const [step, setStep] = useState<Step>('type');
@@ -89,6 +107,8 @@ export const Tests = ({ navigation }: TestsScreenProps) => {
   const stepNum = step === 'type' ? 1 : step === 'subject' ? 2 : 3;
 
   const handleTypePress = (type: typeof TEST_TYPES[0]) => {
+    // List is browsable by everyone; each test is gated by its own
+    // FREE/PREMIUM serviceType in TestSeriesDetail.
     navigation.navigate('TestSeriesList', {
       testType: type.id,
       testTypeTitle: type.title,
@@ -105,6 +125,7 @@ export const Tests = ({ navigation }: TestsScreenProps) => {
 
   const handleContinue = () => {
     if (!selectedSubject || !selectedType || !selectedClassId) return;
+    if (!requirePremium()) { setShowClassModal(false); return; }
     const cls = classOptions.find((c) => c.id === selectedClassId);
     setShowClassModal(false);
 

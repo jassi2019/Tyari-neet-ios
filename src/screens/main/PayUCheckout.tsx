@@ -2,6 +2,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useVerifyPayUPayment, type PayUOrderResponse } from '@/hooks/api/payu';
 import { useGetProfile } from '@/hooks/api/user';
 import { useSendLogReport } from '@/hooks/api/log';
+import { useQueryClient } from '@tanstack/react-query';
 import { TPlan } from '@/types/Plan';
 import { ChevronLeft } from 'lucide-react-native';
 import React, { useRef, useState } from 'react';
@@ -9,6 +10,7 @@ import {
   ActivityIndicator,
   Alert,
   BackHandler,
+  Linking,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -87,14 +89,18 @@ const PayUCheckout = ({ navigation, route }: PayUCheckoutProps) => {
   const { mutateAsync: verifyPayment, isPending: isVerifying } = useVerifyPayUPayment();
   const sendLogReport = useSendLogReport();
 
+  const queryClient = useQueryClient();
   const webViewRef = useRef<WebView>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [hasHandledResult, setHasHandledResult] = useState(false);
+  const lastUrlRef = useRef<string>('');
 
   const formHtml = React.useMemo(() => buildPayUFormHtml(payuParams), [payuParams]);
 
   const refreshAuthUser = async () => {
     try {
+      // Invalidate cache so fresh data is fetched from server
+      await queryClient.invalidateQueries({ queryKey: ['useGetProfile'] });
       const profileResult = await fetchProfile();
       if (profileResult.data?.data) {
         setUser(profileResult.data.data);
@@ -181,13 +187,46 @@ const PayUCheckout = ({ navigation, route }: PayUCheckoutProps) => {
     ]);
   };
 
+  const injectedJS = `
+    (function() {
+      function checkResult() {
+        var el = document.getElementById('payu-result');
+        if (el) {
+          var status = el.getAttribute('data-status');
+          var txnid = el.getAttribute('data-txnid');
+          if (status) {
+            window.ReactNativeWebView.postMessage(JSON.stringify({ status: status, txnid: txnid }));
+          }
+        }
+      }
+      // Check immediately and also after DOM changes
+      checkResult();
+      var observer = new MutationObserver(checkResult);
+      observer.observe(document.body, { childList: true, subtree: true });
+      setTimeout(checkResult, 1000);
+      setTimeout(checkResult, 3000);
+    })();
+    true;
+  `;
+
+  const handleWebViewMessage = (event: any) => {
+    try {
+      const data = JSON.parse(event.nativeEvent.data);
+      if (data.status === 'success') {
+        handlePaymentSuccess(data.txnid || payuParams.txnid);
+      } else if (data.status === 'failure') {
+        handlePaymentFailure();
+      }
+    } catch {}
+  };
+
   const handleNavigationChange = (navState: WebViewNavigation) => {
     const { url } = navState;
     if (!url) return;
 
     // Check if navigated to success URL
-    if (url.startsWith(payuParams.surl)) {
-      handlePaymentSuccess(payuParams.txnid);
+    if (url.includes('/payu/callback') || url.startsWith(payuParams.surl)) {
+      // Let injected JS handle it via payu-result div
       return;
     }
 
@@ -245,7 +284,8 @@ const PayUCheckout = ({ navigation, route }: PayUCheckoutProps) => {
           ref={webViewRef}
           source={{ html: formHtml }}
           style={styles.webView}
-          onNavigationStateChange={handleNavigationChange}
+          onMessage={handleWebViewMessage}
+          injectedJavaScript={injectedJS}
           onLoadStart={() => setIsLoading(true)}
           onLoadEnd={() => setIsLoading(false)}
           javaScriptEnabled={true}
@@ -253,7 +293,49 @@ const PayUCheckout = ({ navigation, route }: PayUCheckoutProps) => {
           startInLoadingState={false}
           scalesPageToFit={true}
           mixedContentMode="compatibility"
-          originWhitelist={['*']}
+          originWhitelist={['http://*', 'https://*', 'upi://*', 'phonepe://*', 'gpay://*', 'paytmmp://*', 'tez://*', 'intent://*']}
+          setSupportMultipleWindows={false}
+          onNavigationStateChange={(navState) => {
+            const { url } = navState;
+            if (url) lastUrlRef.current = url;
+            handleNavigationChange(navState);
+          }}
+          onShouldStartLoadWithRequest={(request) => {
+            const { url } = request;
+            const isExternalScheme =
+              url.startsWith('upi://') ||
+              url.startsWith('phonepe://') ||
+              url.startsWith('gpay://') ||
+              url.startsWith('paytmmp://') ||
+              url.startsWith('tez://') ||
+              url.startsWith('intent://');
+            if (isExternalScheme) {
+              Linking.canOpenURL(url).then((supported) => {
+                if (supported) {
+                  Linking.openURL(url);
+                } else if (url.startsWith('intent://')) {
+                  // Try extracting fallback URL from intent
+                  const fallbackMatch = url.match(/S\.browser_fallback_url=([^;]+)/);
+                  if (fallbackMatch) {
+                    Linking.openURL(decodeURIComponent(fallbackMatch[1])).catch(() => {});
+                  }
+                }
+              }).catch(() => {});
+              return false;
+            }
+            return true;
+          }}
+          onError={(syntheticEvent) => {
+            const { nativeEvent } = syntheticEvent;
+            // Ignore UPI scheme errors — the app was opened externally
+            if (nativeEvent.description?.includes('ERR_UNKNOWN_URL_SCHEME')) {
+              // Go back to the PayU page
+              if (webViewRef.current) {
+                webViewRef.current.goBack();
+              }
+              return;
+            }
+          }}
         />
       </View>
     </SafeAreaView>

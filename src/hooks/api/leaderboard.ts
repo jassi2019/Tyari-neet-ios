@@ -16,7 +16,7 @@ export type TLeaderboardEntry = {
   };
 };
 
-export const useGetLeaderboard = (period: 'weekly' | 'daily' = 'weekly', limit = 50) =>
+export const useGetLeaderboard = (period: 'weekly' | 'daily' | 'monthly' | 'all' = 'weekly', limit = 50) =>
   useQuery({
     queryKey: ['leaderboard', period, limit],
     queryFn: () => api.get<{ data: TLeaderboardEntry[] }>('/api/v1/leaderboard', { params: { period, limit } }),

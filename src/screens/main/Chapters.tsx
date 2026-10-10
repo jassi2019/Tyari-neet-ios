@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useGetChaptersBySubjectId } from '@/hooks/api/chapters';
 import { useGetAllClasses } from '@/hooks/api/classes';
 import { useProgress } from '@/hooks/useProgress';
+import { isPremiumServiceType } from '@/lib/subscription';
 import { TChapter } from '@/types/Chapter';
 import { TClass } from '@/types/Class';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -38,7 +39,7 @@ const FILTERS = ['All', 'In Progress', 'Not Started', 'Completed'] as const;
 type Filter = (typeof FILTERS)[number];
 
 export const Chapters = ({ navigation, route }: ChaptersScreenProps) => {
-  const { isGuest } = useAuth();
+  const { isGuest, user } = useAuth();
   const subjectId = route?.params?.subjectId ?? '';
   const subjectTitle = route?.params?.subjectTitle ?? '';
   const initialClassId = route?.params?.classId;
@@ -59,7 +60,7 @@ export const Chapters = ({ navigation, route }: ChaptersScreenProps) => {
     isLoading: chaptersLoading,
     error: chaptersError,
   } = useGetChaptersBySubjectId(
-    { subjectId, classId: selectedClassId },
+    { subjectId, classId: selectedClassId, freeOnly },
     { enabled: !isGuest && Boolean(subjectId && selectedClassId) }
   );
 
@@ -89,8 +90,12 @@ export const Chapters = ({ navigation, route }: ChaptersScreenProps) => {
   };
 
   const filteredChapters = useMemo(() => {
-    if (filter === 'All') return chaptersToRender;
-    return chaptersToRender.filter((ch) => {
+    let base = chaptersToRender;
+    if (freeOnly) {
+      base = base.filter((ch) => !isPremiumServiceType((ch as any).serviceType));
+    }
+    if (filter === 'All') return base;
+    return base.filter((ch) => {
       const { pct, total } = getChapterProgress(ch);
       if (filter === 'Completed') return total > 0 && pct >= 100;
       if (filter === 'In Progress') return pct > 0 && pct < 100;
@@ -98,7 +103,7 @@ export const Chapters = ({ navigation, route }: ChaptersScreenProps) => {
       return true;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [chaptersToRender, filter, completedTopics]);
+  }, [chaptersToRender, filter, completedTopics, freeOnly]);
 
   const handleBack = () => navigation.goBack();
 

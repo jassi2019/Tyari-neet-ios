@@ -73,7 +73,7 @@ export const Home = ({ navigation }: HomeScreenProps) => {
   const { isGuest } = useAuth();
   const { data: profile } = useGetProfile({ enabled: !isGuest });
   const { data: homeContent, isSuccess: homeContentLoaded } = useGetHomeContent();
-  const { data: leaderboardData } = useGetLeaderboard('weekly', 50);
+  const { data: leaderboardData } = useGetLeaderboard('all', 50);
   const { data: myScoresData } = useGetMyScores(!isGuest);
 
   const heroImageUrl = useMemo(() => {
@@ -138,7 +138,7 @@ export const Home = ({ navigation }: HomeScreenProps) => {
 
   const openFreeFeature = (featureType: string, featureName: string) => {
     setShowFreeContentModal(false);
-    navigation.navigate('FeatureContent', { featureType, featureName });
+    navigation.navigate('FeatureContent', { featureType, featureName, freeOnly: true });
   };
 
   // useContentProtection removed — not in original code, causes iOS black screen
@@ -319,7 +319,7 @@ export const Home = ({ navigation }: HomeScreenProps) => {
             <View style={styles.secRow}>
               <View style={styles.secTitleWrap}>
                 <Text style={styles.pulseIcon}>🏆</Text>
-                <Text style={styles.secTitle}>Weekly Rankings</Text>
+                <Text style={styles.secTitle}>Rankings</Text>
               </View>
               <TouchableOpacity onPress={() => navigation.navigate('Leaderboard')}>
                 <Text style={styles.viewAll}>View All →</Text>

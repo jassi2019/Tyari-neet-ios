@@ -1,17 +1,11 @@
 import React from 'react';
-import { Alert, Linking, Platform, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Linking, Platform, StyleSheet, Text, View } from 'react-native';
 
 type Props = {
   source: { uri: string } | { html: string };
   style?: any;
   debugLabel?: string;
   enableDebugLogs?: boolean;
-  /**
-   * Best-effort content protection for sensitive pages:
-   * - Disables screenshots/screen recording at the screen level (see `useContentProtection`).
-   * - Disables basic copy/select/context menu inside the WebView via injected JS.
-   * - Blocks obvious download/navigation attempts.
-   */
   protectedContent?: boolean;
 };
 
@@ -19,7 +13,6 @@ const shouldBlockNavigation = (url: string): boolean => {
   const lower = String(url || '').toLowerCase();
   const clean = lower.split('#')[0].split('?')[0];
 
-  // Block common file downloads.
   const blockedExts = [
     '.pdf',
     '.zip',
@@ -34,53 +27,49 @@ const shouldBlockNavigation = (url: string): boolean => {
   ];
   if (blockedExts.some((ext) => clean.endsWith(ext))) return true;
 
-  // Heuristic for explicit download intent.
   if (lower.includes('download=')) return true;
 
   return false;
 };
 
 const isTopFrameRequest = (req: any): boolean => {
-  // iOS provides `isTopFrame` and `mainDocumentURL`. Android provides `isTopFrame`.
   if (typeof req?.isTopFrame === 'boolean') return req.isTopFrame;
 
   const url = String(req?.url || '');
   const mainDocumentURL = String(req?.mainDocumentURL || '');
   if (mainDocumentURL) return mainDocumentURL === url;
 
-  // If we can't tell, assume top-frame to keep protection behavior.
   return true;
 };
 
 const PROTECT_JS = `
 (function () {
   try {
-    // Remove Canva header and footer (branding)
+    // Remove Canva header and footer (branding) — same as original app
     document.querySelector('header')?.remove();
     document.querySelector('footer')?.remove();
 
-    // Disable text selection and copying
     var style = document.createElement('style');
     style.type = 'text/css';
-    style.innerHTML = '* { -webkit-user-select: none !important; -moz-user-select: none !important; -ms-user-select: none !important; user-select: none !important; -webkit-touch-callout: none !important; }';
-    document.head.appendChild(style);
+    style.innerHTML = '*{ -webkit-user-select:none !important; user-select:none !important; } body{ -webkit-touch-callout:none !important; }'
+      // Hide Canva branding even when it is not a <header>/<footer> tag
+      // (Canva's mobile layout uses divs/anchors; CSS keeps hiding nodes
+      // that Canva re-adds dynamically, which one-time JS removal misses)
+      + ' header, footer { display:none !important; }'
+      + ' [class*="branding"], [class*="Branding"], [class*="watermark"], [class*="Watermark"] { display:none !important; }'
+      + ' a[href*="canva.com/signup"], a[aria-label*="Canva"], a[aria-label*="canva"] { display:none !important; }';
+    (document.head || document.documentElement).appendChild(style);
 
-    document.addEventListener('copy', function(e) { e.preventDefault(); }, { capture: true });
-    document.addEventListener('cut', function(e) { e.preventDefault(); }, { capture: true });
-    document.addEventListener('paste', function(e) { e.preventDefault(); }, { capture: true });
-    document.addEventListener('contextmenu', function(e) { e.preventDefault(); }, { capture: true });
-    document.addEventListener('dragstart', function(e) { e.preventDefault(); }, { capture: true });
+    document.addEventListener('copy', function (e) { e.preventDefault(); });
+    document.addEventListener('cut', function (e) { e.preventDefault(); });
+    document.addEventListener('contextmenu', function (e) { e.preventDefault(); });
 
-    // Disable pinch zoom
-    document.addEventListener('touchstart', function(e) { if (e.touches.length > 1) e.preventDefault(); }, { passive: false, capture: true });
-    document.addEventListener('touchmove', function(e) { if (e.touches.length > 1) e.preventDefault(); }, { passive: false, capture: true });
-    var lastTap = 0;
-    document.addEventListener('touchend', function(e) { var now = Date.now(); if (now - lastTap < 300) e.preventDefault(); lastTap = now; }, { passive: false, capture: true });
-
-    // Disable zoom only via touch events (no viewport meta — keeps original font size)
+    // Block only pinch (2-finger) zoom; single taps untouched
+    document.addEventListener('touchstart', function (e) { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
+    document.addEventListener('touchmove', function (e) { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
 
     // Periodically remove header/footer (Canva loads them dynamically)
-    setInterval(function() {
+    setInterval(function () {
       var h = document.querySelector('header');
       var f = document.querySelector('footer');
       if (h) h.remove();
@@ -118,12 +107,46 @@ const DEBUG_WEBVIEW_JS = `
   true;
 })();`;
 
-const buildInjectedJavaScript = (useProtection: boolean, useDebug: boolean): string | undefined => {
+// Canva fits the design to screen width, which makes text tiny on phones.
+// Narrowing the layout viewport makes the browser upscale everything 1.5x
+// (a fixed render zoom — user pinch zoom stays disabled).
+const CANVA_FONT_BOOST_JS = `
+(function () {
+  try {
+    if (window.__canvaBoosted) return;
+    window.__canvaBoosted = true;
+    var w = window.innerWidth || 360;
+    var target = Math.round(w / 1.5);
+    var vp = document.querySelector('meta[name="viewport"]');
+    if (!vp) {
+      vp = document.createElement('meta');
+      vp.setAttribute('name', 'viewport');
+      (document.head || document.documentElement).appendChild(vp);
+    }
+    vp.setAttribute('content', 'width=' + target + ', user-scalable=no');
+    setTimeout(function () { try { window.dispatchEvent(new Event('resize')); } catch (e) {} }, 300);
+  } catch (e) {}
+  true;
+})();`;
+
+const buildInjectedJavaScript = (useProtection: boolean, useDebug: boolean, useCanvaBoost: boolean): string | undefined => {
   const scripts: string[] = [];
+  if (useCanvaBoost) scripts.push(CANVA_FONT_BOOST_JS);
   if (useProtection) scripts.push(PROTECT_JS);
   if (useDebug) scripts.push(DEBUG_WEBVIEW_JS);
   if (scripts.length === 0) return undefined;
   return scripts.join('\n');
+};
+
+// Canva's `?embed` response serves its dedicated embed app instead of the
+// full design viewer, so the branding chrome is never part of the page.
+// Same viewport meta, so the font boost is unaffected.
+const withCanvaEmbed = (uri: string): string => {
+  if (/[?&]embed(=|&|$)/i.test(uri)) return uri;
+  const hash = uri.indexOf('#');
+  const base = hash === -1 ? uri : uri.slice(0, hash);
+  const frag = hash === -1 ? '' : uri.slice(hash);
+  return base + (base.includes('?') ? '&' : '?') + 'embed' + frag;
 };
 
 export default function PlatformWebView({
@@ -134,11 +157,31 @@ export default function PlatformWebView({
   enableDebugLogs,
 }: Props) {
   const debugEnabled = Boolean(enableDebugLogs);
-  const injectedJS = buildInjectedJavaScript(Boolean(protectedContent), debugEnabled);
+  const isCanvaSource = 'uri' in source && /canva\.com/i.test(source.uri);
+  const injectedJS = buildInjectedJavaScript(Boolean(protectedContent), debugEnabled, isCanvaSource);
   const debugPrefix = debugLabel ? `[PlatformWebView:${debugLabel}]` : '[PlatformWebView]';
 
+  // Keep Canva pages invisible until PROTECT_JS has run, so branding can never
+  // be seen even for a frame.
+  const [revealed, setRevealed] = React.useState(!isCanvaSource);
+  const revealTimer = React.useRef<any>(null);
+
+  React.useEffect(() => () => {
+    if (revealTimer.current) clearTimeout(revealTimer.current);
+  }, []);
+
+  // Safety net: a stalled load fires neither onLoadEnd nor onError, so never
+  // leave the user stuck on the spinner.
+  React.useEffect(() => {
+    if (!isCanvaSource) return;
+    const t = setTimeout(() => setRevealed(true), 8000);
+    return () => clearTimeout(t);
+  }, [isCanvaSource]);
+
+  const effectiveSource =
+    isCanvaSource && 'uri' in source ? { ...source, uri: withCanvaEmbed(source.uri) } : source;
+
   if (Platform.OS === 'web') {
-    // For web, render an iframe for uri sources, or simple HTML wrapper for html
     if ('uri' in source) {
       return (
         <iframe
@@ -149,7 +192,6 @@ export default function PlatformWebView({
       );
     }
 
-    // html fallback
     return (
       <View style={[styles.webFallback, style]}>
         <Text>HTML content not supported in web fallback.</Text>
@@ -158,15 +200,33 @@ export default function PlatformWebView({
   }
 
   try {
-    // Lazy require so web doesn't import native module
+    const canvaCompatibleUserAgent =
+      Platform.OS === 'android'
+        ? 'Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Mobile Safari/537.36'
+        : 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1';
+
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const { WebView } = require('react-native-webview');
 
     return (
+      <View style={[{ flex: 1, backgroundColor: '#FFFFFF' }, style]}>
       <WebView
-        source={source as any}
-        style={style}
-        injectedJavaScriptBeforeContentLoaded={injectedJS}
+        source={effectiveSource as any}
+        style={[{ flex: 1 }, revealed ? null : styles.hidden]}
+        javaScriptEnabled={true}
+        domStorageEnabled={true}
+        allowsFullscreenVideo={true}
+        startInLoadingState={true}
+        originWhitelist={['*']}
+        mixedContentMode="always"
+        allowFileAccess={true}
+        allowUniversalAccessFromFileURLs={true}
+        thirdPartyCookiesEnabled={true}
+        sharedCookiesEnabled={true}
+        cacheEnabled={true}
+        setBuiltInZoomControls={false}
+        setDisplayZoomControls={false}
+        userAgent={isCanvaSource ? canvaCompatibleUserAgent : undefined}
         injectedJavaScript={injectedJS}
         setSupportMultipleWindows={false}
         allowsLinkPreview={false}
@@ -178,6 +238,11 @@ export default function PlatformWebView({
           });
         }}
         onLoadEnd={(event: any) => {
+          if (isCanvaSource && !revealed) {
+            if (revealTimer.current) clearTimeout(revealTimer.current);
+            // Let injectedJavaScript (branding CSS + font boost) paint first.
+            revealTimer.current = setTimeout(() => setRevealed(true), 450);
+          }
           if (!debugEnabled || !__DEV__) return;
           console.log(`${debugPrefix}[LoadEnd]`, {
             platform: Platform.OS,
@@ -185,6 +250,7 @@ export default function PlatformWebView({
           });
         }}
         onError={(event: any) => {
+          if (!revealed) setRevealed(true);
           if (!debugEnabled || !__DEV__) return;
           console.log(`${debugPrefix}[LoadError]`, {
             platform: Platform.OS,
@@ -193,6 +259,7 @@ export default function PlatformWebView({
           });
         }}
         onHttpError={(event: any) => {
+          if (!revealed) setRevealed(true);
           if (!debugEnabled || !__DEV__) return;
           console.log(`${debugPrefix}[HttpError]`, {
             platform: Platform.OS,
@@ -223,9 +290,6 @@ export default function PlatformWebView({
                     isTopFrame: isTopFrameRequest(req),
                   });
                 }
-                // Important: Allow subresource loads (images/scripts) so embedded lesson
-                // pages (e.g. Canva) don't show broken placeholders. Only gate top-frame
-                // navigations / downloads.
                 if (!isTopFrameRequest(req)) return true;
                 if (shouldBlockNavigation(url)) {
                   Alert.alert('Blocked', 'Downloads are disabled.');
@@ -236,6 +300,12 @@ export default function PlatformWebView({
             : undefined
         }
       />
+      {!revealed && (
+        <View style={styles.loadingOverlay} pointerEvents="none">
+          <ActivityIndicator size="large" color="#F5A623" />
+        </View>
+      )}
+      </View>
     );
   } catch (e) {
     return (
@@ -254,4 +324,11 @@ export default function PlatformWebView({
 const styles = StyleSheet.create({
   webFallback: { padding: 16, alignItems: 'center', justifyContent: 'center' },
   link: { marginTop: 8, color: '#0066cc' },
+  hidden: { opacity: 0 },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });

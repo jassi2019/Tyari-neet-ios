@@ -9,9 +9,8 @@ export const getPlanAppleProductId = (plan?: PlanLike | null): string | null => 
   const explicit = typeof plan.appleProductId === 'string' ? plan.appleProductId.trim() : '';
   if (explicit) {
     // Backward-compat: earlier seeds used bundle-like IDs.
-    if (explicit === 'com.taiyarineetki.educationapp.neet2026') return 'neet_2026_plan';
-    if (explicit === 'com.taiyarineetki.educationapp.neet2027') return 'neet_2027_plan';
-    if (explicit === 'com.taiyarineetki.educationapp.neet2028') return 'neet_2028_plan';
+    if (explicit === 'com.taiyarineetki.educationapp.neet2027') return 'neet_plan_2027';
+    if (explicit === 'com.taiyarineetki.educationapp.neet2028') return 'neet_plan_2028';
     return explicit;
   }
 
@@ -19,8 +18,8 @@ export const getPlanAppleProductId = (plan?: PlanLike | null): string | null => 
   if (!name) return null;
 
   const lowered = name.toLowerCase();
-  if (lowered.includes('neet') && lowered.includes('2027')) return 'neet_2027_plan';
-  if (lowered.includes('neet') && lowered.includes('2028')) return 'neet_2028_plan';
+  if (lowered.includes('neet') && lowered.includes('2027')) return 'neet_plan_2027';
+  if (lowered.includes('neet') && lowered.includes('2028')) return 'neet_plan_2028';
 
   return null;
 };

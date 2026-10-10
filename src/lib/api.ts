@@ -13,6 +13,12 @@
 import env from '@/constants/env';
 import axios, { AxiosError, AxiosRequestConfig, InternalAxiosRequestConfig } from 'axios';
 import { handleError, transformError } from './errorHandler';
+
+// Global callback for session expired (another device logged in)
+let onSessionExpired: (() => void) | null = null;
+export const setOnSessionExpired = (callback: () => void) => {
+  onSessionExpired = callback;
+};
 import { checkInternetConnectivity, checkServerReachability } from './networkUtils';
 import {
   getRetryConfig,
@@ -209,6 +215,11 @@ api.interceptors.response.use(
     if (statusCode === 401) {
       await tokenManager.clearToken();
       requestDeduplicator.clear();
+
+      // Notify app that session expired (another device logged in)
+      if (onSessionExpired) {
+        onSessionExpired();
+      }
 
       const appError = handleError(error, 'API Request', { silent: suppressErrorLogging });
       return Promise.reject(appError);

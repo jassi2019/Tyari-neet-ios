@@ -1,4 +1,3 @@
-import { useAuth } from '@/contexts/AuthContext';
 import { useGetTestSeriesList } from '@/hooks/api/testseries';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ChevronLeft } from 'lucide-react-native';
@@ -30,12 +29,10 @@ export const TestSeriesList = ({ navigation, route }: Props) => {
   const testTypeTitle = route?.params?.testTypeTitle || 'Practice Tests';
   const testTypeEmoji = route?.params?.testTypeEmoji || '📝';
   const accent = route?.params?.testTypeAccent || '#F5A623';
-  const { isGuest } = useAuth();
 
-  const { data, isLoading } = useGetTestSeriesList(
-    { testType },
-    { enabled: !isGuest }
-  );
+  // Public endpoint — guests can browse too; FREE tests open for everyone,
+  // PREMIUM ones are gated in TestSeriesDetail.
+  const { data, isLoading } = useGetTestSeriesList({ testType });
 
   const tests = data?.data || [];
 
@@ -106,6 +103,7 @@ export const TestSeriesList = ({ navigation, route }: Props) => {
                     <View style={s.testMeta}>
                       <Text style={s.testMetaText}>📝 {test.questionCount || 0} Questions</Text>
                       <Text style={s.testMetaText}>⏱ {Math.round((test.timeLimit || 1800) / 60)} min</Text>
+                      <Text style={s.testMetaText}>{(test as any).serviceType === 'FREE' ? '✓ FREE' : '🔒 PREMIUM'}</Text>
                     </View>
                   </View>
                   <View style={s.testArrow}>

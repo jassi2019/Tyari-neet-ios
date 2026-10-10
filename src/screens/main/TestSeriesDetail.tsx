@@ -1,9 +1,12 @@
+import { useAuth } from '@/contexts/AuthContext';
 import { useGetTestSeriesById } from '@/hooks/api/testseries';
+import { isPaidSubscriptionActive } from '@/lib/subscription';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ChevronLeft } from 'lucide-react-native';
 import React from 'react';
 import {
   ActivityIndicator,
+  Alert,
   ScrollView,
   StyleSheet,
   Text,
@@ -28,6 +31,8 @@ export const TestSeriesDetail = ({ navigation, route }: Props) => {
   const testSeriesId = route?.params?.testSeriesId || '';
   const testName = route?.params?.testName || 'Test';
   const accent = route?.params?.accent || '#F5A623';
+  const { user, isGuest } = useAuth();
+  const hasPremium = isPaidSubscriptionActive(user?.subscription);
 
   const { data, isLoading } = useGetTestSeriesById(testSeriesId, {
     enabled: Boolean(testSeriesId),
@@ -50,8 +55,21 @@ export const TestSeriesDetail = ({ navigation, route }: Props) => {
   });
   const syllabus = Array.from(syllabusMap.values());
 
+  const isFreeTest = test?.serviceType === 'FREE';
+
   const handleStartTest = () => {
     if (!test || questions.length === 0) return;
+    if (!isFreeTest && (isGuest || !hasPremium)) {
+      Alert.alert(
+        'Premium Required',
+        'Tests are available for premium subscribers only. Subscribe to unlock all tests.',
+        [
+          { text: 'Maybe Later', style: 'cancel' },
+          { text: 'View Plans', onPress: () => navigation.navigate('Plans') },
+        ]
+      );
+      return;
+    }
     navigation.navigate('TestMCQ', {
       testName: test.name,
       subjectName: '',

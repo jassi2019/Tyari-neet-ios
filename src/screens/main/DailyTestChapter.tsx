@@ -2,12 +2,14 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useGetChaptersBySubjectId } from '@/hooks/api/chapters';
 import { useGetAllClasses } from '@/hooks/api/classes';
 import { getGuestChaptersWithFreeTopics } from '@/constants/guestData';
+import { isPaidSubscriptionActive } from '@/lib/subscription';
 import { TChapter } from '@/types/Chapter';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ChevronLeft } from 'lucide-react-native';
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   ScrollView,
   StyleSheet,
   Text,
@@ -33,7 +35,8 @@ const FILTERS = ['All', 'Recent', 'Favourites', 'Untouched'] as const;
 type Filter = typeof FILTERS[number];
 
 export const DailyTestChapter = ({ navigation, route }: DailyTestChapterProps) => {
-  const { isGuest } = useAuth();
+  const { user, isGuest } = useAuth();
+  const hasPremium = isPaidSubscriptionActive(user?.subscription);
   const subjectId    = route?.params?.subjectId    || '';
   const subjectName  = route?.params?.subjectName  || 'Subject';
   const subjectEmoji = route?.params?.subjectEmoji || '📘';
@@ -65,6 +68,17 @@ export const DailyTestChapter = ({ navigation, route }: DailyTestChapterProps) =
 
   const handleStartTest = () => {
     if (!selectedChapter) return;
+    if (isGuest || !hasPremium) {
+      Alert.alert(
+        'Premium Required',
+        'Tests are available for premium subscribers only. Subscribe to unlock all tests.',
+        [
+          { text: 'Maybe Later', style: 'cancel' },
+          { text: 'View Plans', onPress: () => navigation.navigate('Plans') },
+        ]
+      );
+      return;
+    }
     navigation.navigate('TestMCQ', {
       testName: `${subjectName} · ${className}`,
       subjectName,
