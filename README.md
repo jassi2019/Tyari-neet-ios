@@ -13,6 +13,60 @@ India's best NEET preparation app — free study material, MCQs, chapter-wise no
 - **Email:** Nodemailer + Gmail SMTP
 - **SMS:** Twilio (Phone OTP for password reset)
 
+## Source of truth, releases and operations (read this first)
+
+### Where the code lives
+- **This GitHub repo** (`jassi2019/Tyari-neet-ios`, branch `main`) holds the **mobile app**, the release script and a copy of the server ops scripts (`ops/`).
+- **`backend-main/`, `portal-main/`, `Caddyfile` and `docker-compose.prod.yml` are NOT in this repo.** As of 2026-10-12 their source lives only on the production server, in a clone that has its own git history (unrelated to this repo's `main`) plus uncommitted and untracked changes. Admin-portal and API changes are made and deployed there by rebuilding the containers. Treat the server copy as the only copy and back it up before risky work; the daily backup below covers the **database**, not this source code.
+- SSH access to the VPS is key-based; connection details are kept privately, not in this repo.
+
+### Releasing app updates (OTA)
+App fixes ship to users over the air with EAS Update. Always use the guard script (run it in **Git Bash**, not PowerShell):
+
+```bash
+bash scripts/safe-release.sh "short release message"
+```
+
+It aborts before publishing anything unless all of these pass:
+1. `runtimeVersion` in `app.json` is back at `1.0.6` (catches an aborted earlier run)
+2. `Payment.tsx` and `Plans.tsx` are unmodified (payment screens must never change)
+3. No secrets in the diff or in untracked files
+4. No **new** TypeScript errors compared with the last commit, and none of the crash-class errors at all: undefined name, missing module or export, duplicate declaration, syntax error (`src/tests/` is excluded; other error kinds such as `TS2339` are only compared with the baseline) - see "Why a crash shipped" below
+5. The JS bundle exports cleanly
+
+It then publishes to both EAS branches (`production`, `preview`) on both runtimes (`1.0.6` is the Android store build and the current iOS store build; `1.0.7` is the internal preview APK and the 6 Sep 2026 iOS builds), restores `runtimeVersion` to `1.0.6`, commits modified tracked files to git (`git add -u`; **new files must be `git add`ed by you**), and prints a per-runtime rollback command (`npx eas update:republish --group <id>`). Run `git push origin main` afterwards so GitHub matches what is live. Ctrl+C at any point restores your uncommitted work and `runtimeVersion`.
+
+Channels: Play Store and App Store builds use channel `production`. Android store builds are runtime 1.0.6; iOS store builds exist on both 1.0.6 and 1.0.7, so check the runtime of a build before publishing. The internal preview APK uses channel `preview` (runtime 1.0.7). A fix published only to `production` never reaches preview devices, which is why the script publishes to both.
+
+### Why a crash shipped, and what prevents it now
+Users saw `ReferenceError: Property 'showUnlockAnim' doesn't exist` when opening a subject. A refactor left one reference to a state variable that no longer existed in `FeatureContent.tsx`. `tsc` reported it (`TS2552: Cannot find name`), but the old check only compared the *number* of TypeScript errors with a baseline, so a known error never blocked a release. Later the fix was shipped over the air but never committed, and the next store build, made from git, brought the bug back.
+
+Prevention now: undefined-name class errors are always fatal in `safe-release.sh`, and a successful release commits its changes so git always equals what is live. The app's `ErrorBoundary` also self-heals: after a crash it checks for a newer OTA update once per session, downloads it and reloads (only when a newer update exists, so it cannot reload-loop).
+
+### Fresh installs and store builds
+A newly installed app first runs the **JS bundle embedded in the store build**. With `updates.checkAutomatically: ON_LOAD` and `fallbackToCacheTimeout: 0`, the newest OTA downloads in the background and applies on the **next cold start**. Consequences:
+- Anything fixed only by OTA can still appear on a user's very first launch. The update downloads during one launch and is used from the **next cold start**, so the user must close the app completely (swipe it away from recent apps) and open it again, sometimes twice. The update check runs only at a cold start, so Android users who just background the app can stay on an old bundle for days.
+- Verified on 2026-10-12 by requesting the manifest and downloading the real bundle exactly as a phone does, for all four channel/runtime pairs (production and preview, 1.0.6 and 1.0.7): every one is clean. Users who still see the error are running an old bundle, not receiving a bad one.
+- The Android store builds of 4 Sep 2026 (versionCode 22, commit `283cb04`) contain the `showUnlockAnim` bug, so new installs can hit it on the first launch until a new build replaces them.
+- Before building a new store build: working tree clean, `HEAD` equal to what was last published and pushed, bump `versionCode`, keep `runtimeVersion` `1.0.6` for Android, and run `npx tsc --noEmit` and check for undefined names. Do not touch `Payment.tsx`, `Plans.tsx` or the Razorpay config.
+
+### Server reliability and backups (production VPS)
+Scripts are kept in `ops/` (copies of the files on the VPS; cron entries in `ops/crontab.example`).
+- **Watchdog** (`ops/watchdog.sh`, every 3 minutes): checks Postgres, the backend (inside its container), the portal and the public HTTPS URL. It restarts only what is broken, brings the stack back if a container exited, and prunes Docker images and build cache if the disk passes 85% (never volumes or data). Log: `/root/tyari-neet-ios/watchdog.log`.
+- **Daily DB backup** (`ops/db_backup.sh`, 03:30): `pg_dump` to `/root/backups/education_app_YYYYMMDD.sql.gz` (last 7 kept) and the file is **emailed** (`ops/send_backup_mail.py`) to `ADMIN_EMAIL` and `DEVELOPER_EMAILS`. Above 20 MB it sends a notice instead of the attachment.
+- **System Health page** in the admin portal (`/system-health`, refreshes every 30 s) shows API, database, watchdog heartbeat, last backup, disk use and the last auto-fixed incident. It reads `GET /api/v1/health`, which returns API and DB status plus the `system_status` table that the scripts write to.
+- **Adding any new admin-portal route:** add a block to the `Caddyfile` and reload Caddy, otherwise the apex domain serves the marketing landing page instead of your page:
+  ```
+  handle /your-route* {
+      reverse_proxy portal:3000
+  }
+  ```
+  then `docker exec tyari-neet-ios-caddy-1 caddy reload --config /etc/caddy/Caddyfile`.
+- **Known quirk:** `admin.taiyarineetki.com` redirects to `https://taiyarineetki.com/admin{uri}`, which gives a 404 for every page except the dashboard. Use `https://taiyarineetki.com/<page>` links.
+
+### Known issue: OTP emails arrive late
+OTP mail is handed to Gmail in about 3 seconds (measured from the backend container, ends in `250 OK`), so the delay is on Gmail's side. Mail is sent through a personal Gmail account, and Gmail often defers such mail to other Gmail users ("Delivery incomplete - temporary problem"). The planned fix needs no code change: switch the `SMTP_*` variables to a transactional email provider (for example Brevo) sending from a `taiyarineetki.com` address, and add that provider's DNS authentication records. Until then, ask users to check Spam/Promotions.
+
 ## Project Structure
 
 ```
@@ -62,12 +116,16 @@ India's best NEET preparation app — free study material, MCQs, chapter-wise no
 │       └── questions/          # Question bank management
 ├── assets/                     # App images (hero-banner, footer, bg-image, logo)
 ├── scripts/
+│   ├── safe-release.sh         # Guarded OTA release (checks, publish, commit, rollback hint)
 │   ├── backup-db.sh            # Daily PostgreSQL → GitHub backup
 │   └── setup-backup-repo.sh    # One-time VPS backup setup
+├── ops/                        # Copies of VPS ops scripts: watchdog, daily backup + email, crontab
 ├── docker-compose.prod.yml     # Production Docker setup
 ├── Caddyfile                   # Caddy reverse proxy + SSL config
 └── eas.json                    # EAS Build configuration
 ```
+
+> `backend-main/`, `portal-main/`, `docker-compose.prod.yml` and `Caddyfile` are shown for reference but live only on the production VPS, not in this repo (see "Source of truth" above).
 
 ## Features
 
@@ -107,6 +165,8 @@ India's best NEET preparation app — free study material, MCQs, chapter-wise no
 - Swagger API documentation at `/api-docs`
 
 ### Database Backups
+> Current production setup: see **Server reliability and backups** above (daily 03:30 dump, emailed, last 7 kept; watchdog; System Health page). The GitHub-push backup described below is the older setup and is not in the production crontab.
+
 - Daily automated PostgreSQL dump via cron (2 AM)
 - Backup pushed to GitHub repo automatically
 - Last 7 backups kept locally, last 30 on GitHub
@@ -276,10 +336,41 @@ Tests login → plan fetch → order create → signature verify → subscriptio
 ## URLs
 - **Landing Page:** https://taiyarineetki.com
 - **Admin Panel:** https://taiyarineetki.com/admin
+- **System Health:** https://taiyarineetki.com/system-health
 - **API:** https://api.taiyarineetki.com
 - **API Docs:** https://api.taiyarineetki.com/api-docs
 - **Play Store:** https://play.google.com/store/apps/details?id=com.taiyarineetki.app
 - **App Store:** https://apps.apple.com/app/taiyari-neet-ki/id6740091521
+
+## Recent Changes (October 2026)
+
+### Tests: per-test FREE / PREMIUM access
+- `test_series.serviceType` (`FREE` | `PREMIUM`, default `PREMIUM`). The admin Test Series form has an **Access** dropdown and each card shows a FREE/PREMIUM badge.
+- App: a PREMIUM test needs an active paid subscription; guests and free users see "Premium Required" with a View Plans button. A FREE test opens for everyone, including guests. The test list is browsable by guests.
+- Test-series, full-syllabus and daily chapter tests are premium-gated; feature-content MCQs follow the chapter's FREE/PREMIUM setting.
+
+### Free content
+- In free-only mode, chapters with `serviceType = LOCKED` are no longer listed (`isPremiumServiceType` does not treat `LOCKED` as premium, which is why they leaked).
+- `Chapters`/`FeatureContent` accept `freeOnly`; the chapters API hook passes `freeOnly` and `featureType` and includes them in the query key.
+
+### Admin portal: adding MCQs
+- Question form: Feature Type dropdown (`chapter_checkpoint`, `revision_recall`, `exercise_revival`, `master_exemplar`, `pyq`) and an Explanation URL field. Without a feature type, questions were saved with `featureType = NULL` and never showed in the app.
+- Next question keeps the last subject/class/chapter/feature type.
+- Fixed lost input when adding several MCQs at once (stale state in Feature Content and Test Series).
+- Feature Content: untouched blank rows are ignored; a row that is incomplete is reported by number ("Q2: need question text, Option A, Option B & correct answer"); a server error is reported separately; and the dialog stays open with your input after a partial failure.
+- Feature Content and Test Series dialogs no longer close (and wipe the form) on outside click, Escape or scrollbar clicks. Use Cancel or the X.
+- Plan prices shown in the app are `plans.amount` plus 18% GST. On iOS the amount Apple actually charges comes from App Store Connect, so keep the two in sync.
+
+### Canva lesson viewer (supersedes earlier Canva branding notes below)
+- Canva view URLs are loaded with `?embed` (Canva then serves its embed app, not the full viewer) and `Accept-Language: en-US` so the UI language is English.
+- Canva renders client-side, so selectors must match its real DOM: the logo link (`a.NHn7fw`, links to canva.com in a new tab, aria-label "Create with Canva" / Hindi "Canva के साथ बनाएँ") and Share / Copy link buttons are hidden with CSS. Because Canva translates labels, href/target selectors are used too. `<footer>` is **not** hidden; it is the per-slide caption.
+- Text size: the layout viewport is narrowed to `innerWidth / 1.5` (about 1.5x larger text), pinch zoom is blocked with two-finger touch handlers and Android built-in zoom is off.
+- No flash of branding: the WebView stays at opacity 0 behind a loader until 450 ms after load end (8 s safety timeout).
+- A pasted Canva embed snippet (`<iframe src="https://www.canva.com/design/...">`) in a topic content slot is resolved to its URL so it uses the path above.
+- Limits: selectors come from Canva's bundles and cannot be tested without a device; if branding reappears, capture a screenshot of the element and update `PROTECT_JS` in `src/components/PlatformWebView.tsx`.
+
+### Reliability
+- App: `ErrorBoundary` self-heal (above). Server: watchdog, emailed daily backup, System Health page (above). Release: `scripts/safe-release.sh` (above).
 
 ## Recent Changes (August 29-30, 2026)
 

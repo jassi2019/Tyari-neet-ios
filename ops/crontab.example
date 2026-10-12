@@ -1,0 +1,10 @@
+# Production VPS crontab entries for Taiyari NEET (root). Install with: crontab -e
+# Scripts live in /root/tyari-neet-ios/ on the VPS (copies kept here in ops/).
+
+# Self-heal watchdog: checks Postgres, backend, portal and the public HTTPS URL
+# every 3 minutes and restarts only what is broken.
+*/3 * * * * /bin/bash /root/tyari-neet-ios/watchdog.sh >/dev/null 2>&1
+
+# Daily database backup at 03:30 (kept 7 days in /root/backups) and emailed
+# to ADMIN_EMAIL + DEVELOPER_EMAILS from backend-main/.env.
+30 3 * * * /bin/bash /root/tyari-neet-ios/db_backup.sh >/dev/null 2>&1
