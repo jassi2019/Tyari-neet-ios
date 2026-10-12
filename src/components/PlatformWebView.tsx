@@ -45,19 +45,22 @@ const isTopFrameRequest = (req: any): boolean => {
 const PROTECT_JS = `
 (function () {
   try {
-    // Remove Canva header and footer (branding) — same as original app
-    document.querySelector('header')?.remove();
-    document.querySelector('footer')?.remove();
-
     var style = document.createElement('style');
     style.type = 'text/css';
     style.innerHTML = '*{ -webkit-user-select:none !important; user-select:none !important; } body{ -webkit-touch-callout:none !important; }'
-      // Hide Canva branding even when it is not a <header>/<footer> tag
-      // (Canva's mobile layout uses divs/anchors; CSS keeps hiding nodes
-      // that Canva re-adds dynamically, which one-time JS removal misses)
-      + ' header, footer { display:none !important; }'
-      + ' [class*="branding"], [class*="Branding"], [class*="watermark"], [class*="Watermark"] { display:none !important; }'
-      + ' a[href*="canva.com/signup"], a[aria-label*="Canva"], a[aria-label*="canva"] { display:none !important; }';
+      // Canva's viewer is a client-side app, so these are the REAL elements it
+      // renders (taken from its bundles): the "Create with Canva" logo button
+      // and the Share / Copy link buttons. aria-label is used because Canva's
+      // hashed class names change on every deploy. CSS (not one-time removal)
+      // so nodes Canva re-adds later stay hidden. <footer> is deliberately NOT
+      // hidden: in Canva's embed app it is the per-slide caption, not branding.
+      // Canva translates aria-labels (Hindi: "Canva के साथ बनाएँ"), so an English
+      // text match alone fails on non-English phones. The logo is a real <a> that
+      // opens canva.com in a new tab, so match on href/target too (any language).
+      + ' a.NHn7fw, a[href="/"][target="_blank"], a[href^="/?utm_"][target="_blank"],'
+      + ' a[href^="https://www.canva.com"][target="_blank"], a[href^="https://canva.com"][target="_blank"],'
+      + ' [aria-label="Create with Canva"], [aria-label="Canva के साथ बनाएँ"],'
+      + ' [aria-label="Share"], [aria-label="शेयर करें"], [aria-label="Copy link"] { display:none !important; }';
     (document.head || document.documentElement).appendChild(style);
 
     document.addEventListener('copy', function (e) { e.preventDefault(); });
@@ -67,14 +70,6 @@ const PROTECT_JS = `
     // Block only pinch (2-finger) zoom; single taps untouched
     document.addEventListener('touchstart', function (e) { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
     document.addEventListener('touchmove', function (e) { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
-
-    // Periodically remove header/footer (Canva loads them dynamically)
-    setInterval(function () {
-      var h = document.querySelector('header');
-      var f = document.querySelector('footer');
-      if (h) h.remove();
-      if (f) f.remove();
-    }, 1000);
   } catch (e) {}
   true;
 })();`;
@@ -178,8 +173,16 @@ export default function PlatformWebView({
     return () => clearTimeout(t);
   }, [isCanvaSource]);
 
+  // Canva picks its UI language from Accept-Language; ask for English so the
+  // label-based selectors match on every phone (href selectors cover the rest).
   const effectiveSource =
-    isCanvaSource && 'uri' in source ? { ...source, uri: withCanvaEmbed(source.uri) } : source;
+    isCanvaSource && 'uri' in source
+      ? {
+          ...source,
+          uri: withCanvaEmbed(source.uri),
+          headers: { ...((source as any).headers || {}), 'Accept-Language': 'en-US,en;q=0.9' },
+        }
+      : source;
 
   if (Platform.OS === 'web') {
     if ('uri' in source) {

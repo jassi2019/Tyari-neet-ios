@@ -82,6 +82,15 @@ if [ "$NOW" -gt "$BASE" ]; then
 fi
 ok "no new TS errors ($NOW total, baseline $BASE)"
 
+# Hard rule, independent of the baseline: a reference to a name or module
+# that does not exist crashes the app at runtime ("ReferenceError: Property
+# 'x' doesn't exist") the moment that screen opens. tsc reports these as
+# TS2304/TS2552/TS2551 (undefined name) and TS2307 (missing module).
+FATAL=$(npx tsc --noEmit 2>&1 | grep -E "error (TS2304|TS2552|TS2551|TS2307|TS2305|TS2614|TS2724|TS2503|TS2448|TS2449|TS2454|TS2300|TS2451|TS2392|TS2395|TS2693|TS2686|TS2749|TS1005|TS1109|TS1128|TS1003|TS17008|TS2657|TS2741):" | grep -v "src/tests/" | head -10)
+[ -z "$FATAL" ] || bad "undefined name / bad import / syntax error (this crashes the app at runtime):
+$FATAL"
+ok "no undefined names, bad imports or syntax errors"
+
 # ---------- 5. bundle must build ----------
 inf "5/5  bundle export"
 rm -rf .release-check
@@ -120,6 +129,15 @@ ok "runtimeVersion restored to 1.0.6"
 echo
 if [ "$FAILED" = "1" ]; then
   bad "one or more publishes failed — users may have a partial release. Rerun this script."
+fi
+# Keep git identical to what is live. Fixes that ship over-the-air but are never
+# committed get lost: the next store build is made from git and brings back old
+# bugs (this is how a fixed crash reappeared on a freshly installed phone).
+if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
+  if git add -u && git commit -q -m "release: $MSG" -m "Shipped via EAS OTA on runtimes 1.0.6 and 1.0.7."; then
+    echo "${GRN}  OK${OFF}   committed to git: $(git log -1 --format=%h)"
+  else echo "${RED}  WARNING: could not commit — run git add/commit yourself so git matches what is live${OFF}"; fi
+  echo "${YLW}  Run: git push origin main${OFF}   (so GitHub matches production)"
 fi
 echo "${GRN}Released:${OFF} $MSG"
 echo "Users get it on next app restart."

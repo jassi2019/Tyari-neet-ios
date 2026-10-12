@@ -111,11 +111,16 @@ export const TopicContent = ({ navigation, route }: TopicContentProps) => {
     : (featureName ? FEATURE_CONTENT_MAP[featureName] : undefined);
   const slotValue = slotField ? String((effectiveTopic as any)?.[slotField] || '').trim() : '';
 
-  // Slot can be either a URL or HTML/rich text. Detect URL.
-  const slotIsURL = /^https?:\/\//i.test(slotValue);
-  const richContent = slotValue && !slotIsURL ? slotValue : '';
+  // Slot can be a URL, a pasted Canva embed snippet (<div><iframe src="...">), or
+  // HTML/rich text. For an embed snippet, use its src as a plain URL so it goes
+  // through the Canva-aware WebView path (embed mode, font boost, reveal gate);
+  // injected CSS cannot reach into a cross-origin iframe.
+  const slotSrcMatch = slotValue.startsWith('<') ? slotValue.match(/src=["']([^"']+)["']/) : null;
+  const slotResolved = slotSrcMatch && /canva\.com\/design\//i.test(slotSrcMatch[1]) ? slotSrcMatch[1] : slotValue;
+  const slotIsURL = /^https?:\/\//i.test(slotResolved);
+  const richContent = slotResolved && !slotIsURL ? slotResolved : '';
   const hasRichContent = richContent.length > 0;
-  const rawURL = (slotIsURL ? slotValue : String(effectiveTopic?.contentURL || '')).trim();
+  const rawURL = (slotIsURL ? slotResolved : String(effectiveTopic?.contentURL || '')).trim();
   const isCanvaContent = /canva\.com/i.test(rawURL);
   const isInsecureRemoteUrl = /^http:\/\//i.test(rawURL) && !/^http:\/\/(localhost|127\.0\.0\.1)/i.test(rawURL);
   const secureURL = isInsecureRemoteUrl ? rawURL.replace(/^http:\/\//i, 'https://') : rawURL;
