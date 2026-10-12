@@ -23,6 +23,7 @@
     "plugins": [
       "./plugins/withRazorpayConfig",
       "./plugins/withAndroidSdk36",
+      "./plugins/withAndroidR8",
       "expo-font",
       "expo-web-browser"
     ],
@@ -48,7 +49,7 @@
     },
     "android": {
       "package": "com.taiyarineetki.app",
-      "versionCode": 23,
+      "versionCode": 24,
       "jsEngine": "hermes",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
