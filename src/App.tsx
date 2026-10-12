@@ -14,6 +14,7 @@ import ErrorFallback from './components/ErrorFallback';
 import { AuthProvider } from './contexts/AuthContext';
 import { FeatureProvider } from './contexts/FeatureContext';
 import { usePreventScreenCapture } from 'expo-screen-capture';
+import { useBackgroundUpdate } from './hooks/useBackgroundUpdate';
 import RootNavigator from './navigation/RootNavigator';
 
 enableScreens();
@@ -21,6 +22,7 @@ enableScreens();
 const queryClient = new QueryClient();
 
 function AppShell() {
+  useBackgroundUpdate();
 
   useEffect(() => {
     if (Platform.OS === 'android') {

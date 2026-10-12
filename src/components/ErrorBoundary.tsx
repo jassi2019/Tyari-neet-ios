@@ -32,8 +32,9 @@ class ErrorBoundary extends Component<Props, State> {
     this.attemptSelfHeal();
   }
 
-  attemptSelfHeal = async () => {
-    if (selfHealAttempted || __DEV__) return;
+  attemptSelfHeal = async (force = false) => {
+    if (__DEV__ || !Updates.isEnabled) return;
+    if (selfHealAttempted && !force) return;
     selfHealAttempted = true;
     try {
       const check = await Updates.checkForUpdateAsync();
@@ -42,11 +43,18 @@ class ErrorBoundary extends Component<Props, State> {
         await Updates.reloadAsync();
       }
     } catch (e) {
-      // Offline or updates unavailable — user still has the TRY AGAIN button.
+      // Offline or updates unavailable — fall through to a plain reset.
     }
   };
 
-  resetError = () => {
+  // Try again: first look for a newer update (a crash that repeats every time is
+  // usually a bug that has already been fixed in a newer bundle), and only if
+  // there is none, re-render. The wait is capped so the button never hangs.
+  resetError = async () => {
+    await Promise.race([
+      this.attemptSelfHeal(true),
+      new Promise((resolve) => setTimeout(resolve, 8000)),
+    ]);
     this.setState({ hasError: false, error: null });
   };
 
