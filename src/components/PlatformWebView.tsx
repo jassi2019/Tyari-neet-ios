@@ -124,9 +124,183 @@ const CANVA_FONT_BOOST_JS = `
   true;
 })();`;
 
+// Canva's embed app still renders its own controls after `?embed` removes the logo:
+// a floating fullscreen toggle (button[aria-label="Enter full screen"]), a "More"
+// button, and a black dialog whose round Share / Report buttons carry NO aria-label
+// (the text is in a sibling <label>), plus an "Enlarge" image button. None of these
+// are reachable by the logo selectors, so hide them by label, by role and by position,
+// and keep hiding anything React mounts later. Slide navigation is left alone.
+const CANVA_GUARD_JS = String.raw`
+(function () {
+  try {
+    if (window.__lessonGuard) return;
+    window.__lessonGuard = true;
+
+    // ---- 1. CSS (declarative; survives React re-renders) -------------------
+    var CSS = [
+      'button[aria-label="Enter full screen"]', 'button[aria-label="Exit full screen"]',
+      'button[aria-label="Toggle fullscreen"]',
+      'button[aria-haspopup="dialog"][aria-expanded]',          // "More" (...) button, language independent
+      'button[aria-label="More"]', 'button[aria-label="Enlarge"]',
+      'button[aria-label="Zoom in and out"]', 'button[aria-label="Show controls"]',
+    ];
+    var css = CSS.join(',') + '{display:none!important;visibility:hidden!important;pointer-events:none!important}' +
+      '[role="dialog"][aria-modal="true"],[role="tooltip"]{display:none!important;pointer-events:none!important}';
+    var st = document.createElement('style');
+    st.setAttribute('data-lesson-guard', '1');
+    st.appendChild(document.createTextNode(css));
+    (document.head || document.documentElement).appendChild(st);
+
+    // ---- 2. JS fallback ----------------------------------------------------
+    var BAD = /^(share|report|copy link|hide controls|show controls|more( options)?|enlarge|zoom in and out|(enter |exit |toggle )?full ?screen|present|create with canva|open in canva|made with canva|pinterest|facebook|linkedin|wechat|qq)$/i;
+    var KEEP = /^(next|previous|go to page|slide)/i;   // slide navigation: never touch
+    var count = 0;
+
+    function inNav(el) {
+      for (var n = el; n && n.nodeType === 1; n = n.parentNode) {
+        var r = n.getAttribute('role');
+        if (r === 'navigation') return true;
+      }
+      return false;
+    }
+    function textOf(el) {
+      var t = el.getAttribute('aria-label');
+      if (!t) {
+        var ids = el.getAttribute('aria-labelledby');
+        if (ids) {
+          var parts = ids.split(/\s+/), s = [];
+          for (var i = 0; i < parts.length; i++) {
+            var r = document.getElementById(parts[i]);
+            if (r) s.push(r.textContent || '');
+          }
+          t = s.join(' ');
+        }
+      }
+      if (!t) t = el.getAttribute('title');
+      if (!t && el.textContent && el.textContent.length <= 40) t = el.textContent;
+      return (t || '').replace(/^\s+|\s+$/g, '');
+    }
+    function kill(el) {
+      if (!el || el.__lgKilled) return;
+      el.__lgKilled = true;
+      try {
+        el.style.setProperty('display', 'none', 'important');
+        el.style.setProperty('pointer-events', 'none', 'important');
+        el.setAttribute('aria-hidden', 'true');
+        el.setAttribute('tabindex', '-1');
+      } catch (e) {}
+      count++;
+    }
+    // hide the dialog and the full-screen backdrop wrapped around it
+    function killDialog(d) {
+      kill(d);
+      var vw = window.innerWidth, vh = window.innerHeight, n = d.parentNode, hops = 0;
+      while (n && n.nodeType === 1 && n !== document.body && n !== document.documentElement &&
+             n.id !== 'root' && hops < 6) {
+        var rc = n.getBoundingClientRect();
+        var cs = window.getComputedStyle(n);
+        var covers = rc.width >= vw * 0.9 && rc.height >= vh * 0.9;
+        if (covers && (cs.position === 'fixed' || cs.position === 'absolute')) { kill(n); }
+        n = n.parentNode; hops++;
+      }
+    }
+    function sweep() {
+      var i, el, list;
+      list = document.querySelectorAll('[role="dialog"][aria-modal="true"]');
+      for (i = 0; i < list.length; i++) killDialog(list[i]);
+
+      list = document.querySelectorAll('button,[role="button"]');
+      var vw = window.innerWidth, vh = window.innerHeight;
+      for (i = 0; i < list.length; i++) {
+        el = list[i];
+        if (el.__lgKilled) continue;
+        var t = textOf(el);
+        if (t && KEEP.test(t)) continue;
+        if (inNav(el)) continue;
+        if (t && BAD.test(t)) { kill(el); continue; }
+        // language-independent heuristic: small control pinned to bottom-right corner
+        var r = el.getBoundingClientRect();
+        if (r.width > 0 && r.width <= 64 && r.height <= 64 &&
+            r.right >= vw - 40 && r.bottom >= vh - 40) {
+          var p = el.parentNode, fixed = false, h = 0;
+          while (p && p.nodeType === 1 && p !== document.body && h < 6) {
+            var pos = window.getComputedStyle(p).position;
+            if (pos === 'fixed' || pos === 'absolute') { fixed = true; break; }
+            p = p.parentNode; h++;
+          }
+          if (fixed) kill(el);
+        }
+      }
+      // label-only controls: <label for=btn>Share</label> -> hide label + its button
+      list = document.querySelectorAll('label[for]');
+      for (i = 0; i < list.length; i++) {
+        el = list[i];
+        var lt = (el.textContent || '').replace(/^\s+|\s+$/g, '');
+        if (lt && BAD.test(lt)) {
+          var b = document.getElementById(el.getAttribute('for'));
+          if (b) kill(b.closest ? (b.closest('div') || b) : b);
+          kill(el);
+        }
+      }
+    }
+
+    var pending = false;
+    function schedule() {
+      if (pending) return;
+      pending = true;
+      setTimeout(function () { pending = false; try { sweep(); } catch (e) {} }, 60);
+    }
+    var root = document.documentElement;
+    if (window.MutationObserver) {
+      new MutationObserver(schedule).observe(root, { childList: true, subtree: true });
+    }
+    var ticks = 0;
+    var iv = setInterval(function () {
+      try { sweep(); } catch (e) {}
+      if (++ticks >= 75) clearInterval(iv);          // 75 x 400ms = 30s, then observer only
+    }, 400);
+    window.addEventListener('resize', schedule);
+    sweep();
+  } catch (e) {}
+  true;
+})();
+`;
+
+// Runs before Canva's scripts when the platform honours it (best effort): with
+// fullscreen reported as unsupported, Canva never creates the fullscreen button.
+const CANVA_BEFORE_JS = String.raw`
+(function () {
+  try {
+    ['fullscreenEnabled', 'webkitFullscreenEnabled', 'mozFullScreenEnabled', 'msFullscreenEnabled'].forEach(function (k) {
+      try { Object.defineProperty(document, k, { get: function () { return false; }, configurable: true }); } catch (e) {}
+    });
+  } catch (e) {}
+  true;
+})();
+`;
+
+// Top-frame navigations a Canva page must never make from inside the lesson:
+// report page, sharing sites, and Canva's home page (the logo link).
+const isBlockedCanvaNavigation = (url: string): boolean => {
+  const u = String(url || '').toLowerCase();
+  if (!/^https?:/.test(u)) return /^(mailto|tel|intent|market|whatsapp|fb|twitter):/.test(u);
+  const m = u.match(/^https?:\/\/([^\/?#]+)(\/[^?#]*)?/);
+  if (!m) return false;
+  const host = m[1];
+  const path = m[2] || '/';
+  if (/(^|\.)(facebook|pinterest|linkedin|twitter|x|whatsapp|wechat|qq|instagram|t)\.(com|co|me|net)$/.test(host)) return true;
+  if (/(^|\.)canva\.com$/.test(host)) {
+    if (path.indexOf('/report-content') === 0) return true;
+    if (path === '/' || path === '') return true;
+    if (path.indexOf('/login') === 0 || path.indexOf('/signup') === 0) return true;
+  }
+  return false;
+};
+
 const buildInjectedJavaScript = (useProtection: boolean, useDebug: boolean, useCanvaBoost: boolean): string | undefined => {
   const scripts: string[] = [];
   if (useCanvaBoost) scripts.push(CANVA_FONT_BOOST_JS);
+  if (useCanvaBoost) scripts.push(CANVA_GUARD_JS);
   if (useProtection) scripts.push(PROTECT_JS);
   if (useDebug) scripts.push(DEBUG_WEBVIEW_JS);
   if (scripts.length === 0) return undefined;
@@ -230,6 +404,7 @@ export default function PlatformWebView({
         setBuiltInZoomControls={false}
         setDisplayZoomControls={false}
         userAgent={isCanvaSource ? canvaCompatibleUserAgent : undefined}
+        injectedJavaScriptBeforeContentLoaded={isCanvaSource ? CANVA_BEFORE_JS : undefined}
         injectedJavaScript={injectedJS}
         setSupportMultipleWindows={false}
         allowsLinkPreview={false}
@@ -294,6 +469,7 @@ export default function PlatformWebView({
                   });
                 }
                 if (!isTopFrameRequest(req)) return true;
+                if (isCanvaSource && isBlockedCanvaNavigation(url)) return false;
                 if (shouldBlockNavigation(url)) {
                   Alert.alert('Blocked', 'Downloads are disabled.');
                   return false;
