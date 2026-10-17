@@ -49,7 +49,7 @@
     },
     "android": {
       "package": "com.taiyarineetki.app",
-      "versionCode": 24,
+      "versionCode": 25,
       "jsEngine": "hermes",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
