@@ -47,8 +47,25 @@ Prevention now: undefined-name class errors are always fatal in `safe-release.sh
 A newly installed app first runs the **JS bundle embedded in the store build**. With `updates.checkAutomatically: ON_LOAD` and `fallbackToCacheTimeout: 0`, the newest OTA downloads in the background and applies on the **next cold start**. Consequences:
 - Anything fixed only by OTA can still appear on a user's very first launch. The update downloads during one launch and is used from the **next cold start**, so the user must close the app completely (swipe it away from recent apps) and open it again, sometimes twice. The update check runs only at a cold start, so Android users who just background the app can stay on an old bundle for days.
 - Verified on 2026-10-12 by requesting the manifest and downloading the real bundle exactly as a phone does, for all four channel/runtime pairs (production and preview, 1.0.6 and 1.0.7): every one is clean. Users who still see the error are running an old bundle, not receiving a bad one.
-- The Android store builds of 4 Sep 2026 (versionCode 22, commit `283cb04`) contain the `showUnlockAnim` bug, so new installs can hit it on the first launch until a new build replaces them.
+- Each store build embeds whatever JS existed when it was cut, so a fresh install shows that older behaviour on its first launch (see the build table below). On 2026-10-17 a freshly installed phone showed this (seen in a screen recording): Canva's toolbar (zoom, "...", fullscreen), the Share / Report overlay, Canva's Report page opening inside the app, and "Copy link" giving a URL that opened the whole design in Chrome. This matches the embedded bundle of an older store build running before the OTA update was applied.
 - Before building a new store build: working tree clean, `HEAD` equal to what was last published and pushed, bump `versionCode`, keep `runtimeVersion` `1.0.6` for Android, and run `npx tsc --noEmit` and check for undefined names. Do not touch `Payment.tsx`, `Plans.tsx` or the Razorpay config.
+
+### Android store builds, R8 and Play rollout
+
+| versionCode | Cut from | What its embedded JS has | Notes |
+|---|---|---|---|
+| 22 | `283cb04` (4 Sep 2026) | still has the `showUnlockAnim` crash | do not use |
+| 23 | `c5472d5` | crash fixed, premium gates, language-proof Canva hide | no Canva guard (fullscreen / More / Share / Report still visible on a fresh install) |
+| 24 | `e980379` | same JS as 23 | built with R8 (`production-r8` profile); not for production until a Razorpay test payment passes on an internal testing track |
+| 25 | `ddd3013` | everything above plus the Canva guard, share/report navigation block and update-heal | the build to upload |
+
+All of them target API 36 (Android 16, set by `plugins/withAndroidSdk36.js`), min API 24, runtime `1.0.6`, channel `production`, and are signed with the Play upload key. Play Console's "update your target API level" notice is satisfied by these builds; its "no deobfuscation file" notice is only a suggestion.
+
+**Build:** `npx eas build --platform android --profile production` (normal) or `--profile production-r8` (R8). Bump `android.versionCode` in `app.json` first, commit, and build from a clean tree so the embedded bundle equals what is in git. Check the finished `.aab`: no `showUnlockAnim`, the fixes you expect are present in `base/assets/index.android.bundle`, `targetSdkVersion` 36, and the signer SHA1 matches the upload key registered in Play Console (App signing page).
+
+**R8 (optional):** `plugins/withAndroidR8.js` does nothing unless the build is started with `ENABLE_R8=1`, which the `production-r8` profile in `eas.json` sets. It sets `android.enableMinifyInReleaseBuilds` (the property this Expo SDK reads, unlike `enableProguardInReleaseBuilds`) and appends keep rules for Razorpay, Play Billing, the Nitro IAP module, JavaScriptInterface bridges and React Native/Hermes entry points. Resource shrinking stays off. R8 only touches Java/Kotlin code, never the JS bundle or OTA updates, and the AAB then contains the mapping file Play Console asks for. Static checks cannot prove the Razorpay callbacks still fire: test a payment on an internal testing track before any production rollout.
+
+**Rollout:** release to production as a staged rollout (20%, then 50%, then 100%) and watch Play Console > Android vitals (crashes and ANRs) between steps. The percentage can only be raised or halted, not lowered. A native-identical build (same libraries, same plugins) carries little extra risk because users already run the same JS through OTA.
 
 ### Server reliability and backups (production VPS)
 Scripts are kept in `ops/` (copies of the files on the VPS; cron entries in `ops/crontab.example`).
@@ -363,11 +380,21 @@ Tests login → plan fetch → order create → signature verify → subscriptio
 
 ### Canva lesson viewer (supersedes earlier Canva branding notes below)
 - Canva view URLs are loaded with `?embed` (Canva then serves its embed app, not the full viewer) and `Accept-Language: en-US` so the UI language is English.
-- Canva renders client-side, so selectors must match its real DOM: the logo link (`a.NHn7fw`, links to canva.com in a new tab, aria-label "Create with Canva" / Hindi "Canva के साथ बनाएँ") and Share / Copy link buttons are hidden with CSS. Because Canva translates labels, href/target selectors are used too. `<footer>` is **not** hidden; it is the per-slide caption.
+- Canva renders client-side, so selectors must match its real DOM. Controls the embed app shows, found in its bundles and confirmed by rendering the real page in headless Chrome with the app's user agent (see "Verifying Canva changes" below):
+  - logo link (`a.NHn7fw`, aria-label "Create with Canva", Hindi "Canva के साथ बनाएँ"), hidden by CSS in `PROTECT_JS`
+  - fullscreen toggle `button[aria-label="Enter full screen"]` (the label never changes; the state is in `aria-pressed`), "Zoom in and out", "More" (`aria-haspopup="dialog"`) and "Enlarge"
+  - the black dialog opened by "More" with round Share, Hide controls and Report buttons. These carry **no** `aria-label`: their text is in a sibling `<label>` referenced by `aria-labelledby`, so `[aria-label="Share"]` never matches them
+  - Share leads to Copy link, Facebook, Pinterest and LinkedIn; Report opens `canva.com/report-content`
+  - `<footer>` is **not** hidden; it is the per-slide caption
+- `CANVA_GUARD_JS` (Canva sources only) hides all of the above by label text, `aria-labelledby` text, role (`dialog` plus its full-viewport backdrop) and a language-independent rule for a small fixed button in the bottom-right corner, and keeps hiding anything React mounts later with a debounced `MutationObserver` (childList only, so it cannot retrigger itself). It never touches `role="navigation"` or "Next/Previous page" buttons. `CANVA_BEFORE_JS` (best effort, runs before page scripts when the platform allows) makes `document.fullscreenEnabled` false so Canva never creates the fullscreen toggle.
+- `isBlockedCanvaNavigation` (inside `onShouldStartLoadWithRequest`, Canva sources only) refuses top-frame navigations to the Canva home page, `/report-content`, `/login`, `/signup`, `mailto:`/`intent:`-style schemes and sharing sites (Facebook, Pinterest, LinkedIn, X/Twitter, WhatsApp, and similar).
 - Text size: the layout viewport is narrowed to `innerWidth / 1.5` (about 1.5x larger text), pinch zoom is blocked with two-finger touch handlers and Android built-in zoom is off.
 - No flash of branding: the WebView stays at opacity 0 behind a loader until 450 ms after load end (8 s safety timeout).
 - A pasted Canva embed snippet (`<iframe src="https://www.canva.com/design/...">`) in a topic content slot is resolved to its URL so it uses the path above.
-- Limits: selectors come from Canva's bundles and cannot be tested without a device; if branding reappears, capture a screenshot of the element and update `PROTECT_JS` in `src/components/PlatformWebView.tsx`.
+- Limits: Canva design links are public. Hiding Share / Copy link and blocking navigation removes the easy ways to get the URL out of the app, but anyone who already has a link can open it in a browser. Restricting who can view the design in Canva is the only real protection. Selectors can break when Canva redeploys; if a control reappears, take a photo or screen recording, find the element in Canva's embed bundle, and update `CANVA_GUARD_JS` in `src/components/PlatformWebView.tsx` (an OTA update is enough, no store build).
+
+#### Verifying Canva changes
+Render a real design in headless Chrome over the DevTools protocol (the `ws` package already in `node_modules` is enough), with the app's Android user agent, `Accept-Language: en-US` and a 360 px (or 240 px, after the font boost) viewport, list every `button`, `[role=button]`, `a` and `[role=dialog]`, inject the scripts extracted from `PlatformWebView.tsx`, wait a few seconds and list again. Do this before every Canva-related release; it found what static reading missed. Headless Chrome is a stand-in for Android WebView, so also test on a phone: fully close the app twice after an OTA so the new bundle is actually running.
 
 ### Reliability
 - App: `ErrorBoundary` self-heal (above). Server: watchdog, emailed daily backup, System Health page (above). Release: `scripts/safe-release.sh` (above).
