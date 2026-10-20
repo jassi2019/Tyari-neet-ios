@@ -10,7 +10,7 @@ India's best NEET preparation app — free study material, MCQs, chapter-wise no
 - **Deployment:** Docker + Docker Compose on Hostinger VPS
 - **Payments:** Razorpay (Android) + Apple IAP (iOS)
 - **Content:** Canva Connect API for design thumbnails
-- **Email:** Nodemailer + Gmail SMTP
+- **Email:** Nodemailer via Brevo SMTP relay (free plan, 300 emails/day); sender `dahiyaakanksha055@gmail.com` verified in Brevo
 - **SMS:** Twilio (Phone OTP for password reset)
 
 ## Source of truth, releases and operations (read this first)
@@ -87,6 +87,7 @@ All of them target API 36 (Android 16, set by `plugins/withAndroidSdk36.js`), mi
 ### Server reliability and backups (production VPS)
 Scripts are kept in `ops/` (copies of the files on the VPS; cron entries in `ops/crontab.example`).
 - **Watchdog** (`ops/watchdog.sh`, every 3 minutes): checks Postgres, the backend (inside its container), the portal and the public HTTPS URL. It restarts only what is broken, brings the stack back if a container exited, and prunes Docker images and build cache if the disk passes 85% (never volumes or data). Log: `/root/tyari-neet-ios/watchdog.log`.
+- **SMTP key expiry check** (`ops/smtp_key_check.py`, 04:00 UTC daily): see "Email delivery (OTP) and the Brevo key".
 - **Daily DB backup** (`ops/db_backup.sh`, 03:30): `pg_dump` to `/root/backups/education_app_YYYYMMDD.sql.gz` (last 7 kept) and the file is **emailed** (`ops/send_backup_mail.py`) to `ADMIN_EMAIL` and `DEVELOPER_EMAILS`. Above 20 MB it sends a notice instead of the attachment.
 - **System Health page** in the admin portal (`/system-health`, refreshes every 30 s) shows API, database, watchdog heartbeat, last backup, disk use and the last auto-fixed incident. It reads `GET /api/v1/health`, which returns API and DB status plus the `system_status` table that the scripts write to.
 - **Adding any new admin-portal route:** add a block to the `Caddyfile` and reload Caddy, otherwise the apex domain serves the marketing landing page instead of your page:
@@ -98,8 +99,14 @@ Scripts are kept in `ops/` (copies of the files on the VPS; cron entries in `ops
   then `docker exec tyari-neet-ios-caddy-1 caddy reload --config /etc/caddy/Caddyfile`.
 - **Known quirk:** `admin.taiyarineetki.com` redirects to `https://taiyarineetki.com/admin{uri}`, which gives a 404 for every page except the dashboard. Use `https://taiyarineetki.com/<page>` links.
 
-### Known issue: OTP emails arrive late
-OTP mail is handed to Gmail in about 3 seconds (measured from the backend container, ends in `250 OK`), so the delay is on Gmail's side. Mail is sent through a personal Gmail account, and Gmail often defers such mail to other Gmail users ("Delivery incomplete - temporary problem"). The planned fix needs no code change: switch the `SMTP_*` variables to a transactional email provider (for example Brevo) sending from a `taiyarineetki.com` address, and add that provider's DNS authentication records. Until then, ask users to check Spam/Promotions.
+### Email delivery (OTP) and the Brevo key
+Until 2026-10-20 OTP mail went out through a personal Gmail account over Gmail SMTP. Gmail first delayed those messages and then blocked them outright ("Message blocked ... appears suspicious"): 20 OTPs bounced in one day, including test messages, so users could not register. Since 2026-10-20 the backend sends through **Brevo's SMTP relay** (`smtp-relay.brevo.com:587`, login is a Brevo SMTP login, not an email address) with the same verified sender address; no code change was needed beyond `src/services/mail.js` now using `SMTP_FROM` as the visible sender. The Brevo account is in the business's name (KARTAR ENTERPRISES, registered address from the GST record) on the free plan, 300 emails per day, which is far above the current 1-10 OTPs a day.
+
+The mail itself was also made less spam-like: a named sender ("Taiyari NEET ki"), the code in the subject line, a plain-text part alongside the HTML, and separate registration / password-reset templates.
+
+**The SMTP key expires every year** (user's choice; Brevo also expires a key after 90 days without use). The current key expires on **2027-10-20**. `ops/smtp_key_check.py` runs daily from cron, shows the days left on the System Health page ("Email (Brevo) Key" card) and emails the admins 30, 14, 7, 3 and 1 days before expiry and every day once expired. To rotate: Brevo → Settings → SMTP & API → generate a new SMTP key (1 year), put it in the backend `.env` as `SMTP_PASSWORD`, set `SMTP_KEY_EXPIRES=YYYY-MM-DD`, then `docker compose -f docker-compose.prod.yml up -d --force-recreate backend` (a plain restart does not reload `.env`). If the key lapses, OTP and password-reset emails stop and the daily backup email fails too.
+
+Still open, optional: sending from a `taiyarineetki.com` address with DKIM/DMARC (Brevo flags a free-mail sender as "not recommended"); it needs DNS records on the domain.
 
 ## Project Structure
 
@@ -273,12 +280,14 @@ RAZORPAY_WEBHOOK_SECRET=<webhook_secret>
 APPLE_SHARED_SECRET=<apple_secret>
 APPLE_BUNDLE_ID=com.taiyarineetki.educationapp
 
-# SMTP (Email OTP)
-SMTP_HOST=smtp.gmail.com
+# SMTP (Email OTP) — Brevo relay
+SMTP_HOST=smtp-relay.brevo.com
 SMTP_PORT=587
-SMTP_USER=<gmail>
-SMTP_PASSWORD=<app_password>
-SMTP_FROM=<gmail>
+SMTP_USER=<brevo_smtp_login>
+SMTP_PASSWORD=<brevo_smtp_key>
+SMTP_FROM=<verified_sender_email>
+SMTP_SECURE=false
+SMTP_KEY_EXPIRES=<YYYY-MM-DD, read by ops/smtp_key_check.py>
 
 # Twilio (Phone OTP)
 TWILIO_ACCOUNT_SID=<twilio_sid>
@@ -362,7 +371,7 @@ Tests login → plan fetch → order create → signature verify → subscriptio
 ## Email System
 - **Buyer invoice:** sent to user's registered email with payment receipt
 - **Admin notification:** sent to all addresses in `DEVELOPER_EMAILS` (comma-separated)
-- **SMTP:** Gmail with App Password (not regular password)
+- **SMTP:** Brevo relay (see "Email delivery (OTP) and the Brevo key" above); `SMTP_EXTRA_ACCOUNTS` can list extra `login:password[:from]` accounts for round-robin sending
 - **Templates:** `backend-main/src/views/billing/`
   - `invoice.handlebars` — buyer receipt
   - `purchase.notification.handlebars` — admin notification

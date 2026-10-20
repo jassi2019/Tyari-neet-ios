@@ -8,3 +8,7 @@
 # Daily database backup at 03:30 (kept 7 days in /root/backups) and emailed
 # to ADMIN_EMAIL + DEVELOPER_EMAILS from backend-main/.env.
 30 3 * * * /bin/bash /root/tyari-neet-ios/db_backup.sh >/dev/null 2>&1
+
+# Daily 04:00 UTC: records the Brevo SMTP key expiry on the System Health page and
+# emails the admins 30/14/7/3/1 days before it expires (and daily once expired).
+0 4 * * * /usr/bin/python3 /root/tyari-neet-ios/smtp_key_check.py >/dev/null 2>&1
