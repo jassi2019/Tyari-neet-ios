@@ -1,4 +1,4 @@
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { StatusBar } from 'expo-status-bar';
 import * as NavigationBar from 'expo-navigation-bar';
@@ -15,9 +15,13 @@ import { AuthProvider } from './contexts/AuthContext';
 import { FeatureProvider } from './contexts/FeatureContext';
 import { usePreventScreenCapture } from 'expo-screen-capture';
 import { useBackgroundUpdate } from './hooks/useBackgroundUpdate';
+import { registerNavigationRef } from './navigation/navigationRef';
 import RootNavigator from './navigation/RootNavigator';
 
 enableScreens();
+
+const navigationRef = createNavigationContainerRef();
+registerNavigationRef(navigationRef);
 
 const queryClient = new QueryClient();
 
@@ -49,7 +53,7 @@ export default function App() {
           <FeatureProvider>
             <BottomNavProvider>
               <SafeAreaProvider>
-                <NavigationContainer>
+                <NavigationContainer ref={navigationRef}>
                   <AppShell />
                   <StatusBar style="auto" />
                 </NavigationContainer>
