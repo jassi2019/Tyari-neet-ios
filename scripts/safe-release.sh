@@ -19,8 +19,8 @@ inf(){ echo "${YLW}==>${OFF} $1"; }
 # ---------- 1. runtimeVersion at rest ----------
 inf "1/5  runtimeVersion check"
 RV=$(grep -o '"runtimeVersion": *"[^"]*"' app.json | head -1 | sed 's/.*"\([0-9.]*\)"$/\1/')
-[ "$RV" = "1.0.6" ] || bad "runtimeVersion is $RV, expected 1.0.6 — fix app.json (a previous run may have aborted)"
-ok "runtimeVersion = 1.0.6"
+[ "$RV" = "1.0.8" ] || bad "runtimeVersion is $RV, expected 1.0.8 — fix app.json (a previous run may have aborted)"
+ok "runtimeVersion = 1.0.8"
 
 # ---------- 2. payment files must never change ----------
 inf "2/5  payment files untouched"
@@ -101,20 +101,22 @@ ok "bundle exports cleanly"
 
 # ---------- publish ----------
 PREV=$(npx eas update:list --branch production --non-interactive 2>/dev/null \
-       | grep -E "Runtime Version|Group ID" | paste - - | awk '{print $3" -> "$6}' | head -2)
+       | grep -E "Runtime Version|Group ID" | paste - - | awk '{print $3" -> "$6}' | head -3)
 echo
 inf "All checks passed. Publishing..."
 
 FAILED=0
-restore_rv(){ sed -i 's/"runtimeVersion": "1.0.7"/"runtimeVersion": "1.0.6"/' app.json; }
+restore_rv(){ sed -i -E 's/"runtimeVersion": "1.0.[67]"/"runtimeVersion": "1.0.8"/' app.json; }
 on_signal_rv(){ restore_rv; echo "${RED}  aborted during publish — rerun the script${OFF}"; exit 130; }
 trap restore_rv EXIT
 trap on_signal_rv INT TERM
-for RUNTIME in 1.0.6 1.0.7; do
-  if [ "$RUNTIME" = "1.0.7" ]; then
-    sed -i 's/"runtimeVersion": "1.0.6"/"runtimeVersion": "1.0.7"/' app.json
-    grep -q '"runtimeVersion": "1.0.7"' app.json || bad "could not switch runtimeVersion to 1.0.7"
-  fi
+# 1.0.8 = builds with the new native modules (versionCode 26+); 1.0.7 = iOS /
+# preview builds; 1.0.6 = older Android store builds. Publish to all so every
+# installed build keeps receiving fixes. JS that uses a module only present in
+# 1.0.8 builds must be guarded (try/require) until older runtimes are retired.
+for RUNTIME in 1.0.8 1.0.7 1.0.6; do
+  sed -i -E "s/\"runtimeVersion\": \"1.0.[678]\"/\"runtimeVersion\": \"$RUNTIME\"/" app.json
+  grep -q "\"runtimeVersion\": \"$RUNTIME\"" app.json || bad "could not switch runtimeVersion to $RUNTIME"
   for BRANCH in production preview; do
     echo "    -> $BRANCH @ $RUNTIME"
     npx eas update --branch "$BRANCH" --message "$MSG ($RUNTIME)" --non-interactive \
@@ -123,8 +125,8 @@ for RUNTIME in 1.0.6 1.0.7; do
 done
 restore_rv
 trap - EXIT INT TERM
-grep -q '"runtimeVersion": "1.0.6"' app.json || bad "runtimeVersion NOT restored — fix app.json by hand"
-ok "runtimeVersion restored to 1.0.6"
+grep -q '"runtimeVersion": "1.0.8"' app.json || bad "runtimeVersion NOT restored — fix app.json by hand"
+ok "runtimeVersion restored to 1.0.8"
 
 echo
 if [ "$FAILED" = "1" ]; then
@@ -134,7 +136,7 @@ fi
 # committed get lost: the next store build is made from git and brings back old
 # bugs (this is how a fixed crash reappeared on a freshly installed phone).
 if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
-  if git add -u && git commit -q -m "release: $MSG" -m "Shipped via EAS OTA on runtimes 1.0.6 and 1.0.7."; then
+  if git add -u && git commit -q -m "release: $MSG" -m "Shipped via EAS OTA on runtimes 1.0.8, 1.0.7 and 1.0.6."; then
     echo "${GRN}  OK${OFF}   committed to git: $(git log -1 --format=%h)"
   else echo "${RED}  WARNING: could not commit — run git add/commit yourself so git matches what is live${OFF}"; fi
   echo "${YLW}  Run: git push origin main${OFF}   (so GitHub matches production)"

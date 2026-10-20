@@ -11,7 +11,7 @@
       "resizeMode": "contain",
       "backgroundColor": "#F59E0B"
     },
-    "runtimeVersion": "1.0.6",
+    "runtimeVersion": "1.0.8",
     "updates": {
       "url": "https://u.expo.dev/e55c6314-0b1e-43af-a737-ce4557b6f804",
       "fallbackToCacheTimeout": 5000,
@@ -25,7 +25,8 @@
       "./plugins/withAndroidSdk36",
       "./plugins/withAndroidR8",
       "expo-font",
-      "expo-web-browser"
+      "expo-web-browser",
+      "expo-video"
     ],
     "ios": {
       "supportsTablet": true,

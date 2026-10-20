@@ -28,15 +28,15 @@ bash scripts/safe-release.sh "short release message"
 ```
 
 It aborts before publishing anything unless all of these pass:
-1. `runtimeVersion` in `app.json` is back at `1.0.6` (catches an aborted earlier run)
+1. `runtimeVersion` in `app.json` is back at `1.0.8` (catches an aborted earlier run)
 2. `Payment.tsx` and `Plans.tsx` are unmodified (payment screens must never change)
 3. No secrets in the diff or in untracked files
 4. No **new** TypeScript errors compared with the last commit, and none of the crash-class errors at all: undefined name, missing module or export, duplicate declaration, syntax error (`src/tests/` is excluded; other error kinds such as `TS2339` are only compared with the baseline) - see "Why a crash shipped" below
 5. The JS bundle exports cleanly
 
-It then publishes to both EAS branches (`production`, `preview`) on both runtimes (`1.0.6` is the Android store build and the current iOS store build; `1.0.7` is the internal preview APK and the 6 Sep 2026 iOS builds), restores `runtimeVersion` to `1.0.6`, commits modified tracked files to git (`git add -u`; **new files must be `git add`ed by you**), and prints a per-runtime rollback command (`npx eas update:republish --group <id>`). Run `git push origin main` afterwards so GitHub matches what is live. Ctrl+C at any point restores your uncommitted work and `runtimeVersion`.
+It then publishes to both EAS branches (`production`, `preview`) on all three runtimes (`1.0.8` is every build from versionCode 26 on, which carries the extra native modules; `1.0.7` is the internal preview APK and the 6 Sep 2026 iOS builds; `1.0.6` is the older Android store builds and the current iOS store build), restores `runtimeVersion` to `1.0.8`, commits modified tracked files to git (`git add -u`; **new files must be `git add`ed by you**), and prints a per-runtime rollback command (`npx eas update:republish --group <id>`). Run `git push origin main` afterwards so GitHub matches what is live. Ctrl+C at any point restores your uncommitted work and `runtimeVersion`.
 
-Channels: Play Store and App Store builds use channel `production`. Android store builds are runtime 1.0.6; iOS store builds exist on both 1.0.6 and 1.0.7, so check the runtime of a build before publishing. The internal preview APK uses channel `preview` (runtime 1.0.7). A fix published only to `production` never reaches preview devices, which is why the script publishes to both.
+Channels: Play Store and App Store builds use channel `production`. Android store builds from versionCode 26 are runtime 1.0.8, older ones 1.0.6; iOS store builds exist on 1.0.6 and 1.0.7, so check the runtime of a build before publishing. JS that uses a module only present in 1.0.8 builds (see "Native modules reserved for future features") must be guarded so the 1.0.6/1.0.7 bundles do not crash, or those runtimes must be dropped from the script. The internal preview APK uses channel `preview` (runtime 1.0.7). A fix published only to `production` never reaches preview devices, which is why the script publishes to both.
 
 ### Why a crash shipped, and what prevents it now
 Users saw `ReferenceError: Property 'showUnlockAnim' doesn't exist` when opening a subject. A refactor left one reference to a state variable that no longer existed in `FeatureContent.tsx`. `tsc` reported it (`TS2552: Cannot find name`), but the old check only compared the *number* of TypeScript errors with a baseline, so a known error never blocked a release. Later the fix was shipped over the air but never committed, and the next store build, made from git, brought the bug back.
@@ -48,7 +48,7 @@ A newly installed app first runs the **JS bundle embedded in the store build**. 
 - Anything fixed only by OTA can still appear on a user's very first launch. The update downloads during one launch and is used from the **next cold start**, so the user must close the app completely (swipe it away from recent apps) and open it again, sometimes twice. The update check runs only at a cold start, so Android users who just background the app can stay on an old bundle for days.
 - Verified on 2026-10-12 by requesting the manifest and downloading the real bundle exactly as a phone does, for all four channel/runtime pairs (production and preview, 1.0.6 and 1.0.7): every one is clean. Users who still see the error are running an old bundle, not receiving a bad one.
 - Each store build embeds whatever JS existed when it was cut, so a fresh install shows that older behaviour on its first launch (see the build table below). On 2026-10-17 a freshly installed phone showed this (seen in a screen recording): Canva's toolbar (zoom, "...", fullscreen), the Share / Report overlay, Canva's Report page opening inside the app, and "Copy link" giving a URL that opened the whole design in Chrome. This matches the embedded bundle of an older store build running before the OTA update was applied.
-- Before building a new store build: working tree clean, `HEAD` equal to what was last published and pushed, bump `versionCode`, keep `runtimeVersion` `1.0.6` for Android, and run `npx tsc --noEmit` and check for undefined names. Do not touch `Payment.tsx`, `Plans.tsx` or the Razorpay config.
+- Before building a new store build: working tree clean, `HEAD` equal to what was last published and pushed, bump `versionCode`, keep `runtimeVersion` `1.0.8`, and run `npx tsc --noEmit` and check for undefined names. Do not touch `Payment.tsx`, `Plans.tsx` or the Razorpay config.
 
 ### Android store builds, R8 and Play rollout
 
@@ -57,9 +57,22 @@ A newly installed app first runs the **JS bundle embedded in the store build**. 
 | 22 | `283cb04` (4 Sep 2026) | still has the `showUnlockAnim` crash | do not use |
 | 23 | `c5472d5` | crash fixed, premium gates, language-proof Canva hide | no Canva guard (fullscreen / More / Share / Report still visible on a fresh install) |
 | 24 | `e980379` | same JS as 23 | built with R8 (`production-r8` profile); not for production until a Razorpay test payment passes on an internal testing track |
-| 25 | `ddd3013` | everything above plus the Canva guard, share/report navigation block and update-heal | the build to upload |
+| 25 | `ddd3013` | everything above plus the Canva guard, share/report navigation block and update-heal | superseded by 26 |
+| 26 | see `git log` | same JS as 25 plus the brand loader; **waits up to 5 s for the newest OTA on launch** (`fallbackToCacheTimeout: 5000`), so a fresh install starts on the latest published bundle; runtime `1.0.8` with the native modules below | the build to upload, at 100% rollout |
 
-All of them target API 36 (Android 16, set by `plugins/withAndroidSdk36.js`), min API 24, runtime `1.0.6`, channel `production`, and are signed with the Play upload key. Play Console's "update your target API level" notice is satisfied by these builds; its "no deobfuscation file" notice is only a suggestion.
+All of them target API 36 (Android 16, set by `plugins/withAndroidSdk36.js`), min API 24, channel `production`, and are signed with the Play upload key. Play Console's "update your target API level" notice is satisfied by these builds; its "no deobfuscation file" notice is only a suggestion.
+
+**Native modules reserved for future features (present from versionCode 26, runtime 1.0.8):** a module that is not in the store build cannot be added over the air, so these were included ahead of need. None is used by the JS yet; a feature built on one ships as a normal OTA.
+
+| Package | What it allows later |
+|---|---|
+| `expo-screen-orientation` | landscape lesson viewer (bigger Canva slides) |
+| `@react-native-community/netinfo` | offline detection, friendlier OTP / loading messages |
+| `expo-notifications` | push notifications (needs a Firebase `google-services.json` in the build before Android push can register) |
+| `expo-video` | video lessons |
+| `expo-file-system`, `expo-sharing` | downloads and sharing of notes / PDFs |
+| `expo-haptics`, `expo-clipboard` | small UX details |
+| `@sentry/react-native` | crash reporting; add `Sentry.init({ dsn })` in JS once an account exists (the Expo config plugin was deliberately not added, it needs an auth token at build time) |
 
 **Build:** `npx eas build --platform android --profile production` (normal) or `--profile production-r8` (R8). Bump `android.versionCode` in `app.json` first, commit, and build from a clean tree so the embedded bundle equals what is in git. Check the finished `.aab`: no `showUnlockAnim`, the fixes you expect are present in `base/assets/index.android.bundle`, `targetSdkVersion` 36, and the signer SHA1 matches the upload key registered in Play Console (App signing page).
 
