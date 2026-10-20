@@ -14,7 +14,7 @@
     "runtimeVersion": "1.0.6",
     "updates": {
       "url": "https://u.expo.dev/e55c6314-0b1e-43af-a737-ce4557b6f804",
-      "fallbackToCacheTimeout": 0,
+      "fallbackToCacheTimeout": 5000,
       "checkAutomatically": "ON_LOAD"
     },
     "assetBundlePatterns": [
@@ -49,7 +49,7 @@
     },
     "android": {
       "package": "com.taiyarineetki.app",
-      "versionCode": 25,
+      "versionCode": 26,
       "jsEngine": "hermes",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
