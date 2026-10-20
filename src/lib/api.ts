@@ -100,6 +100,10 @@ const api = axios.create({
   timeout: TIMEOUT_CONFIG.default, // Default 30 seconds timeout (increased from 15s)
   headers: {
     'Content-Type': 'application/json',
+    // Tells the API this bundle handles Canva itself (embed mode, guard, font
+    // boost). Without it the API hands back the server-hosted lesson page
+    // instead of raw Canva links, which is what older embedded bundles need.
+    'x-lesson-guard': '1',
   },
   // Validate status - consider 2xx and 3xx as success
   validateStatus: (status) => status >= 200 && status < 400,
