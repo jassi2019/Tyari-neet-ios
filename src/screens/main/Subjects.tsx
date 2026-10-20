@@ -10,7 +10,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { ChevronLeft } from 'lucide-react-native';
 import React, { useState } from 'react';
 import {
-  ActivityIndicator,
   ScrollView,
   StyleSheet,
   Text,
@@ -19,6 +18,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import BrandLoader from '@/components/BrandLoader';
 type SubjectsScreenProps = {
   navigation: any;
   route?: { params?: { featureName?: string; freeOnly?: boolean } };
@@ -118,7 +118,7 @@ export const Subjects = ({ navigation, route }: SubjectsScreenProps) => {
   if (!isGuest && isLoading) {
     return (
       <SafeAreaView style={styles.centerContainer}>
-        <ActivityIndicator size="large" color="#F1BB3E" />
+        <BrandLoader />
       </SafeAreaView>
     );
   }

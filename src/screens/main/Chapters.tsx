@@ -13,7 +13,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { ChevronLeft } from 'lucide-react-native';
 import React, { useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
   ScrollView,
   StyleSheet,
   Text,
@@ -22,6 +21,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import BrandLoader from '@/components/BrandLoader';
 type ChaptersScreenProps = {
   navigation: any;
   route: {
@@ -122,7 +122,7 @@ export const Chapters = ({ navigation, route }: ChaptersScreenProps) => {
   if (!isGuest && chaptersLoading) {
     return (
       <SafeAreaView style={styles.centered} edges={['top']}>
-        <ActivityIndicator size="large" color="#F1BB3E" />
+        <BrandLoader />
       </SafeAreaView>
     );
   }

@@ -9,7 +9,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { ChevronLeft, Lock } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
   Modal,
   ScrollView,
   StyleSheet,
@@ -20,6 +19,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import BrandLoader from '@/components/BrandLoader';
 type TopicsScreenProps = {
   navigation: any;
   route: {
@@ -115,7 +115,7 @@ const Topics = ({ navigation, route }: TopicsScreenProps) => {
   if (!isGuest && (isLoading || favoritesLoading)) {
     return (
       <SafeAreaView style={styles.centered} edges={['top']}>
-        <ActivityIndicator size="large" color="#F4B95F" />
+        <BrandLoader />
         <Text style={styles.loadingText}>Loading topics...</Text>
       </SafeAreaView>
     );

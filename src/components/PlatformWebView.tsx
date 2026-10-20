@@ -1,6 +1,7 @@
 import React from 'react';
-import { ActivityIndicator, Alert, Linking, Platform, StyleSheet, Text, View } from 'react-native';
+import { Alert, Linking, Platform, StyleSheet, Text, View } from 'react-native';
 
+import BrandLoader from './BrandLoader';
 type Props = {
   source: { uri: string } | { html: string };
   style?: any;
@@ -481,7 +482,7 @@ export default function PlatformWebView({
       />
       {!revealed && (
         <View style={styles.loadingOverlay} pointerEvents="none">
-          <ActivityIndicator size="large" color="#F5A623" />
+          <BrandLoader />
         </View>
       )}
       </View>

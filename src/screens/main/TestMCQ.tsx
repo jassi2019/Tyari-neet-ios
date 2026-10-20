@@ -6,7 +6,6 @@ import api from '@/lib/api';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
   Image,
   ScrollView,
   StyleSheet,
@@ -16,6 +15,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import BrandLoader from '@/components/BrandLoader';
 export type MCQQuestion = {
   id: string;
   subject: string;
@@ -279,7 +279,7 @@ export const TestMCQ = ({ navigation, route }: TestMCQProps) => {
           <Text style={styles.loadingHeaderText}>{testName}</Text>
         </LinearGradient>
         <View style={styles.centerWrap}>
-          <ActivityIndicator size="large" color="#F5A623" />
+          <BrandLoader />
           <Text style={styles.loadingText}>Loading questions...</Text>
         </View>
       </SafeAreaView>

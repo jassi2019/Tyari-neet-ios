@@ -1,7 +1,7 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import React from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { View } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
 import BottomNav from '../components/BottomNavBar/BottomNavBar';
 
@@ -42,6 +42,7 @@ import TopicContent from '../screens/main/TopicContent';
 import Topics from '../screens/main/Topics';
 import NotFoundScreen from '../screens/NotFoundScreen';
 
+import BrandLoader from '../components/BrandLoader';
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
@@ -153,7 +154,7 @@ export default function RootNavigator() {
   if (isLoading) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color="#F1BB3E" />
+        <BrandLoader />
       </View>
     );
   }

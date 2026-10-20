@@ -3,7 +3,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { ChevronLeft } from 'lucide-react-native';
 import React, { useState } from 'react';
 import {
-  ActivityIndicator,
   Dimensions,
   ScrollView,
   StyleSheet,
@@ -13,6 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import BrandLoader from '@/components/BrandLoader';
 const { width } = Dimensions.get('window');
 
 type Period = 'daily' | 'weekly' | 'monthly';
@@ -83,7 +83,7 @@ export const Leaderboard = ({ navigation }: Props) => {
         >
           {isLoading ? (
             <View style={styles.loadingWrap}>
-              <ActivityIndicator size="large" color="#F5A623" />
+              <BrandLoader />
             </View>
           ) : entries.length === 0 ? (
             <View style={styles.emptyWrap}>

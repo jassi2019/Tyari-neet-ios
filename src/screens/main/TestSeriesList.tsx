@@ -3,7 +3,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { ChevronLeft } from 'lucide-react-native';
 import React from 'react';
 import {
-  ActivityIndicator,
   ScrollView,
   StyleSheet,
   Text,
@@ -12,6 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import BrandLoader from '@/components/BrandLoader';
 type Props = {
   navigation: any;
   route: {
@@ -63,7 +63,7 @@ export const TestSeriesList = ({ navigation, route }: Props) => {
         <View style={s.bodyCard}>
           {isLoading ? (
             <View style={s.loadingWrap}>
-              <ActivityIndicator size="large" color="#F5A623" />
+              <BrandLoader />
               <Text style={s.loadingText}>Loading tests...</Text>
             </View>
           ) : tests.length === 0 ? (

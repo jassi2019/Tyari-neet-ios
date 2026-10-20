@@ -8,9 +8,10 @@ import { isPaidSubscriptionActive, isPremiumServiceType } from '@/lib/subscripti
 import { TTopic } from '@/types/Topic';
 import { ChevronLeft } from 'lucide-react-native';
 import React from 'react';
-import { ActivityIndicator, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import BrandLoader from '@/components/BrandLoader';
 const TopicHeader = ({ title, onBack }: { title: string; onBack: () => void }) => (
   <View style={topicHeaderStyles.header}>
     <TouchableOpacity onPress={onBack} style={topicHeaderStyles.backBtn} activeOpacity={0.7}>
@@ -196,7 +197,7 @@ export const TopicContent = ({ navigation, route }: TopicContentProps) => {
         <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }} edges={['top']}>
           <TopicHeader title={topic?.name || 'Topic'} onBack={() => navigation.goBack()} />
           <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-            <ActivityIndicator size="large" color="#F4B95F" />
+            <BrandLoader />
             <Text style={{ marginTop: 12, color: '#6B7280' }}>Loading topic...</Text>
           </View>
         </SafeAreaView>

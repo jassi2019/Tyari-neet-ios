@@ -8,7 +8,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { ChevronLeft } from 'lucide-react-native';
 import React, { useState } from 'react';
 import {
-  ActivityIndicator,
   Alert,
   ScrollView,
   StyleSheet,
@@ -18,6 +17,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import BrandLoader from '@/components/BrandLoader';
 type DailyTestChapterProps = {
   navigation: any;
   route: {
@@ -148,7 +148,7 @@ export const DailyTestChapter = ({ navigation, route }: DailyTestChapterProps) =
           {/* Chapter list */}
           {isLoading && !isGuest ? (
             <View style={styles.loadingWrap}>
-              <ActivityIndicator size="large" color="#F5A623" />
+              <BrandLoader />
             </View>
           ) : filteredChapters.length === 0 ? (
             <View style={styles.emptyWrap}>

@@ -15,7 +15,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { ChevronLeft, FileText, ExternalLink } from 'lucide-react-native';
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
   Alert,
   Modal,
   Platform,
@@ -28,6 +27,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import BrandLoader from '@/components/BrandLoader';
 type Props = {
   navigation: any;
   route: {
@@ -472,7 +472,7 @@ export const FeatureContent = ({ navigation, route }: Props) => {
           {/* Step 2: Chapter */}
           {step === 'chapter' && (
             chaptersLoading ? (
-              <View style={s.center}><ActivityIndicator size="large" color="#F5A623" /></View>
+              <View style={s.center}><BrandLoader /></View>
             ) : chapters.length === 0 ? (
               <View style={s.center}><Text style={s.emptyText}>No chapters found</Text></View>
             ) : (
@@ -536,7 +536,7 @@ export const FeatureContent = ({ navigation, route }: Props) => {
           {/* Step 3: Content */}
           {step === 'content' && (
             contentLoading ? (
-              <View style={s.center}><ActivityIndicator size="large" color="#F5A623" /></View>
+              <View style={s.center}><BrandLoader /></View>
             ) : contents.filter(c => c.isActive && (!freeOnly || !isPremiumServiceType(c.serviceType))).length === 0 ? (
               <View style={s.center}>
                 <Text style={{ fontSize: 40, marginBottom: 8 }}>📭</Text>
@@ -573,7 +573,7 @@ export const FeatureContent = ({ navigation, route }: Props) => {
           <ScrollView style={{ flex: 1, backgroundColor: '#FFF8E8' }} contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
             <View style={{ paddingHorizontal: 16, paddingTop: 10 }}>
               {isExerciseLoading ? (
-                <View style={s.center}><ActivityIndicator size="large" color="#F5A623" /></View>
+                <View style={s.center}><BrandLoader /></View>
               ) : exerciseQuestions.length === 0 ? (
                 <View style={s.center}>
                   <Text style={{ fontSize: 40, marginBottom: 8 }}>📭</Text>
@@ -609,7 +609,7 @@ export const FeatureContent = ({ navigation, route }: Props) => {
           <ScrollView style={{ flex: 1, backgroundColor: '#FFF8E8' }} contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
             <View style={{ paddingHorizontal: 16, paddingTop: 10 }}>
               {(topicsLoading || (featureType === 'revision_recall' && rrQLoading)) ? (
-                <View style={s.center}><ActivityIndicator size="large" color="#F5A623" /></View>
+                <View style={s.center}><BrandLoader /></View>
               ) : topics.length === 0 ? (
                 <View style={s.center}>
                   <Text style={{ fontSize: 40, marginBottom: 8 }}>📭</Text>
