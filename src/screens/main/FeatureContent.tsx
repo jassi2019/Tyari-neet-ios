@@ -88,7 +88,9 @@ export const FeatureContent = ({ navigation, route }: Props) => {
   const { data: subjectsData } = useGetAllSubjects({});
   const { data: classesData } = useGetAllClasses({});
   const { data: chaptersData, isLoading: chaptersLoading } = useGetChaptersBySubjectId(
-    { subjectId: selectedSubject?.id, classId: selectedClass?.id, freeOnly, featureType },
+    // Content-list features (e.g. Hidden Links) show only chapters that have content, in every flow,
+    // so free and premium users see the same chapter list.
+    { subjectId: selectedSubject?.id, classId: selectedClass?.id, freeOnly, featureType, withContent: !isQuestionBased && featureType !== 'explanation' },
     { enabled: !!selectedSubject && !!selectedClass }
   );
   const { data: contentData, isLoading: contentLoading } = useGetFeatureContent(
