@@ -3,6 +3,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { ChevronLeft } from 'lucide-react-native';
 import React from 'react';
 import {
+  Alert,
   ScrollView,
   StyleSheet,
   Text,
@@ -12,6 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import BrandLoader from '@/components/BrandLoader';
+import { compareTests, formatUnlock, isTestLocked, serverOffsetMs } from '@/lib/testUnlock';
 type Props = {
   navigation: any;
   route: {
@@ -34,7 +36,15 @@ export const TestSeriesList = ({ navigation, route }: Props) => {
   // PREMIUM ones are gated in TestSeriesDetail.
   const { data, isLoading } = useGetTestSeriesList({ testType });
 
-  const tests = data?.data || [];
+  const tests = [...(data?.data || [])].sort(compareTests);
+  // Locks are judged on server time; re-render each 30s so a test opens on time.
+  const offsetMs = serverOffsetMs((data as any)?.serverTime);
+  const [, setTick] = React.useState(0);
+  React.useEffect(() => {
+    const t = setInterval(() => setTick((n) => n + 1), 30000);
+    return () => clearInterval(t);
+  }, []);
+  const openCount = tests.filter((t) => !isTestLocked(t as any, offsetMs)).length;
 
   return (
     <LinearGradient
@@ -55,7 +65,9 @@ export const TestSeriesList = ({ navigation, route }: Props) => {
           <View style={s.headerPanel}>
             <Text style={s.headerEmoji}>{testTypeEmoji}</Text>
             <Text style={s.headerTitle}>Select a Test</Text>
-            <Text style={s.headerSub}>{tests.length} tests available</Text>
+            <Text style={s.headerSub}>
+              {openCount < tests.length ? `${tests.length} tests · ${openCount} khule, baaki roz unlock honge` : `${tests.length} tests available`}
+            </Text>
           </View>
         </View>
 
@@ -78,20 +90,29 @@ export const TestSeriesList = ({ navigation, route }: Props) => {
               showsVerticalScrollIndicator={false}
               contentContainerStyle={s.testList}
             >
-              {tests.map((test, idx) => (
+              {tests.map((test, idx) => {
+                const locked = isTestLocked(test as any, offsetMs);
+                const when = formatUnlock((test as any).unlockAt);
+                return (
                 <TouchableOpacity
                   key={test.id}
-                  style={s.testCard}
+                  style={[s.testCard, locked && { opacity: 0.6 }]}
                   activeOpacity={0.85}
-                  onPress={() => navigation.navigate('TestSeriesDetail', {
-                    testSeriesId: test.id,
-                    testName: test.name,
-                    testTypeTitle,
-                    accent,
-                  })}
+                  onPress={() => {
+                    if (locked) {
+                      Alert.alert('🔒 Abhi locked hai', `"${test.name}" ${when} par khulega. Roz naya test unlock hota hai, tab tak pichhle tests practice karo!`);
+                      return;
+                    }
+                    navigation.navigate('TestSeriesDetail', {
+                      testSeriesId: test.id,
+                      testName: test.name,
+                      testTypeTitle,
+                      accent,
+                    });
+                  }}
                 >
                   <LinearGradient
-                    colors={['#FFB74D', '#F6C228']}
+                    colors={locked ? ['#BDBDBD', '#9E9E9E'] : ['#FFB74D', '#F6C228']}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
                     style={s.testNum}
@@ -105,12 +126,14 @@ export const TestSeriesList = ({ navigation, route }: Props) => {
                       <Text style={s.testMetaText}>⏱ {Math.round((test.timeLimit || 1800) / 60)} min</Text>
                       <Text style={s.testMetaText}>{(test as any).serviceType === 'FREE' ? '✓ FREE' : '🔒 PREMIUM'}</Text>
                     </View>
+                    {locked && when ? <Text style={s.unlockText}>🔓 Khulega: {when}</Text> : null}
                   </View>
                   <View style={s.testArrow}>
-                    <Text style={s.testArrowText}>→</Text>
+                    <Text style={s.testArrowText}>{locked ? '🔒' : '→'}</Text>
                   </View>
                 </TouchableOpacity>
-              ))}
+                );
+              })}
             </ScrollView>
           )}
         </View>
@@ -168,6 +191,7 @@ const s = StyleSheet.create({
   testName: { fontSize: 14, fontWeight: '800', color: '#111', marginBottom: 4 },
   testMeta: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   testMetaText: { fontSize: 11, color: '#666', fontWeight: '600' },
+  unlockText: { fontSize: 11, color: '#B26A00', fontWeight: '700', marginTop: 4 },
   testArrow: {
     width: 30, height: 30, borderRadius: 15,
     backgroundColor: '#F6C228', alignItems: 'center', justifyContent: 'center',

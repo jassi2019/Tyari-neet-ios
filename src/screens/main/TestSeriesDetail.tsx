@@ -15,6 +15,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import BrandLoader from '@/components/BrandLoader';
+import { formatUnlock, isTestLocked, serverOffsetMs } from '@/lib/testUnlock';
 type Props = {
   navigation: any;
   route: {
@@ -56,8 +57,16 @@ export const TestSeriesDetail = ({ navigation, route }: Props) => {
   const syllabus = Array.from(syllabusMap.values());
 
   const isFreeTest = test?.serviceType === 'FREE';
+  // Before its unlock time the API sends no questions; show when it opens instead.
+  const locked = isTestLocked(test as any, serverOffsetMs((data as any)?.serverTime));
+  const unlockWhen = formatUnlock((test as any)?.unlockAt);
+  const questionTotal = locked ? Number((test as any)?.questionCount) || 0 : questions.length;
 
   const handleStartTest = () => {
+    if (locked) {
+      Alert.alert('🔒 Abhi locked hai', `Ye test ${unlockWhen || 'jaldi'} par khulega.`);
+      return;
+    }
     if (!test || questions.length === 0) return;
     if (!isFreeTest && (isGuest || !hasPremium)) {
       Alert.alert(
@@ -128,7 +137,7 @@ export const TestSeriesDetail = ({ navigation, route }: Props) => {
                   ) : null}
                   <View style={s.infoRow}>
                     <View style={s.infoBadge}>
-                      <Text style={s.infoBadgeText}>📝 {questions.length} Questions</Text>
+                      <Text style={s.infoBadgeText}>📝 {questionTotal} Questions</Text>
                     </View>
                     <View style={s.infoBadge}>
                       <Text style={s.infoBadgeText}>⏱ {timeMinutes} min</Text>
@@ -183,14 +192,14 @@ export const TestSeriesDetail = ({ navigation, route }: Props) => {
               {/* Start Test Button */}
               <View style={s.startBar}>
                 <TouchableOpacity
-                  style={[s.startBtn, questions.length === 0 && s.startBtnDisabled]}
-                  activeOpacity={questions.length > 0 ? 0.85 : 1}
+                  style={[s.startBtn, (locked || questions.length === 0) && s.startBtnDisabled]}
+                  activeOpacity={!locked && questions.length > 0 ? 0.85 : 1}
                   onPress={handleStartTest}
                 >
                   <Text style={s.startBtnText}>
-                    {questions.length > 0 ? 'START TEST' : 'No questions available'}
+                    {locked ? `🔒 KHULEGA: ${unlockWhen}` : questions.length > 0 ? 'START TEST' : 'No questions available'}
                   </Text>
-                  {questions.length > 0 && (
+                  {!locked && questions.length > 0 && (
                     <View style={s.startArrow}>
                       <Text style={s.startArrowText}>→</Text>
                     </View>
