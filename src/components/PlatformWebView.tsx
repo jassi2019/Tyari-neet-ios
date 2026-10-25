@@ -5,6 +5,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import BrandLoader from './BrandLoader';
 import CanvaFooterBar from './CanvaFooterBar';
+import { useAuth } from '@/contexts/AuthContext';
+import { isPaidSubscriptionActive } from '@/lib/subscription';
+import { navigateTo } from '@/navigation/navigationRef';
 type Props = {
   source: { uri: string } | { html: string };
   style?: any;
@@ -406,6 +409,9 @@ export default function PlatformWebView({
   const canvaNav = (dir: 1 | -1) => {
     try { webViewRef.current?.injectJavaScript(`window.__canvaNav && window.__canvaNav(${dir}); true;`); } catch {}
   };
+  // Free users get a "Go Premium" call to action in the footer.
+  const { user } = useAuth();
+  const hasPremium = isPaidSubscriptionActive(user?.subscription);
 
   React.useEffect(() => () => {
     if (revealTimer.current) clearTimeout(revealTimer.current);
@@ -569,6 +575,7 @@ export default function PlatformWebView({
           onPrev={() => canvaNav(-1)}
           onNext={() => canvaNav(1)}
           bottomInset={insets.bottom}
+          onUpgrade={hasPremium ? undefined : () => navigateTo('Plans')}
         />
       )}
       </View>

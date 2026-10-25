@@ -7,6 +7,7 @@ type RootNavigationLike = {
   isReady(): boolean;
   getCurrentRoute(): { name?: string } | undefined;
   addListener(event: 'state', callback: () => void): () => void;
+  navigate?: (name: string, params?: object) => void;
 };
 
 let ref: RootNavigationLike | null = null;
@@ -18,6 +19,13 @@ export function registerNavigationRef(navigation: RootNavigationLike): void {
 export function currentRouteName(): string | undefined {
   if (!ref || !ref.isReady()) return undefined;
   return ref.getCurrentRoute()?.name;
+}
+
+// Navigate from non-screen code (e.g. the lesson viewer's footer). No-op until the
+// navigator is ready.
+export function navigateTo(name: string, params?: object): void {
+  if (!ref || !ref.isReady() || !ref.navigate) return;
+  try { ref.navigate(name, params); } catch {}
 }
 
 export function onNavigationStateChange(callback: () => void): () => void {
