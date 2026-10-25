@@ -1,7 +1,10 @@
 import React from 'react';
 import { Alert, Linking, Platform, StyleSheet, Text, View } from 'react-native';
 
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
 import BrandLoader from './BrandLoader';
+import CanvaFooterBar from './CanvaFooterBar';
 type Props = {
   source: { uri: string } | { html: string };
   style?: any;
@@ -298,10 +301,69 @@ const isBlockedCanvaNavigation = (url: string): boolean => {
   return false;
 };
 
+// Slide navigation bridge for the native footer bar (CanvaFooterBar): reports
+// whether Canva currently offers Previous / Next and the "3 / 12" page counter,
+// and exposes window.__canvaNav(dir) which presses Canva's own button. Also pads
+// the page bottom so scrolling layouts are not cut off under the bar.
+const CANVA_NAV_JS = String.raw`
+(function () {
+  try {
+    if (window.__canvaNavInit) return;
+    window.__canvaNavInit = true;
+    var NEXT = /^next/i, PREV = /^prev/i;
+    var st = document.createElement('style');
+    st.appendChild(document.createTextNode('body{padding-bottom:64px!important}'));
+    (document.head || document.documentElement).appendChild(st);
+    function visible(el) {
+      var r = el.getBoundingClientRect();
+      return r.width > 0 && r.height > 0;
+    }
+    function find(re) {
+      var list = document.querySelectorAll('button,[role="button"]');
+      for (var i = 0; i < list.length; i++) {
+        var l = list[i].getAttribute('aria-label') || list[i].getAttribute('title') || '';
+        if (re.test(l) && visible(list[i])) return list[i];
+      }
+      return null;
+    }
+    function enabled(b) {
+      return !!b && !b.disabled && b.getAttribute('aria-disabled') !== 'true';
+    }
+    function pageText() {
+      var walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null);
+      var n, c = 0;
+      while ((n = walker.nextNode()) && c++ < 4000) {
+        var t = (n.nodeValue || '').replace(/\s+/g, ' ').trim();
+        if (t.length <= 9 && /^\d{1,3} ?\/ ?\d{1,3}$/.test(t) && n.parentElement && visible(n.parentElement)) return t;
+      }
+      return null;
+    }
+    window.__canvaNav = function (dir) {
+      var b = find(dir > 0 ? NEXT : PREV);
+      if (b) { b.click(); return true; }
+      try {
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: dir > 0 ? 'ArrowRight' : 'ArrowLeft', keyCode: dir > 0 ? 39 : 37, bubbles: true }));
+      } catch (e) {}
+      return false;
+    };
+    var last = '';
+    function report() {
+      var n = find(NEXT), p = find(PREV);
+      var msg = JSON.stringify({ type: 'canvaNav', hasNext: enabled(n), hasPrev: enabled(p), page: (n || p) ? pageText() : null });
+      if (msg !== last && window.ReactNativeWebView) { last = msg; window.ReactNativeWebView.postMessage(msg); }
+    }
+    setInterval(function () { try { report(); } catch (e) {} }, 700);
+    report();
+  } catch (e) {}
+  true;
+})();
+`;
+
 const buildInjectedJavaScript = (useProtection: boolean, useDebug: boolean, useCanvaBoost: boolean): string | undefined => {
   const scripts: string[] = [];
   if (useCanvaBoost) scripts.push(CANVA_FONT_BOOST_JS);
   if (useCanvaBoost) scripts.push(CANVA_GUARD_JS);
+  if (useCanvaBoost) scripts.push(CANVA_NAV_JS);
   if (useProtection) scripts.push(PROTECT_JS);
   if (useDebug) scripts.push(DEBUG_WEBVIEW_JS);
   if (scripts.length === 0) return undefined;
@@ -335,6 +397,15 @@ export default function PlatformWebView({
   // be seen even for a frame.
   const [revealed, setRevealed] = React.useState(!isCanvaSource);
   const revealTimer = React.useRef<any>(null);
+
+  // Native footer over the bottom of Canva pages (see CanvaFooterBar). Prev / Next
+  // state comes from CANVA_NAV_JS messages; presses go back into the page.
+  const webViewRef = React.useRef<any>(null);
+  const insets = useSafeAreaInsets();
+  const [nav, setNav] = React.useState<{ hasPrev: boolean; hasNext: boolean; page: string | null }>({ hasPrev: false, hasNext: false, page: null });
+  const canvaNav = (dir: 1 | -1) => {
+    try { webViewRef.current?.injectJavaScript(`window.__canvaNav && window.__canvaNav(${dir}); true;`); } catch {}
+  };
 
   React.useEffect(() => () => {
     if (revealTimer.current) clearTimeout(revealTimer.current);
@@ -389,6 +460,7 @@ export default function PlatformWebView({
     return (
       <View style={[{ flex: 1, backgroundColor: '#FFFFFF' }, style]}>
       <WebView
+        ref={webViewRef}
         source={effectiveSource as any}
         style={[{ flex: 1 }, revealed ? null : styles.hidden]}
         javaScriptEnabled={true}
@@ -448,11 +520,15 @@ export default function PlatformWebView({
           });
         }}
         onMessage={(event: any) => {
-          if (!debugEnabled || !__DEV__) return;
           const raw = event?.nativeEvent?.data;
           if (!raw) return;
           try {
             const parsed = JSON.parse(raw);
+            if (parsed && parsed.type === 'canvaNav') {
+              setNav({ hasPrev: !!parsed.hasPrev, hasNext: !!parsed.hasNext, page: typeof parsed.page === 'string' ? parsed.page : null });
+              return;
+            }
+            if (!debugEnabled || !__DEV__) return;
             console.log(`${debugPrefix}[Message]`, parsed);
           } catch {
             console.log(`${debugPrefix}[Message]`, raw);
@@ -484,6 +560,16 @@ export default function PlatformWebView({
         <View style={styles.loadingOverlay} pointerEvents="none">
           <BrandLoader />
         </View>
+      )}
+      {isCanvaSource && (
+        <CanvaFooterBar
+          hasPrev={nav.hasPrev}
+          hasNext={nav.hasNext}
+          page={nav.page}
+          onPrev={() => canvaNav(-1)}
+          onNext={() => canvaNav(1)}
+          bottomInset={insets.bottom}
+        />
       )}
       </View>
     );
