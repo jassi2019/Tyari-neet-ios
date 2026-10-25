@@ -23,6 +23,9 @@ type Offer = {
   revealText?: string | null;
   seatsTotal?: number | null;
   seatsLeft?: number | null;
+  quizQuestion?: string | null;
+  quizOptions?: string | null;
+  quizAnswer?: string | null;
   ctaText?: string | null;
   endsAt: string;
   audience: 'free' | 'all';
@@ -30,6 +33,8 @@ type Offer = {
 };
 
 const HOME_ROUTE = 'HomeTab';
+const PLANS_ROUTE = 'Plans';
+const PLANS_DELAY_MS = 700;
 const REFETCH_GAP_MS = 5 * 60 * 1000;
 const SHOW_DELAY_MS = 1500;
 const shownThisLaunch = new Set<string>();
@@ -254,26 +259,67 @@ function OfferCard({ o, left, onClose, onCta }: { o: Offer; left: number; onClos
       </View>
     );
   }
-  // omr
+  return <OmrCard o={o} left={left} onClose={onClose} onCta={onCta} />;
+}
+
+// OMR theme: when the admin has set an MCQ, the student fills a bubble first and the
+// price + button appear after it (right or wrong; a wrong pick shows the right one).
+const LETTERS = ['A', 'B', 'C', 'D'];
+const optionAt = (t: string | null | undefined, i: number) => (String(t || '').split('\n')[i] || '').trim();
+
+function OmrCard({ o, left, onClose, onCta }: { o: Offer; left: number; onClose: () => void; onCta: () => void }) {
+  const answer = String(o.quizAnswer || '').toUpperCase();
+  const hasQuiz = !!(o.quizQuestion && String(o.quizQuestion).trim()) && LETTERS.includes(answer);
+  const [picked, setPicked] = React.useState<string | null>(null);
+  const open = !hasQuiz || !!picked;
+  const right = picked === answer;
   return (
     <View style={[st.card, { backgroundColor: '#fffdf7', borderRadius: 16, borderWidth: 2, borderColor: '#1b1b1b' }]}>
       <Close bg="#eee" fg="#333" onPress={onClose} />
       {o.tag ? <Text style={[st.tag, { color: '#b00020', letterSpacing: 1.5 }]}>{String(o.tag).toUpperCase()}</Text> : null}
       <Text style={[st.h, { color: '#1b1b1b', fontSize: 22 }]}><Hi text={o.headline} color="#0a7a3c" /></Text>
-      <View style={st.bubbles}>
-        {['A', 'B', 'C', 'D'].map((l) => (
-          <View key={l} style={st.bubbleRow}>
-            <View style={[st.bubble, l === 'C' && { backgroundColor: '#1b1b1b' }]} />
-            <Text style={{ fontSize: 11, fontWeight: '600', color: '#1b1b1b' }}>{l}</Text>
-          </View>
-        ))}
-      </View>
-      <Price price={o.price} old={o.oldPrice} color="#0a7a3c" oldColor="#555" size={26} />
-      {o.subline || o.points ? (
-        <Text style={{ fontSize: 11, color: '#555', marginTop: 2, marginBottom: 6 }}>{o.subline || lines(o.points).join(' · ')}</Text>
+      {hasQuiz ? (
+        <View style={{ marginTop: 4, marginBottom: 8 }}>
+          <Text style={st.quizQ}>Q. {String(o.quizQuestion)}</Text>
+          {LETTERS.map((l, i) => {
+            const isAnswer = l === answer;
+            const isPicked = l === picked;
+            const fill = picked ? (isAnswer ? '#0a7a3c' : isPicked ? '#C62828' : 'transparent') : 'transparent';
+            return (
+              <TouchableOpacity
+                key={l}
+                disabled={!!picked}
+                activeOpacity={0.7}
+                onPress={() => setPicked(l)}
+                style={[st.quizRow, picked && isAnswer && { backgroundColor: '#E8F5E9' }, isPicked && !isAnswer && { backgroundColor: '#FFEBEE' }]}
+                accessibilityRole="button"
+                accessibilityLabel={`Option ${l}`}
+              >
+                <View style={[st.bubble, { width: 18, height: 18, borderRadius: 9, backgroundColor: fill, borderColor: picked && (isAnswer || isPicked) ? fill : '#1b1b1b' }]} />
+                <Text style={st.quizLetter}>{l}</Text>
+                <Text style={st.quizText}>{optionAt(o.quizOptions, i)}</Text>
+              </TouchableOpacity>
+            );
+          })}
+          {picked ? (
+            <Text style={[st.quizResult, { color: right ? '#0a7a3c' : '#C62828' }]}>
+              {right ? '✓ Sahi jawab! Offer aapka hai 🎉' : `✗ Sahi jawab ${answer} tha, par offer phir bhi aapka hai 😊`}
+            </Text>
+          ) : (
+            <Text style={st.quizHint}>☝ Sahi bubble bharo, offer khulega</Text>
+          )}
+        </View>
+      ) : null}
+      {open ? (
+        <>
+          <Price price={o.price} old={o.oldPrice} color="#0a7a3c" oldColor="#555" size={26} />
+          {o.subline || o.points ? (
+            <Text style={{ fontSize: 11, color: '#555', marginTop: 2, marginBottom: 6 }}>{o.subline || lines(o.points).join(' · ')}</Text>
+          ) : null}
+        </>
       ) : null}
       <Clock left={left} bg="#1b1b1b" fg="#fff" />
-      <Cta text={o.ctaText} bg="#0a7a3c" fg="#fff" onPress={onCta} />
+      {open ? <Cta text={o.ctaText} bg="#0a7a3c" fg="#fff" onPress={onCta} /> : null}
     </View>
   );
 }
@@ -305,6 +351,9 @@ function OfferPopupInner() {
   const [visible, setVisible] = React.useState(false);
   const lastFetch = React.useRef(0);
   const timer = React.useRef<any>(null);
+  const plansShown = React.useRef(false); // already shown during the current Plans visit
+  const lastRoute = React.useRef<string | undefined>(undefined);
+  const [shownOn, setShownOn] = React.useState<string | undefined>(undefined);
 
   const fetchOffer = React.useCallback(async () => {
     if (Date.now() - lastFetch.current < REFETCH_GAP_MS) return;
@@ -326,23 +375,36 @@ function OfferPopupInner() {
     return () => sub.remove();
   }, [isLoading, signedIn, fetchOffer]);
 
-  // Show once the user is on Home and the offer applies to them.
+  // Home: per the offer's frequency. Plans (price) screen: every time the user opens
+  // it, once per visit.
   React.useEffect(() => {
     if (!offer || visible || isLoading || !signedIn) return;
     if (offer.audience === 'free' && hasPremium) return;
     let cancelled = false;
     const tryShow = async () => {
-      if (cancelled || currentRouteName() !== HOME_ROUTE) return;
+      if (cancelled) return;
+      const route = currentRouteName();
+      // A Plans visit ends when the user leaves Plans; the next visit may show it again.
+      if (lastRoute.current === PLANS_ROUTE && route !== PLANS_ROUTE) plansShown.current = false;
+      lastRoute.current = route;
       const end = Date.parse(offer.endsAt);
       if (!Number.isFinite(end) || end <= Date.now() + offsetMs) return;
-      if (await alreadySeen(offer)) return;
+      if (route === PLANS_ROUTE) {
+        if (plansShown.current) return;
+      } else if (route === HOME_ROUTE) {
+        if (await alreadySeen(offer)) return;
+      } else {
+        return;
+      }
       if (timer.current) clearTimeout(timer.current);
       timer.current = setTimeout(() => {
-        if (cancelled || currentRouteName() !== HOME_ROUTE) return;
-        markSeen(offer);
+        if (cancelled || currentRouteName() !== route) return;
+        if (route === PLANS_ROUTE) plansShown.current = true;
+        else markSeen(offer);
         report(offer.id, 'view');
+        setShownOn(route);
         setVisible(true);
-      }, SHOW_DELAY_MS);
+      }, route === PLANS_ROUTE ? PLANS_DELAY_MS : SHOW_DELAY_MS);
     };
     tryShow();
     const unsub = onNavigationStateChange(tryShow);
@@ -358,12 +420,13 @@ function OfferPopupInner() {
     <OfferModal
       o={offer}
       offsetMs={offsetMs}
-      onClose={() => { setVisible(false); setOffer(null); }}
+      onClose={() => setVisible(false)}
       onCta={() => {
         report(offer.id, 'click');
         setVisible(false);
-        setOffer(null);
-        navigateTo('Plans');
+        // Going to Plans now: do not pop the same offer again on arrival.
+        plansShown.current = true;
+        if (shownOn !== PLANS_ROUTE) navigateTo('Plans');
       }}
     />
   );
@@ -385,8 +448,12 @@ const st = StyleSheet.create({
   barTrack: { height: 6, borderRadius: 6, backgroundColor: '#0b1226', marginTop: 10, marginBottom: 6, overflow: 'hidden' },
   barFill: { height: '100%', backgroundColor: '#ffb020' },
   seats: { fontSize: 11, color: '#c9cfe3' },
-  bubbles: { flexDirection: 'row', justifyContent: 'space-between', marginVertical: 10, paddingRight: 30 },
-  bubbleRow: { flexDirection: 'row', alignItems: 'center' },
+  quizQ: { fontSize: 13.5, fontWeight: '700', color: '#1b1b1b', marginBottom: 6, lineHeight: 19 },
+  quizRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 7, paddingHorizontal: 6, borderRadius: 8 },
+  quizLetter: { fontSize: 13, fontWeight: '800', color: '#1b1b1b', width: 18 },
+  quizText: { flex: 1, fontSize: 13, color: '#1b1b1b' },
+  quizHint: { fontSize: 11.5, color: '#b00020', fontWeight: '700', marginTop: 4 },
+  quizResult: { fontSize: 12.5, fontWeight: '800', marginTop: 6, marginBottom: 2 },
   bubble: { width: 15, height: 15, borderRadius: 8, borderWidth: 1.5, borderColor: '#1b1b1b', marginRight: 5 },
   scrCard: { height: 96, borderRadius: 12, overflow: 'hidden', borderWidth: 2, borderStyle: 'dashed', borderColor: '#f5a623', backgroundColor: '#fff7e0', alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
   scrWin: { fontSize: 26, fontWeight: '800', color: '#d98b0a' },
