@@ -116,14 +116,15 @@ export default function PlanTicketCard({ name, isSelected, open, onPress, priceT
 
         {/* Price */}
         <View style={st.priceRow}>
-          <View>
+          <View style={st.priceCol}>
             {mrpValue && off > 0 ? <Text style={st.mrpRow}><Text style={st.mrp}>MRP {inr(mrpValue)}</Text>{'  '}<Text style={st.offInline}>{off}% OFF</Text></Text> : null}
-            <Text style={st.price}>{priceText}</Text>
-            <Text style={st.base}>{baseText} · total, GST included</Text>
+            <Text style={st.price} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{priceText}</Text>
+            <Text style={st.base}>{baseText}</Text>
+            <Text style={st.base}>Total price, GST included</Text>
           </View>
           {off > 0 && mrpValue ? (
             <View style={st.save}>
-              <Text style={st.saveLbl}>Aap bachate ho</Text>
+              <Text style={st.saveLbl}>You save</Text>
               <Text style={st.saveAmt}>{inr(Math.round(mrpValue - baseAmount))}</Text>
             </View>
           ) : null}
@@ -132,7 +133,7 @@ export default function PlanTicketCard({ name, isSelected, open, onPress, priceT
         {hasDetails ? (
           <View style={[st.more, open && st.moreOpen]}>
             <Text style={[st.moreText, open && st.moreTextOpen]}>
-              {open ? 'Details band karo ▲' : `Plan mein kya milega? ${totalFeatures}+ features dekho ▼`}
+              {open ? 'Hide details ▲' : `What's included? View ${totalFeatures}+ features ▼`}
             </Text>
           </View>
         ) : null}
@@ -209,13 +210,14 @@ const st = StyleSheet.create({
   notchL: { marginLeft: -9 },
   notchR: { marginRight: -9 },
   perfLine: { flex: 1, borderTopWidth: 2, borderStyle: 'dashed', borderColor: '#E3D9C4', marginHorizontal: 6 },
-  priceRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', paddingHorizontal: 18, paddingTop: 6, paddingBottom: 12 },
+  priceCol: { flex: 1, minWidth: 0, marginRight: 10 },
+  priceRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 18, paddingTop: 6, paddingBottom: 12 },
   mrpRow: { fontSize: 13 },
   mrp: { fontSize: 13, color: '#9CA3AF', textDecorationLine: 'line-through', fontWeight: '600' },
   offInline: { fontSize: 12, color: '#E53935', fontWeight: '900' },
   price: { fontSize: 32, fontWeight: '900', color: '#0A7A3C', marginTop: 1 },
   base: { fontSize: 11.5, color: '#6B7280', marginTop: 1 },
-  save: { alignItems: 'flex-end', backgroundColor: '#E8F5E9', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 6 },
+  save: { flexShrink: 0, alignItems: 'center', backgroundColor: '#E8F5E9', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 6 },
   saveLbl: { fontSize: 10, color: '#2E7D32', fontWeight: '700' },
   saveAmt: { fontSize: 16, color: '#1B5E20', fontWeight: '900' },
   block: { paddingHorizontal: 18, paddingBottom: 10 },
