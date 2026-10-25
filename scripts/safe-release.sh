@@ -135,8 +135,10 @@ fi
 # Keep git identical to what is live. Fixes that ship over-the-air but are never
 # committed get lost: the next store build is made from git and brings back old
 # bugs (this is how a fixed crash reappeared on a freshly installed phone).
-if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
-  if git add -u && git commit -q -m "release: $MSG" -m "Shipped via EAS OTA on runtimes 1.0.8, 1.0.7 and 1.0.6."; then
+# New files under src/, assets/ and plugins/ are part of the bundle too, so they
+# are committed as well (a new component once shipped live but stayed out of git).
+if [ -n "$(git status --porcelain --untracked-files=no)" ] || [ -n "$(git status --porcelain -- src assets plugins)" ]; then
+  if git add -u && git add -A -- src assets plugins && git commit -q -m "release: $MSG" -m "Shipped via EAS OTA on runtimes 1.0.8, 1.0.7 and 1.0.6."; then
     echo "${GRN}  OK${OFF}   committed to git: $(git log -1 --format=%h)"
   else echo "${RED}  WARNING: could not commit — run git add/commit yourself so git matches what is live${OFF}"; fi
   echo "${YLW}  Run: git push origin main${OFF}   (so GitHub matches production)"

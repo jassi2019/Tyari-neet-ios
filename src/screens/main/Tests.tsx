@@ -27,7 +27,7 @@ const TEST_TYPES = [
     emoji: '📅',
     title: 'Daily Practice Test',
     desc: 'Everyday concept strengthening',
-    sub: '10–15 questions · 20 min',
+    sub: '40 questions · 40 min',
     colors: ['#E8F5E9', '#C8E6C9'] as [string, string],
     accent: '#2E7D32',
   },
@@ -36,7 +36,7 @@ const TEST_TYPES = [
     emoji: '📊',
     title: 'Weekly Test',
     desc: 'Revision + performance tracking',
-    sub: '30–45 questions · 45 min',
+    sub: '180 questions · 180 min',
     colors: ['#E3F2FD', '#BBDEFB'] as [string, string],
     accent: '#1565C0',
   },
@@ -45,7 +45,7 @@ const TEST_TYPES = [
     emoji: '📄',
     title: 'Full Syllabus Test',
     desc: 'Real NEET exam simulation',
-    sub: '180 questions · 200 min',
+    sub: '180 questions · 180 min',
     colors: ['#F3E5F5', '#E1BEE7'] as [string, string],
     accent: '#6A1B9A',
   },
@@ -140,7 +140,7 @@ export const Tests = ({ navigation }: TestsScreenProps) => {
         chapterId: '',
         chapterName: 'Full Syllabus',
         chapterNum: '',
-        totalTime: 200 * 60,
+        totalTime: 180 * 60,
       });
     } else {
       navigation.navigate('DailyTestChapter', {

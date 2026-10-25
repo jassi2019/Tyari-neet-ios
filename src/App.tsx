@@ -17,6 +17,7 @@ import { usePreventScreenCapture } from 'expo-screen-capture';
 import { useBackgroundUpdate } from './hooks/useBackgroundUpdate';
 import { registerNavigationRef } from './navigation/navigationRef';
 import RootNavigator from './navigation/RootNavigator';
+import OfferPopup from './components/OfferPopup';
 
 enableScreens();
 
@@ -36,7 +37,12 @@ function AppShell() {
     }
   }, []);
 
-  return <RootNavigator />;
+  return (
+    <>
+      <RootNavigator />
+      <OfferPopup />
+    </>
+  );
 }
 
 function AndroidScreenProtection() {
