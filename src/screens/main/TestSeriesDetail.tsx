@@ -64,7 +64,7 @@ export const TestSeriesDetail = ({ navigation, route }: Props) => {
 
   const handleStartTest = () => {
     if (locked) {
-      Alert.alert('🔒 Abhi locked hai', `Ye test ${unlockWhen || 'jaldi'} par khulega.`);
+      Alert.alert('🔒 Scheduled', `Ye test ${unlockWhen || 'jaldi'} ke liye scheduled hai.`);
       return;
     }
     if (!test || questions.length === 0) return;
@@ -197,7 +197,7 @@ export const TestSeriesDetail = ({ navigation, route }: Props) => {
                   onPress={handleStartTest}
                 >
                   <Text style={s.startBtnText}>
-                    {locked ? `🔒 KHULEGA: ${unlockWhen}` : questions.length > 0 ? 'START TEST' : 'No questions available'}
+                    {locked ? `🔒 SCHEDULED: ${unlockWhen}` : questions.length > 0 ? 'START TEST' : 'No questions available'}
                   </Text>
                   {!locked && questions.length > 0 && (
                     <View style={s.startArrow}>

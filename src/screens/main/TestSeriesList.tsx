@@ -100,7 +100,7 @@ export const TestSeriesList = ({ navigation, route }: Props) => {
                   activeOpacity={0.85}
                   onPress={() => {
                     if (locked) {
-                      Alert.alert('🔒 Abhi locked hai', `"${test.name}" ${when} par khulega. Roz naya test unlock hota hai, tab tak pichhle tests practice karo!`);
+                      Alert.alert('🔒 Scheduled', `"${test.name}" ${when} ke liye scheduled hai. Roz naya test unlock hota hai, tab tak pichhle tests practice karo!`);
                       return;
                     }
                     navigation.navigate('TestSeriesDetail', {
@@ -126,7 +126,7 @@ export const TestSeriesList = ({ navigation, route }: Props) => {
                       <Text style={s.testMetaText}>⏱ {Math.round((test.timeLimit || 1800) / 60)} min</Text>
                       <Text style={s.testMetaText}>{(test as any).serviceType === 'FREE' ? '✓ FREE' : '🔒 PREMIUM'}</Text>
                     </View>
-                    {locked && when ? <Text style={s.unlockText}>🔓 Khulega: {when}</Text> : null}
+                    {locked && when ? <Text style={s.unlockText}>🗓 Scheduled: {when}</Text> : null}
                   </View>
                   <View style={s.testArrow}>
                     <Text style={s.testArrowText}>{locked ? '🔒' : '→'}</Text>
@@ -189,11 +189,11 @@ const s = StyleSheet.create({
   testNumText: { color: '#fff', fontSize: 16, fontWeight: '900' },
   testText: { flex: 1, minWidth: 0 },
   testName: { fontSize: 14, fontWeight: '800', color: '#111', marginBottom: 4 },
-  testMeta: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  testMeta: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', columnGap: 10, rowGap: 2 },
   testMetaText: { fontSize: 11, color: '#666', fontWeight: '600' },
   unlockText: { fontSize: 11, color: '#B26A00', fontWeight: '700', marginTop: 4 },
   testArrow: {
-    width: 30, height: 30, borderRadius: 15,
+    width: 30, height: 30, borderRadius: 15, flexShrink: 0,
     backgroundColor: '#F6C228', alignItems: 'center', justifyContent: 'center',
   },
   testArrowText: { color: '#fff', fontSize: 14, fontWeight: '900' },
