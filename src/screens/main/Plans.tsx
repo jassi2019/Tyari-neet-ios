@@ -19,6 +19,7 @@ type TPlanCardProps = {
   isSelected: boolean;
   isOpen: boolean;
   onToggleOpen: (plan: TPlan) => void;
+  serverTime?: string | null;
   iapProduct?: TAppleIapProduct | null;
 };
 
@@ -40,7 +41,7 @@ const formatInr = (amount: number): string => {
   return `${INR_SYMBOL}${new Intl.NumberFormat('en-IN').format(Math.max(0, Math.round(amount)))}`;
 };
 
-const PlanCard = ({ plan, onSelect, isSelected, isOpen, onToggleOpen, iapProduct }: TPlanCardProps) => {
+const PlanCard = ({ plan, onSelect, isSelected, isOpen, onToggleOpen, serverTime, iapProduct }: TPlanCardProps) => {
   const displayTitle =
     Platform.OS === 'ios' ? (iapProduct?.title || '').trim() || plan.name : plan.name;
 
@@ -92,6 +93,8 @@ const PlanCard = ({ plan, onSelect, isSelected, isOpen, onToggleOpen, iapProduct
       gstRate={gstRate}
       description={plan.description}
       mrp={(plan as any).mrp ?? null}
+      offerEndsAt={(plan as any).offerEndsAt ?? null}
+      serverTime={serverTime}
     />
   );
 };
@@ -275,6 +278,7 @@ export const PlansScreen = ({ navigation }: any) => {
                   isSelected={selectedPlan?.id === plan.id}
                   isOpen={openPlanId === plan.id}
                   onToggleOpen={(p) => setOpenPlanId((cur) => (cur === p.id ? null : p.id))}
+                  serverTime={(data as any)?.serverTime ?? null}
                   iapProduct={plan.appleProductId ? iapProductsById[plan.appleProductId] : null}
                 />
               ))

@@ -74,13 +74,32 @@ type Props = {
   description?: string | null;
   badge?: string | null;  // e.g. "MOST POPULAR"
   mrp?: number | null;    // admin "Discount / Offer: MRP" field (without GST)
+  offerEndsAt?: string | null; // admin offer timer; after it the discount is not shown
+  serverTime?: string | null;  // from the plans API, so the countdown ignores the phone clock
 };
 
-export default function PlanTicketCard({ name, isSelected, open, onPress, priceText, baseText, subText, baseAmount, gstRate, description, badge, mrp }: Props) {
+export default function PlanTicketCard({ name, isSelected, open, onPress, priceText, baseText, subText, baseAmount, gstRate, description, badge, mrp, offerEndsAt, serverTime }: Props) {
   const d = React.useMemo(() => parsePlanDescription(description), [description]);
   // The admin MRP field wins; an "MRP: ..." line in the description is the fallback.
   const mrpValue = Number(mrp) > 0 ? Number(mrp) : d.mrp;
-  const off = mrpValue && baseAmount > 0 && mrpValue > baseAmount ? Math.round(((mrpValue - baseAmount) / mrpValue) * 100) : 0;
+  // Offer timer: while it runs the card shows a countdown; once it has passed the
+  // discount (MRP, % off, saving) is no longer shown, so the countdown is never fake.
+  const offsetMs = React.useMemo(() => {
+    const t = serverTime ? Date.parse(serverTime) : NaN;
+    return Number.isFinite(t) ? t - Date.now() : 0;
+  }, [serverTime]);
+  const endMs = offerEndsAt ? Date.parse(offerEndsAt) : NaN;
+  const hasTimer = Number.isFinite(endMs);
+  const [nowMs, setNowMs] = React.useState(() => Date.now() + offsetMs);
+  React.useEffect(() => {
+    if (!hasTimer) return;
+    const t = setInterval(() => setNowMs(Date.now() + offsetMs), 1000);
+    return () => clearInterval(t);
+  }, [hasTimer, offsetMs]);
+  const leftMs = hasTimer ? Math.max(0, endMs - nowMs) : 0;
+  const offerLive = !hasTimer || leftMs > 0;
+  const rawOff = mrpValue && baseAmount > 0 && mrpValue > baseAmount ? Math.round(((mrpValue - baseAmount) / mrpValue) * 100) : 0;
+  const off = offerLive ? rawOff : 0;
   const inr = (n: number) => '₹' + new Intl.NumberFormat('en-IN').format(n);
   const totalFeatures = d.sections.reduce((n, s) => n + s.items.length, 0) + d.intro.length;
   const hasDetails = totalFeatures > 0 || d.headlines.length > 0 || !!d.tagline;
@@ -129,6 +148,26 @@ export default function PlanTicketCard({ name, isSelected, open, onPress, priceT
             </View>
           ) : null}
         </View>
+
+        {/* Offer countdown (admin timer) */}
+        {off > 0 && hasTimer && leftMs > 0 ? (
+          <View style={st.timer}>
+            <Text style={st.timerLbl}>🔥 {off}% OFF ENDS IN</Text>
+            <View style={st.timerCells}>
+              {[
+                [Math.floor(leftMs / 86400000), 'D'],
+                [Math.floor((leftMs % 86400000) / 3600000), 'H'],
+                [Math.floor((leftMs % 3600000) / 60000), 'M'],
+                [Math.floor((leftMs % 60000) / 1000), 'S'],
+              ].map(([v, l]) => (
+                <View key={String(l)} style={st.timerCell}>
+                  <Text style={st.timerNum}>{String(v).padStart(2, '0')}</Text>
+                  <Text style={st.timerUnit}>{l}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        ) : null}
 
         {hasDetails ? (
           <View style={[st.more, open && st.moreOpen]}>
@@ -190,6 +229,12 @@ export default function PlanTicketCard({ name, isSelected, open, onPress, priceT
 }
 
 const st = StyleSheet.create({
+  timer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginHorizontal: 12, marginBottom: 12, backgroundColor: '#FFEBEE', borderRadius: 12, borderWidth: 1, borderColor: '#FFCDD2', paddingVertical: 8, paddingHorizontal: 10 },
+  timerLbl: { flexShrink: 1, color: '#C62828', fontSize: 11.5, fontWeight: '900', letterSpacing: 0.4, marginRight: 8 },
+  timerCells: { flexDirection: 'row' },
+  timerCell: { backgroundColor: '#C62828', borderRadius: 6, paddingHorizontal: 5, paddingVertical: 3, marginLeft: 4, alignItems: 'center', minWidth: 30 },
+  timerNum: { color: '#FFFFFF', fontSize: 14, fontWeight: '900', fontVariant: ['tabular-nums'] },
+  timerUnit: { color: '#FFCDD2', fontSize: 8, fontWeight: '800' },
   card: { backgroundColor: '#FFFFFF', borderRadius: 18, marginBottom: 18, overflow: 'hidden', shadowColor: '#1B2550', shadowOpacity: 0.12, shadowRadius: 14, shadowOffset: { width: 0, height: 6 }, elevation: 4 },
   cardOff: { borderWidth: 1, borderColor: '#E8E1D3' },
   cardOn: { borderWidth: 2.5, borderColor: '#F1BB3E' },
