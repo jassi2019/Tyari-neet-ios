@@ -7,7 +7,8 @@ import {
 } from '@/libs/iap';
 import { TPlan } from '@/types/Plan';
 import { getPlanAppleProductId } from '@/utils/appleIap';
-import { AlertCircle, Check, ChevronRight } from 'lucide-react-native';
+import { AlertCircle, ChevronRight } from 'lucide-react-native';
+import PlanTicketCard from '@/components/PlanTicketCard';
 import React from 'react';
 import { Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -16,6 +17,8 @@ type TPlanCardProps = {
   plan: TPlan;
   onSelect: (plan: TPlan) => void;
   isSelected: boolean;
+  isOpen: boolean;
+  onToggleOpen: (plan: TPlan) => void;
   iapProduct?: TAppleIapProduct | null;
 };
 
@@ -37,13 +40,7 @@ const formatInr = (amount: number): string => {
   return `${INR_SYMBOL}${new Intl.NumberFormat('en-IN').format(Math.max(0, Math.round(amount)))}`;
 };
 
-const PlanCard = ({ plan, onSelect, isSelected, iapProduct }: TPlanCardProps) => {
-  const features = String(plan.description || '')
-    .split('\n')
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .map((line) => line.replace(/^[-*•]\s*/, ''));
-
+const PlanCard = ({ plan, onSelect, isSelected, isOpen, onToggleOpen, iapProduct }: TPlanCardProps) => {
   const displayTitle =
     Platform.OS === 'ios' ? (iapProduct?.title || '').trim() || plan.name : plan.name;
 
@@ -77,41 +74,31 @@ const PlanCard = ({ plan, onSelect, isSelected, iapProduct }: TPlanCardProps) =>
         : validUntilText
       : validUntilText;
 
-  const showGst = false;
-
+  // Look only (PlanTicketCard): tapping a card selects it exactly as before and opens
+  // its feature list; opening one closes the other.
   return (
-    <TouchableOpacity
-      onPress={() => onSelect(plan)}
-      style={[
-        styles.planCard,
-        isSelected ? styles.planCardSelected : styles.planCardDefault,
-      ]}
-    >
-      <View style={styles.planHeader}>
-        <View style={styles.planInfo}>
-          <Text style={styles.planName}>{displayTitle}</Text>
-          <Text style={styles.planValidity}>{subText}</Text>
-        </View>
-        <View style={styles.planPricing}>
-          <Text style={styles.planAmount}>{priceText}</Text>
-          <Text style={styles.planGst}>{baseText}</Text>
-        </View>
-      </View>
-
-      <View style={styles.featuresList}>
-        {features.map((feature, index) => (
-          <View key={index} style={styles.featureItem}>
-            <Check size={16} color="#F1BB3E" />
-            <Text style={styles.featureText}>{feature}</Text>
-          </View>
-        ))}
-      </View>
-    </TouchableOpacity>
+    <PlanTicketCard
+      name={displayTitle}
+      isSelected={isSelected}
+      open={isOpen}
+      onPress={() => {
+        onSelect(plan);
+        onToggleOpen(plan);
+      }}
+      priceText={priceText}
+      baseText={baseText}
+      subText={subText}
+      baseAmount={Number(plan.amount) || 0}
+      gstRate={gstRate}
+      description={plan.description}
+      mrp={(plan as any).mrp ?? null}
+    />
   );
 };
 
 export const PlansScreen = ({ navigation }: any) => {
   const [selectedPlan, setSelectedPlan] = React.useState<TPlan | null>(null);
+  const [openPlanId, setOpenPlanId] = React.useState<string | null>(null);
   const { data, error, isLoading } = useGetAllPlans();
 
   const [iapProductsById, setIapProductsById] = React.useState<
@@ -286,6 +273,8 @@ export const PlansScreen = ({ navigation }: any) => {
                   plan={plan}
                   onSelect={handlePlanSelect}
                   isSelected={selectedPlan?.id === plan.id}
+                  isOpen={openPlanId === plan.id}
+                  onToggleOpen={(p) => setOpenPlanId((cur) => (cur === p.id ? null : p.id))}
                   iapProduct={plan.appleProductId ? iapProductsById[plan.appleProductId] : null}
                 />
               ))

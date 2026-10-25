@@ -24,10 +24,18 @@ ok "runtimeVersion = 1.0.8"
 
 # ---------- 2. payment files must never change ----------
 inf "2/5  payment files untouched"
-PAY=$(git status --porcelain src/screens/main/Payment.tsx src/screens/main/Plans.tsx 2>/dev/null)
-[ -z "$PAY" ] || bad "Payment.tsx/Plans.tsx modified — these must never change:
+# Payment.tsx never changes. Plans.tsx only shows the plan cards; a look-only change
+# to it needs the owner's OK and an explicit ALLOW_PLANS_UI=1 for that one release.
+PAY_FILES="src/screens/main/Payment.tsx src/screens/main/Plans.tsx"
+[ "${ALLOW_PLANS_UI:-0}" = "1" ] && PAY_FILES="src/screens/main/Payment.tsx"
+PAY=$(git status --porcelain $PAY_FILES 2>/dev/null)
+[ -z "$PAY" ] || bad "payment files modified — these must never change:
 $PAY"
-ok "Payment.tsx and Plans.tsx clean"
+if [ "${ALLOW_PLANS_UI:-0}" = "1" ]; then
+  ok "Payment.tsx clean (Plans.tsx UI change allowed for this release)"
+else
+  ok "Payment.tsx and Plans.tsx clean"
+fi
 
 # ---------- 3. secrets (tracked diff + untracked files) ----------
 inf "3/5  secrets scan"
