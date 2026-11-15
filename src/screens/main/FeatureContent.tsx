@@ -138,9 +138,9 @@ export const FeatureContent = ({ navigation, route }: Props) => {
   const subjects = subjectsData?.data || [];
   const classes = classesData?.data || [];
   const allChapters: TChapter[] = chaptersData?.data || [];
-  const chapters: TChapter[] = freeOnly
-    ? allChapters.filter((ch) => !isPremiumServiceType((ch as any).serviceType) && (ch as any).serviceType !== 'LOCKED')
-    : allChapters;
+  // Free section: the server already returns only chapters the admin put free content in;
+  // the chapter's own PREMIUM/LOCKED status must not hide or lock them here.
+  const chapters: TChapter[] = allChapters;
   const contents: TFeatureContent[] = (contentData as any)?.data || [];
   // Merge exercise_questions + questions table data
   const exerciseQFromTable: TExerciseQuestion[] = exerciseQData?.data || [];
@@ -481,9 +481,9 @@ export const FeatureContent = ({ navigation, route }: Props) => {
               <View style={s.chList}>
                 {chapters.map((ch, idx) => {
                   const sType = (ch as any).serviceType || 'FREE';
-                  const isChLocked = sType === 'LOCKED';
-                  // In normal flow (not freeOnly): non-premium users see lock on all chapters
-                  // In freeOnly flow: only free-topic chapters shown, all can open
+                  // In normal flow (not freeOnly): LOCKED chapters stay locked and non-premium
+                  // users see a lock on all chapters. In the free section nothing is locked.
+                  const isChLocked = !freeOnly && sType === 'LOCKED';
                   const showLock = !freeOnly && !hasPremium && !isChLocked;
                   const isLocked = isChLocked || showLock;
                   return (
