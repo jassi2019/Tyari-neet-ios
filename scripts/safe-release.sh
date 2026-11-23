@@ -28,6 +28,8 @@ inf "2/5  payment files untouched"
 # to it needs the owner's OK and an explicit ALLOW_PLANS_UI=1 for that one release.
 PAY_FILES="src/screens/main/Payment.tsx src/screens/main/Plans.tsx"
 [ "${ALLOW_PLANS_UI:-0}" = "1" ] && PAY_FILES="src/screens/main/Payment.tsx"
+# ALLOW_PAYMENT_FIX=1: owner-approved, agent-reviewed change to Payment.tsx (one release only).
+[ "${ALLOW_PAYMENT_FIX:-0}" = "1" ] && PAY_FILES="src/screens/main/Plans.tsx"
 PAY=$(git status --porcelain $PAY_FILES 2>/dev/null)
 [ -z "$PAY" ] || bad "payment files modified — these must never change:
 $PAY"

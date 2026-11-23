@@ -41,6 +41,52 @@ export type TAppleIapProduct = {
 const IAP_NOT_AVAILABLE_MESSAGE =
   'In-app purchases are not available. Please use a development build (not Expo Go).';
 
+// True while purchaseAppleProduct() is waiting on StoreKit. The background sync must not
+// open/close the IAP connection then: endConnection() would drop the live purchase's
+// listeners and the user could be charged without the app ever hearing about it.
+let applePurchaseInFlight = false;
+export const isApplePurchaseInFlight = () => applePurchaseInFlight;
+
+export const APPLE_PURCHASE_TIMEOUT_MS = 5 * 60 * 1000;
+export const APPLE_PURCHASE_TIMEOUT_MESSAGE =
+  'Apple is taking longer than usual to confirm this purchase. If you were charged, your plan will be activated automatically the next time you open the app (or tap "Restore Purchases"). Please do not pay again.';
+
+// Remembers that a purchase was started but not confirmed in time, so the app checks
+// with the App Store on the next launch even if StoreKit does not re-deliver it.
+const PENDING_KEY = '@apple_purchase_pending';
+
+async function storage(): Promise<any | null> {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    return require('@react-native-async-storage/async-storage').default;
+  } catch {
+    return null;
+  }
+}
+
+export async function markApplePurchasePending(productId: string): Promise<void> {
+  const s = await storage();
+  if (!s) return;
+  await s.setItem(PENDING_KEY, JSON.stringify({ productId, at: Date.now() }));
+}
+
+export async function getApplePurchasePending(): Promise<{ productId: string; at: number } | null> {
+  const s = await storage();
+  if (!s) return null;
+  try {
+    const raw = await s.getItem(PENDING_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function clearApplePurchasePending(): Promise<void> {
+  const s = await storage();
+  if (!s) return;
+  await s.removeItem(PENDING_KEY).catch(() => undefined);
+}
+
 function isExpoGo(): boolean {
   try {
     // `expo-constants` is present in Expo projects, but keep this lazy to avoid hard dependency.
@@ -393,13 +439,20 @@ export async function purchaseAppleProduct(
   }
 
   const IAP = requireIap();
-  await ensureAppleIapConnection(IAP);
+  applePurchaseInFlight = true;
+  try {
+    await ensureAppleIapConnection(IAP);
+  } catch (e) {
+    applePurchaseInFlight = false;
+    throw e;
+  }
 
   let purchaseSub: EventSubscription | null = null;
   let errorSub: EventSubscription | null = null;
   let timeout: ReturnType<typeof setTimeout> | null = null;
 
   const cleanup = async () => {
+    applePurchaseInFlight = false;
     if (timeout) {
       clearTimeout(timeout);
       timeout = null;
@@ -478,11 +531,16 @@ export async function purchaseAppleProduct(
         });
       });
 
+      // Apple sometimes confirms a purchase well after the payment sheet closes. If that
+      // confirmation arrives after this timeout, StoreKit keeps the transaction unfinished
+      // and syncPendingApplePurchases() picks it up on the next launch, so the user is
+      // never charged without getting the plan.
       timeout = setTimeout(() => {
+        markApplePurchasePending(productId).catch(() => undefined);
         settle(async () => {
-          throw new Error('Purchase timed out. Please try again.');
+          throw new Error(APPLE_PURCHASE_TIMEOUT_MESSAGE);
         });
-      }, 2 * 60 * 1000);
+      }, APPLE_PURCHASE_TIMEOUT_MS);
 
       IAP.requestPurchase({
         type,
@@ -510,4 +568,132 @@ export async function purchaseAppleProduct(
 // Backward-compat alias (older code used this name).
 export async function purchaseAppleSubscription(productId: string): Promise<TAppleIapPurchase> {
   return purchaseAppleProduct(productId, 'subs');
+}
+
+// ---------------------------------------------------------------------------
+// Late / unfinished purchases. StoreKit re-delivers every transaction that was never
+// finished (purchase confirmed after our timeout, app killed mid-purchase, server call
+// failed) to purchaseUpdatedListener right after initConnection(). This sends each one
+// to our server and finishes it only once the server has recorded it.
+// ---------------------------------------------------------------------------
+const SYNCED_KEY = '@apple_purchases_synced';
+
+async function readSynced(): Promise<string[]> {
+  const s = await storage();
+  if (!s) return [];
+  try {
+    const raw = await s.getItem(SYNCED_KEY);
+    const arr = raw ? JSON.parse(raw) : [];
+    return Array.isArray(arr) ? arr : [];
+  } catch {
+    return [];
+  }
+}
+
+async function rememberSynced(transactionId: string): Promise<void> {
+  const s = await storage();
+  if (!s) return;
+  const arr = await readSynced();
+  if (!arr.includes(transactionId)) arr.push(transactionId);
+  await s.setItem(SYNCED_KEY, JSON.stringify(arr.slice(-50))).catch(() => undefined);
+}
+
+export type TApplePurchaseSyncResult = { submitted: number; activated: number; failed: number };
+
+export async function syncPendingApplePurchases(options: {
+  knownProductIds: string[];
+  // resolves true when the server created a new subscription, false if it already had it
+  submit: (purchase: TAppleIapPurchase) => Promise<boolean>;
+}): Promise<TApplePurchaseSyncResult> {
+  const result: TApplePurchaseSyncResult = { submitted: 0, activated: 0, failed: 0 };
+  if (Platform.OS !== 'ios' || !IapSdk) return result;
+  if (applePurchaseInFlight) return result; // a purchase is in progress; try again later
+
+  const known = new Set(options.knownProductIds.filter(Boolean));
+  if (known.size === 0) return result;
+
+  const IAP = IapSdk;
+  const pending = await getApplePurchasePending();
+  const synced = await readSynced();
+  const found = new Map<string, Purchase>();
+  const consider = (p: Purchase | null | undefined) => {
+    if (!p || !p.transactionId || !known.has(p.productId)) return;
+    if (p.purchaseState && p.purchaseState !== 'purchased') return;
+    if (synced.includes(p.transactionId)) return;
+    found.set(p.transactionId, p);
+  };
+
+  let sub: EventSubscription | null = null;
+  try {
+    sub = IAP.purchaseUpdatedListener((p: Purchase) => consider(p));
+    await ensureAppleIapConnection(IAP, { attempts: 2, delayMs: 400, settleDelayMs: 300 });
+    // Unfinished transactions arrive on the listener shortly after the connection opens
+    // (StoreKit does that once per launch); asking for them directly works at any time.
+    await sleep(2500);
+    if (applePurchaseInFlight) return result;
+    try {
+      const unfinished = await IAP.getPendingTransactionsIOS();
+      if (Array.isArray(unfinished)) unfinished.forEach((p: Purchase) => consider(p));
+    } catch {
+      // noop
+    }
+
+    // After a failed/timed-out purchase also ask StoreKit for the current entitlements of
+    // this Apple ID (finished purchases included); anything our server has not recorded
+    // yet is submitted (the server is idempotent).
+    if (pending) {
+      try {
+        const owned = await runAppleIapWithInitRetry(IAP, () => IAP.getAvailablePurchases());
+        if (Array.isArray(owned)) owned.forEach((p: Purchase) => consider(p));
+      } catch {
+        // noop
+      }
+    }
+
+    if (found.size === 0) {
+      // Nothing outstanding; a stale pending flag (user cancelled, never charged) is dropped
+      // after a day so we stop asking StoreKit on every launch.
+      if (pending && Date.now() - pending.at > 24 * 60 * 60 * 1000) await clearApplePurchasePending();
+      return result;
+    }
+
+    const receipt = await getAppleReceiptInternal(IAP, { attempts: 4, delayMs: 1200 });
+    if (!receipt) throw new Error('Could not fetch App Store receipt.');
+
+    for (const purchase of found.values()) {
+      try {
+        const created = await options.submit({
+          productId: purchase.productId,
+          transactionId: purchase.transactionId,
+          originalTransactionId: purchase.originalTransactionIdentifierIOS ?? null,
+          environmentIOS: purchase.environmentIOS ?? null,
+          receipt,
+        });
+        try {
+          await IAP.finishTransaction({ purchase });
+        } catch {
+          // Already finished or not finishable; the server has it either way.
+        }
+        await rememberSynced(purchase.transactionId);
+        result.submitted += 1;
+        if (created) result.activated += 1;
+      } catch {
+        // Server/network failure: leave the transaction unfinished so it is retried next time.
+        result.failed += 1;
+      }
+    }
+    if (result.submitted > 0 && result.failed === 0) await clearApplePurchasePending();
+    return result;
+  } finally {
+    try {
+      sub?.remove();
+    } catch {
+      // noop
+    }
+    try {
+      await IAP.endConnection();
+    } catch {
+      // noop
+    }
+  }
 }

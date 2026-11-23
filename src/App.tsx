@@ -18,6 +18,7 @@ import { useBackgroundUpdate } from './hooks/useBackgroundUpdate';
 import { registerNavigationRef } from './navigation/navigationRef';
 import RootNavigator from './navigation/RootNavigator';
 import OfferPopup from './components/OfferPopup';
+import ApplePurchaseSync from './components/ApplePurchaseSync';
 
 enableScreens();
 
@@ -41,6 +42,7 @@ function AppShell() {
     <>
       <RootNavigator />
       <OfferPopup />
+      <ApplePurchaseSync />
     </>
   );
 }

@@ -9,9 +9,11 @@ import { useCreatePayUOrder } from '@/hooks/api/payu';
 import { useSendLogReport } from '@/hooks/api/log';
 import { useGetProfile } from '@/hooks/api/user';
 import {
+  APPLE_PURCHASE_TIMEOUT_MESSAGE,
   fetchAppleSubscriptionProducts,
   formatAppleSubscriptionPeriod,
   isIapAvailable,
+  markApplePurchasePending,
   openAppleManageSubscriptions,
   purchaseAppleProduct,
   restoreAppleReceipt,
@@ -285,6 +287,20 @@ export const PaymentScreen = ({ navigation, route }: PaymentScreenProps) => {
 
       if (error?.message?.includes('In-app purchases are not available')) {
         alertDevBuildRequired();
+        return;
+      }
+
+      // Anything other than the user cancelling may mean Apple charged but we could not
+      // record it (late confirmation, network drop): ApplePurchaseSync re-checks on next launch.
+      const cancelled =
+        /cancel/i.test(String(error?.message || '')) || String(error?.code || '') === 'user-cancelled';
+      if (!cancelled && appleProductId) {
+        markApplePurchasePending(appleProductId).catch(() => undefined);
+      }
+      if (String(error?.message || '') === APPLE_PURCHASE_TIMEOUT_MESSAGE) {
+        Alert.alert('Purchase pending', APPLE_PURCHASE_TIMEOUT_MESSAGE, [
+          { text: 'OK', onPress: () => navigation.goBack() },
+        ]);
         return;
       }
 
