@@ -12,5 +12,11 @@ export type TUser = {
   password?: string;
   createdAt: string;
   updatedAt: string;
+  // Billing address, filled on the payment screen and printed on the GST invoice.
+  addressLine?: string | null;
+  city?: string | null;
+  state?: string | null;
+  pincode?: string | null;
+  phone?: string | null;
   subscription: TSubscription | null;
 };

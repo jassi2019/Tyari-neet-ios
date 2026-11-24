@@ -7,7 +7,11 @@ import {
 } from '@/hooks/api/payment';
 import { useCreatePayUOrder } from '@/hooks/api/payu';
 import { useSendLogReport } from '@/hooks/api/log';
-import { useGetProfile } from '@/hooks/api/user';
+import { useGetProfile, useUpdateUser } from '@/hooks/api/user';
+import BillingAddressCard, {
+  isBillingAddressComplete,
+  type TBillingAddress,
+} from '@/components/BillingAddressCard';
 import {
   APPLE_PURCHASE_TIMEOUT_MESSAGE,
   fetchAppleSubscriptionProducts,
@@ -27,6 +31,7 @@ import {
   ActivityIndicator,
   Alert,
   Platform,
+  KeyboardAvoidingView,
   ScrollView,
   StyleSheet,
   Text,
@@ -89,7 +94,7 @@ export const PaymentScreen = ({ navigation, route }: PaymentScreenProps) => {
     );
   }
 
-  const { setUser, signOut } = useAuth();
+  const { user, setUser, signOut } = useAuth();
   const { refetch: fetchProfile } = useGetProfile({ enabled: false });
   const { mutateAsync: createOrderAsync, isPending: isCreatingOrder } = useCreateOrder();
   const {
@@ -106,6 +111,45 @@ export const PaymentScreen = ({ navigation, route }: PaymentScreenProps) => {
 
   const [isPurchasing, setIsPurchasing] = React.useState(false);
   const [isRestoring, setIsRestoring] = React.useState(false);
+
+  // Billing address for the GST invoice: prefilled from the profile, saved before paying.
+  const { mutateAsync: updateUserAsync, isPending: isSavingAddress } = useUpdateUser();
+  const [billing, setBilling] = React.useState<TBillingAddress>({
+    name: user?.name || '',
+    phone: String(user?.phone || ''),
+    addressLine: String(user?.addressLine || ''),
+    city: String(user?.city || ''),
+    state: String(user?.state || ''),
+    pincode: String(user?.pincode || ''),
+  });
+  React.useEffect(() => {
+    if (!user) return;
+    setBilling((b) => ({
+      name: b.name || user.name || '',
+      phone: b.phone || String(user.phone || ''),
+      addressLine: b.addressLine || String(user.addressLine || ''),
+      city: b.city || String(user.city || ''),
+      state: b.state || String(user.state || ''),
+      pincode: b.pincode || String(user.pincode || ''),
+    }));
+  }, [user?.id]);
+  const billingComplete = isBillingAddressComplete(billing);
+
+  // Saved before the payment sheet opens, so the invoice always has the address even if
+  // the app is closed right after paying.
+  const saveBillingAddress = async () => {
+    if (!user?.id) return;
+    await updateUserAsync({
+      id: user.id,
+      name: billing.name.trim(),
+      phone: billing.phone.replace(/\D/g, '').slice(-10),
+      addressLine: billing.addressLine.trim(),
+      city: billing.city.trim(),
+      state: billing.state.trim(),
+      pincode: billing.pincode.trim(),
+    });
+    await refreshAuthUser();
+  };
 
   const [storeProduct, setStoreProduct] = React.useState<TAppleIapProduct | null>(null);
   const [isLoadingStoreProduct, setIsLoadingStoreProduct] = React.useState(false);
@@ -169,6 +213,21 @@ export const PaymentScreen = ({ navigation, route }: PaymentScreenProps) => {
   };
 
   const handlePayment = async () => {
+    // The GST invoice needs a billing address, so it is saved before any payment starts.
+    if (!billingComplete) {
+      Alert.alert('Billing address needed', 'Please fill your billing address to continue. It is printed on your GST invoice.');
+      return;
+    }
+    try {
+      await saveBillingAddress();
+    } catch (e: any) {
+      // On 401 the api client already shows the session-expired alert and signs out.
+      if (e?.statusCode !== 401 && e?.response?.status !== 401) {
+        Alert.alert('Could not save address', String(e?.userMessage || e?.message || 'Please try again.'));
+      }
+      return;
+    }
+
     if (Platform.OS === 'android') {
       setIsPurchasing(true);
 
@@ -396,6 +455,7 @@ export const PaymentScreen = ({ navigation, route }: PaymentScreenProps) => {
   const isProcessing =
     isPurchasing ||
     isRestoring ||
+    isSavingAddress ||
     isCreatingAppleSubscription ||
     isCreatingOrder ||
     isCreatingRazorpaySubscription ||
@@ -442,7 +502,16 @@ export const PaymentScreen = ({ navigation, route }: PaymentScreenProps) => {
         <View style={styles.headerSpacer} />
       </View>
 
-      <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={60}
+      >
+      <ScrollView
+        style={styles.content}
+        contentContainerStyle={styles.contentContainer}
+        keyboardShouldPersistTaps="handled"
+      >
         <View style={styles.summaryCard}>
           <Text style={styles.summaryTitle}>Payment Summary</Text>
 
@@ -565,16 +634,23 @@ export const PaymentScreen = ({ navigation, route }: PaymentScreenProps) => {
           </View>
         )}
 
+        <BillingAddressCard value={billing} onChange={setBilling} editable={!isProcessing} />
+
         <TouchableOpacity
           onPress={handlePayment}
           // Allow tap to show helpful alerts even when IAP isn't ready (Expo Go, missing config).
           disabled={isProcessing}
-          style={[styles.payButton, (!canPay || isProcessing) && styles.payButtonDisabled]}
+          style={[
+            styles.payButton,
+            (!canPay || isProcessing || !billingComplete) && styles.payButtonDisabled,
+          ]}
         >
           {isProcessing ? (
             <View style={styles.payButtonContent}>
               <ActivityIndicator color="white" />
-              <Text style={styles.payButtonText}>Processing...</Text>
+              <Text style={styles.payButtonText}>
+                {isSavingAddress ? 'Saving address...' : 'Processing...'}
+              </Text>
             </View>
           ) : (
             <Text style={styles.payButtonText}>{payButtonLabel}</Text>
@@ -607,6 +683,7 @@ export const PaymentScreen = ({ navigation, route }: PaymentScreenProps) => {
           </View>
         )}
       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };

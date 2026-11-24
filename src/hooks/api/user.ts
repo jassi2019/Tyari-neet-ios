@@ -19,6 +19,11 @@ const updateUser = (
     password: string;
     currentPassword: string;
     profilePicture: string | null;
+    addressLine: string;
+    city: string;
+    state: string;
+    pincode: string;
+    phone: string;
   }>
 ): TApiPromise<TUser> => {
   return api.put(`/api/v1/users/${data.id}`, data, {
@@ -48,6 +53,11 @@ export const useUpdateUser = (
       password: string;
       currentPassword: string;
       profilePicture: string | null;
+      addressLine: string;
+      city: string;
+      state: string;
+      pincode: string;
+      phone: string;
     }>,
     TUser
   >
@@ -62,6 +72,11 @@ export const useUpdateUser = (
         password: string;
         currentPassword: string;
         profilePicture: string | null;
+        addressLine: string;
+        city: string;
+        state: string;
+        pincode: string;
+        phone: string;
       }>
     ) => updateUser(data),
     ...options,
